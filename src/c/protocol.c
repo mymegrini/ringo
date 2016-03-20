@@ -306,7 +306,7 @@ void insertionsrv() {
         // error from accept
         if ( sock2 == -1 ) {
             perror("Error accept.");
-            exit(1);
+            continue;
         }
         verbose("Connection established.\n");
         // insertion protocol
@@ -326,6 +326,8 @@ void insertionsrv() {
         if (newc == NULL) {
             fprintf(stderr, "Protocol error: bad response from client.\nInsertion failed.\n");
             free(newc);
+            close(sock2);
+            continue;
         }
         verbose("Parsing successful.\n");
         // modifying entity
