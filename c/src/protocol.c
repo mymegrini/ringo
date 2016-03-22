@@ -1,4 +1,5 @@
 #include "protocol.h"
+#include "listmsg.h"
 
 #include "common.h"
 #include "network.h"
@@ -29,6 +30,18 @@ typedef struct entity {
     unsigned short  mdiff_port;
 } entity;
 
+entity ent = { .id = "Bryan", .udp = 4242, .tcp = 4343,
+    .ip_next = "127.000.000.100", .port_next = 4243,
+    .mdiff_ip = "255.255.255.255", .mdiff_port = 8888
+};
+
+typedef struct _entity {
+    int socksend;
+    struct sockaddr *receiver;
+    int socklisten;
+} _entity;
+
+_entity _ent;
 
 typedef struct welc_msg {
     char ip[16];
@@ -43,10 +56,21 @@ typedef struct newc_msg {
 } newc_msg;
  
 
-entity ent = { .id = "Bryan", .udp = 4242, .tcp = 4343,
-    .ip_next = "127.000.000.100", .port_next = 4243,
-    .mdiff_ip = "255.255.255.255", .mdiff_port = 8888
+typedef struct application {
+    char name[5];
+    char id[9];
+    void (*app)(char *); // action to do, take the message as argument
+} application;
+
+
+
+application app[] = {
+    { "", "", NULL}
 };
+
+
+int socksend;
+int socklisten;
 
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
@@ -181,7 +205,6 @@ static newc_msg *parse_newc(const char *n_msg) {
 
 
 
-
 static char *prepare_welc() {
     char *msg = (char *)malloc(50);
     sprintf(msg, "WELC %s %s %s %s\n",
@@ -200,79 +223,7 @@ static char *prepare_newc() {
 
 
 
-////////////////////////////////////////////////////////////////////////////////
-// GLOBAL
-////////////////////////////////////////////////////////////////////////////////
-
-int insert(const char *host, const char *tcpport) {
-    // preparing the structure
-    struct sockaddr_in *addr;
-    struct addrinfo *first_info;
-    struct addrinfo hints;
-    bzero(&hints, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(host, tcpport, &hints, &first_info) != 0 ||
-            first_info == NULL) {
-        fprintf(stderr, 
-                "Can't get address of %s at port %s.\n", host, tcpport);
-        return 0;
-    }
-    addr = (struct sockaddr_in *) first_info->ai_addr;
-    // socket creation
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (connect(sock, (struct sockaddr *)addr,
-                (socklen_t)sizeof(struct sockaddr_in)) != 0)
-    {
-        close(sock);
-        fprintf(stderr,
-                "Can't establish connection with %s on port %s.\n", host, tcpport);
-        return 0;
-    }
-    verbose("Connection established with %s on port %s.\n", host, tcpport);
-    // WELC message reception
-    verbose("waitig for WELC message...\n");
-    char *msg = receptLine(sock);
-    verbose("Message received : \"%s\".\n", msg);
-    verbose("Parsing message...\n");
-    welc_msg *welc = parse_welc(msg);
-    free(msg);
-    if (welc == NULL) {
-        fprintf(stderr, "Protocol error: bad response.\nInsertion failed.\n");
-        free(welc);
-        return 0;
-    }
-    verbose("Parsing successfull.\n");
-    // NEWC message sending
-    verbose("Preparing NEWC message...\n");
-    char *newc_str = prepare_newc();
-    verbose("Sending: \"%s\".\n", newc_str);
-    send(sock, newc_str, strlen(newc_str), 0);
-    verbose("Message sent.\n");
-    fflush(stdout);
-    // ACKC message reception
-    verbose("Waiting for ACKC confirmation message...\n");
-    msg = receptLine(sock);
-    verbose("Message received: \"%s\".\n", msg);
-    if (strcmp(msg, "ACKC") != 0) {
-        fprintf(stderr, "Protocol error: bad response.\nInsertion failed.\n");
-        free(welc);
-        free(msg);
-        return 0;
-    }
-    verbose("Modifying current entity...");
-    verbose("Current entity:\n%s\n", entitytostr());
-    ent.port_next = welc->port;
-    ent.mdiff_port = welc->port_diff;
-    strcpy(ent.ip_next, welc->ip);
-    strcpy(ent.mdiff_ip, welc->ip_diff);
-    verbose("Modified entity:\n%s\n", entitytostr());
-
-    return 1;
-}
-
-
-void insertionsrv() {
+static void insertionsrv() {
     // socket preparation
     int sock = socket(PF_INET,SOCK_STREAM, 0);
     struct sockaddr_in addr_sock;
@@ -349,9 +300,137 @@ void insertionsrv() {
 
 
 
-void *insertion_thread(void *arg) {
+static void *insertion_thread(void *arg) {
     insertionsrv();
 }
+
+
+
+static int parsemsg(char *message) {
+    verbose(UNDERLINED "Entering parsemsg(char *message):\n" RESET);
+    if (message[5] != ' ' || message[13] != ' ' || message[22] != ' ') {
+        fprintf(stderr, "Message not following the protocol.\n");
+        return -1;
+    }
+    char name[5], idm[9], idapp[9], content[490];
+    snprintf(name, 5, message);
+    snprintf(idm, 9, &message[5]);
+    snprintf(idapp, 9, &message[14]);
+    snprintf(content, 490, &message[23]);
+    verbose("App name:\t%s\n", name);
+    verbose("Id message:\t%s\n", name);
+    verbose("Id app:\t%s\n", name);
+    verbose("Content:\t%s\n", name);
+    if (lookup(idm)) {
+        verbose("Message already seen.\n");
+        return 1;
+    }
+
+    return 0;
+}
+
+
+
+static int execapp(char *idapp, char *content) {
+    // search app and execute
+    for (int i = 0; app[i].id[0] != 0; i++) 
+        if (strcmp(app[i].id, idapp) == 0) {
+            app[i].app(content);
+            return 1;
+        }
+    // app not found
+    return 0;
+}
+
+
+// TODO
+static char *messageid() {
+    char *id = (char *) malloc(9);
+    snprintf(id, 8, "12345678");
+    return id;
+}
+
+
+
+static int sendmessage(int app_index, char *content) {
+    char packet[513];
+    snprintf(packet, 513, "%s %s %s %s", 
+            app[app_index].name, messageid(), app[app_index].id, content);
+
+    return sendto(_ent.socksend, packet, 512, 0, _ent.receiver,
+            (socklen_t)sizeof(struct sockaddr_in));
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// GLOBAL
+////////////////////////////////////////////////////////////////////////////////
+int insert(const char *host, const char *tcpport) {
+    // preparing the structure
+    struct sockaddr_in *addr;
+    struct addrinfo *first_info;
+    struct addrinfo hints;
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    if (getaddrinfo(host, tcpport, &hints, &first_info) != 0 ||
+            first_info == NULL) {
+        fprintf(stderr, 
+                "Can't get address of %s at port %s.\n", host, tcpport);
+        return 0;
+    }
+    addr = (struct sockaddr_in *) first_info->ai_addr;
+    // socket creation
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (connect(sock, (struct sockaddr *)addr,
+                (socklen_t)sizeof(struct sockaddr_in)) != 0)
+    {
+        close(sock);
+        fprintf(stderr,
+                "Can't establish connection with %s on port %s.\n", host, tcpport);
+        return 0;
+    }
+    verbose("Connection established with %s on port %s.\n", host, tcpport);
+    // WELC message reception
+    verbose("waitig for WELC message...\n");
+    char *msg = receptLine(sock);
+    verbose("Message received : \"%s\".\n", msg);
+    verbose("Parsing message...\n");
+    welc_msg *welc = parse_welc(msg);
+    free(msg);
+    if (welc == NULL) {
+        fprintf(stderr, "Protocol error: bad response.\nInsertion failed.\n");
+        free(welc);
+        return 0;
+    }
+    verbose("Parsing successfull.\n");
+    // NEWC message sending
+    verbose("Preparing NEWC message...\n");
+    char *newc_str = prepare_newc();
+    verbose("Sending: \"%s\".\n", newc_str);
+    send(sock, newc_str, strlen(newc_str), 0);
+    verbose("Message sent.\n");
+    fflush(stdout);
+    // ACKC message reception
+    verbose("Waiting for ACKC confirmation message...\n");
+    msg = receptLine(sock);
+    verbose("Message received: \"%s\".\n", msg);
+    if (strcmp(msg, "ACKC") != 0) {
+        fprintf(stderr, "Protocol error: bad response.\nInsertion failed.\n");
+        free(welc);
+        free(msg);
+        return 0;
+    }
+    verbose("Modifying current entity...");
+    verbose("Current entity:\n%s\n", entitytostr());
+    ent.port_next = welc->port;
+    ent.mdiff_port = welc->port_diff;
+    strcpy(ent.ip_next, welc->ip);
+    strcpy(ent.mdiff_ip, welc->ip_diff);
+    verbose("Modified entity:\n%s\n", entitytostr());
+
+    return 1;
+}
+
 
 void launch_insserv() {
     pthread_t th;
@@ -360,3 +439,6 @@ void launch_insserv() {
 
 
 }
+
+
+
