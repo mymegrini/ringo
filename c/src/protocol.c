@@ -459,7 +459,7 @@ static char *messageid() {
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
 /***
- * Protocol for inserting current entity into a ring.
+ * Protocol for insertion of current entity into a ring.
  *
  * @param hostname of the entity on the ring
  * @param port of the entity on the ring
