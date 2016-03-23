@@ -56,21 +56,30 @@ typedef struct newc_msg {
 } newc_msg;
  
 
+typedef struct protocol_msg {
+    char type[5];
+    void (*action)(char *); // action on message
+} protocol_msg;
+
+
+/***
+ * list of supported message and there actions
+ */
+protocol_msg pmsg[] = {
+    { "", NULL }
+};
+
+/***
+ * list of supported applications and there actions
+ */
 typedef struct application {
-    char name[5];
     char id[9];
     void (*app)(char *); // action to do, take the message as argument
 } application;
 
-
-
 application app[] = {
-    { "", "", NULL}
+    { "", NULL}
 };
-
-
-int socksend;
-int socklisten;
 
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
@@ -324,42 +333,50 @@ static void *insertion_thread(void *arg) {
 }
 
 
-
 static int parsemsg(char *message) {
-    verbose(UNDERLINED "Entering parsemsg(char *message):\n" RESET);
-    if (message[5] != ' ' || message[13] != ' ' || message[22] != ' ') {
+    if (message[4] != ' ' || message[12] != ' ') {
         fprintf(stderr, "Message not following the protocol.\n");
         return -1;
     }
-    char name[5], idm[9], idapp[9], content[490];
-    snprintf(name, 5, message);
-    snprintf(idm, 9, &message[5]);
-    snprintf(idapp, 9, &message[14]);
-    snprintf(content, 490, &message[23]);
-    verbose("App name:\t%s\n", name);
-    verbose("Id message:\t%s\n", name);
-    verbose("Id app:\t%s\n", name);
-    verbose("Content:\t%s\n", name);
+    message[4]  = 0;
+    message[12] = 0;
+    char *type = message;
+    char *idm  = &message[5];
+    char *content = &message[13];
     if (lookup(idm)) {
         verbose("Message already seen.\n");
-        return 1;
+        return 0;
     }
-
-    return 0;
+    // search action to do
+    for (int i = 0; pmsg[i].type[0] != 0; i++)
+        if (strcmp(type, pmsg[i].type) == 0) {
+            pmsg[i].action(content);
+            return 1;
+        }
+    // message not supported
+    verbose("Message of type %s not supported.\n", type);
+    // remove message from the list because not supported
+    lookup(idm);
+    return -1;
 }
 
-
-
-static int execapp(char *idapp, char *content) {
+static int parseappmsg(char *message) {
+    if (message[4] != ' ') {
+        fprintf(stderr, "APPL message not following the protocol.\n");
+        return -1;
+    }
+    message[4] = 0;
+    char *idapp = message, *content = &message[5];
     // search app and execute
     for (int i = 0; app[i].id[0] != 0; i++) 
         if (strcmp(app[i].id, idapp) == 0) {
-            app[i].app(content);
+            app[i].app(message);
             return 1;
         }
     // app not found
     return 0;
 }
+
 
 
 // TODO
@@ -371,14 +388,6 @@ static char *messageid() {
 
 
 
-static int sendmessage(int app_index, char *content) {
-    char packet[513];
-    snprintf(packet, 513, "%s %s %s %s", 
-            app[app_index].name, messageid(), app[app_index].id, content);
-
-    return sendto(_ent.socksend, packet, 512, 0, (struct sockaddr *)&_ent.receiver,
-            (socklen_t)sizeof(struct sockaddr_in));
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
