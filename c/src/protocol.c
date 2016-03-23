@@ -35,6 +35,10 @@ typedef struct entity {
     unsigned short  mdiff_port;
 } entity;
 
+/**
+ * Current entity
+ */
+// TODO replace current entity by an array.
 entity ent = { .id = "Bryan", .udp = 4242, .tcp = 4343,
     .ip_next = "127.000.000.100", .port_next = 4243,
     .mdiff_ip = "255.255.255.255", .mdiff_port = 8888
@@ -91,6 +95,11 @@ application app[] = {
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
 
+/***
+ * Return a string representing current entity.
+ *
+ * @return the string representing current entity
+ */
 static char *entitytostr() {
     char *str = (char *)malloc(350);
     char *id = malloc(50), *udp = malloc(50), *tcp = malloc(50),
@@ -108,6 +117,13 @@ static char *entitytostr() {
     return str;
 }
 
+
+/***
+ * Parse a NEWC message
+ * 
+ * @param NEWC message
+ * @return a newc_msg *, or NULL when message doesn't follow protocol
+ */
 static welc_msg *parse_welc(const char *w_msg) {
     char *msg = strdup(w_msg);
 #ifdef DEBUG
@@ -170,6 +186,13 @@ static welc_msg *parse_welc(const char *w_msg) {
     return welc;
 }
 
+
+/***
+ * Parse a NEWC message
+ * 
+ * @param NEWC message
+ * @return a newc_msg *, or NULL when message doesn't follow protocol
+ */
 static newc_msg *parse_newc(const char *n_msg) {
     char *msg = strdup(n_msg);
 #ifdef DEBUG
@@ -220,6 +243,11 @@ static newc_msg *parse_newc(const char *n_msg) {
 
 
 
+/***
+ * Prepare WELC message for insertion protocol
+ *
+ * @return WELC message
+ */
 static char *prepare_welc() {
     char *msg = (char *)malloc(50);
     sprintf(msg, "WELC %s %s %s %s\n",
@@ -230,6 +258,11 @@ static char *prepare_welc() {
 
 
 
+/**
+ * Prepare NEWC message for insertion protocol
+ *
+ * @return NEWC message
+ */
 static char *prepare_newc() {
     char *msg = (char *)malloc(30);
     sprintf(msg, "NEWC %s %s\n", getLocalIp(), itoa4(ent.udp));
@@ -238,6 +271,9 @@ static char *prepare_newc() {
 
 
 
+/**
+ * Server waiting for new entity insertions
+ */
 static void insertionsrv() {
     // socket preparation
     int sock = socket(PF_INET,SOCK_STREAM, 0);
@@ -334,11 +370,21 @@ static void insertionsrv() {
 
 
 
+/***
+ * Mapping of function insertionsrv to fit the thread signature
+ */
 static void *insertion_thread(void *arg) {
     insertionsrv();
 }
 
 
+/***
+ * Parse a packet and call the appropriate function.
+ * 
+ * @param the packet message
+ * @return returned value of the function called
+ * @return -1 if the message has already been seen are is not supported
+ */
 static int parsemsg(char *message) {
     if (message[4] != ' ' || message[12] != ' ') {
         fprintf(stderr, "Message not following the protocol.\n");
@@ -351,7 +397,7 @@ static int parsemsg(char *message) {
     char *content = &message[13];
     if (lookup(idm)) {
         verbose("Message already seen.\n");
-        return 0;
+        return -1;
     }
     // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
@@ -365,6 +411,16 @@ static int parsemsg(char *message) {
     return -1;
 }
 
+
+
+/***
+ * Call the application function corresponding to an APPL message
+ *
+ * @param APPL message
+ * @return 1 when the app is supported
+ * @return 0 when the app is not supported
+ * @return -1 when the message doesn't follow the protocol
+ */
 static int parseappmsg(char *message) {
     if (message[4] != ' ') {
         fprintf(stderr, "APPL message not following the protocol.\n");
@@ -384,6 +440,11 @@ static int parseappmsg(char *message) {
 
 
 
+/***
+ * Generate a unique message identificator
+ *
+ * @return message idenfitificator, a char* of strlen 8
+ */
 // TODO
 static char *messageid() {
     char *id = (char *) malloc(9);
@@ -397,6 +458,13 @@ static char *messageid() {
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
+/***
+ * Protocol for inserting current entity into a ring.
+ *
+ * @param hostname of the entity on the ring
+ * @param port of the entity on the ring
+ * @return 1 if insertion succed, 0 else
+ */
 int insert(const char *host, const char *tcpport) {
     // preparing the structure
     struct sockaddr_in *addr;
@@ -496,6 +564,10 @@ int insert(const char *host, const char *tcpport) {
 }
 
 
+
+/***
+ * Launch thread for adding new entity to current ring
+ */
 void launch_insserv() {
     pthread_t th;
     pthread_create(&th, NULL, insertion_thread, NULL);
