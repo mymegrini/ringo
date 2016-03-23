@@ -17,6 +17,11 @@
 #include <pthread.h>
 
 ////////////////////////////////////////////////////////////////////////////////
+// PROTOTYPES
+////////////////////////////////////////////////////////////////////////////////
+static int parseappmsg(char *message);
+
+////////////////////////////////////////////////////////////////////////////////
 // TYPES
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -58,7 +63,7 @@ typedef struct newc_msg {
 
 typedef struct protocol_msg {
     char type[5];
-    void (*action)(char *); // action on message
+    int (*action)(char *); // action on message
 } protocol_msg;
 
 
@@ -66,6 +71,7 @@ typedef struct protocol_msg {
  * list of supported message and there actions
  */
 protocol_msg pmsg[] = {
+    { "APPL", &parseappmsg },
     { "", NULL }
 };
 
@@ -350,8 +356,7 @@ static int parsemsg(char *message) {
     // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
         if (strcmp(type, pmsg[i].type) == 0) {
-            pmsg[i].action(content);
-            return 1;
+            return (pmsg[i].action(content));
         }
     // message not supported
     verbose("Message of type %s not supported.\n", type);
