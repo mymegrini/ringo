@@ -23,10 +23,14 @@
 #define CYAN          "\x1b[36m"
 
 
+#ifdef DEBUG
 #define debug(funcname, format, ...) \
     printf("\x1b[1m\x1b[4m\x1b[7mDEBUG IN " __FILE__ " LINE " __LINE__ ":\x1b[0m\n" \
             "\x1b[4m\x1b[7mIn " funcname "\x1b[0m\n"\
              "\x1b[7m" format "\x1b[0m", ##__VA_ARGS__)
+#else
+#define debug(funcname, format, ...)
+#endif
 
 
 #define verbose(format, ...) printf("\x1b[1mverbose\x1b[0m - " \

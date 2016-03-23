@@ -104,7 +104,7 @@ void printmsg() {
     else {
         int i = 0; 
         for (node *n = l.first; n != NULL; n = n->next, i++)
-            printf(UNDERLINED "%4d:\t%s\n", n->idm);
+            printf(UNDERLINED "%4d:\t%s\n", i, n->idm);
     }
 }
 
