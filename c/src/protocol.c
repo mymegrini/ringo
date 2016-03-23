@@ -37,7 +37,7 @@ entity ent = { .id = "Bryan", .udp = 4242, .tcp = 4343,
 
 typedef struct _entity {
     int socksend;
-    struct sockaddr *receiver;
+    struct sockaddr_in receiver;
     int socklisten;
 } _entity;
 
@@ -274,6 +274,7 @@ static void insertionsrv() {
         verbose("Received : \"%s\".\n", msg);
         verbose("Parsing message...\n");
         newc_msg *newc = parse_newc(msg);
+        free(msg);
         if (newc == NULL) {
             fprintf(stderr, "Protocol error: bad response from client.\nInsertion failed.\n");
             free(newc);
@@ -281,6 +282,24 @@ static void insertionsrv() {
             continue;
         }
         verbose("Parsing successful.\n");
+        // Actualize udp communication
+        verbose("Actualizing socket informations for next entity...\n");
+        struct in_addr next_addr;
+        if (inet_aton(newc->ip, &next_addr) == -1) {
+            fprintf(stderr,
+                    "Error converting ip %s to network.Insertion failed", 
+                    newc->ip);
+            verbose("Sending error message...\n");
+            
+        }
+        memcpy(&_ent.receiver.sin_addr, &next_addr, sizeof(struct in_addr));
+        _ent.receiver.sin_port = newc->port;
+        close(_ent.socksend);
+        verbose("Creating new socket for receiver...\n");
+        _ent.socksend = socket(PF_INET, SOCK_DGRAM, 0);
+        verbose("Socket created.\n");
+        verbose("Actualization done.\n");
+        
         // modifying entity
         verbose("Modifying current entity...\n");
         verbose("Current entity :\n%s\n", entitytostr());
@@ -288,12 +307,12 @@ static void insertionsrv() {
         strcpy(ent.ip_next, newc->ip);
         verbose("Modified entity :\n%s\n", entitytostr());
         free(newc);
-        // ACKC message sending
+        // ACKC confirmation sending
         verbose("Sending ACKC confirmation message...\n");
         send(sock2, "ACKC\n", 5, 0);
         verbose("Message sent.\n");
         // closing connection
-        verbose("Closing connection.");
+        verbose("Closing connection.\n");
         close(sock2);
     }
 }
@@ -357,7 +376,7 @@ static int sendmessage(int app_index, char *content) {
     snprintf(packet, 513, "%s %s %s %s", 
             app[app_index].name, messageid(), app[app_index].id, content);
 
-    return sendto(_ent.socksend, packet, 512, 0, _ent.receiver,
+    return sendto(_ent.socksend, packet, 512, 0, (struct sockaddr *)&_ent.receiver,
             (socklen_t)sizeof(struct sockaddr_in));
 }
 
@@ -427,7 +446,38 @@ int insert(const char *host, const char *tcpport) {
     strcpy(ent.ip_next, welc->ip);
     strcpy(ent.mdiff_ip, welc->ip_diff);
     verbose("Modified entity:\n%s\n", entitytostr());
-
+    // Socket creation
+    verbose("Creating sockets for UDP communication...\n");
+    _ent.socklisten = socket(PF_INET, SOCK_DGRAM, 0);
+    verbose("Socket for udp listening created.\n");
+    verbose("Binding socket for listening...\n");
+    struct sockaddr_in address_sock;
+    address_sock.sin_family = AF_INET;
+    address_sock.sin_port = htons(ent.udp);
+    address_sock.sin_addr = addr->sin_addr; // Bind udp socket to the address from tcp connection
+    int r=bind(_ent.socklisten,(struct sockaddr *)&address_sock,
+            sizeof(struct sockaddr_in));
+    if (r == -1) {
+        fprintf(stderr, "Binding error. Insertion failed.\n");
+        return 0;
+    }
+    verbose("Binding done.\n");
+    _ent.socksend   = socket(PF_INET, SOCK_DGRAM, 0);
+    verbose("Socket for udp sending created.\n");
+    verbose("Preparing structure for receiver address...\n");
+    bzero(&_ent.receiver, sizeof(struct sockaddr_in));
+    _ent.receiver.sin_family = AF_INET;
+    _ent.receiver.sin_port   = ent.port_next;
+    if (inet_aton(ent.ip_next, &_ent.receiver.sin_addr) == -1) {
+        fprintf(stderr,
+                "Error converting ip %s to network address. Insertion failed.\n",
+                ent.ip_next);
+        return 0;
+    }
+    // TODO multi diff
+    verbose("Structure prepared.\n");
+    verbose("Socket for UDP communication prepared.");
+    verbose("Insertion done.\n");
     return 1;
 }
 
@@ -436,8 +486,6 @@ void launch_insserv() {
     pthread_t th;
     pthread_create(&th, NULL, insertion_thread, NULL);
     //pthread_join(th, NULL);
-
-
 }
 
 
