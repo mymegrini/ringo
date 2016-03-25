@@ -3,8 +3,12 @@
 
 
 
-all	:
+all	: C Java
+
+C	:
 	make -C c/src
+
+Java	:
 	make -C java/src
 
 clean	:
