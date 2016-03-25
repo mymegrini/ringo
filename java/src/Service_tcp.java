@@ -4,8 +4,8 @@ import java.io.*;
 
 public class Service_tcp implements Runnable{
     Socket socket;
-    entity ent;
-    public Service_tcp(Socket s,entity e){
+    Entity ent;
+    public Service_tcp(Socket s,Entity e){
         socket=s;
         ent=e;
     }
@@ -18,7 +18,7 @@ public class Service_tcp implements Runnable{
             pw.println(mess);
             pw.flush();
             mess=br.readLine();
-            newc_mess data = parse_newc(mess);
+            Newc_mess data = parse_newc(mess);
             if(data!=null){
                 ent.ip_next=data.ip;
                 ent.port_next=data.port;
@@ -35,7 +35,7 @@ public class Service_tcp implements Runnable{
         }
     }
 
-    public newc_mess parse_newc(String mess){
+    public Newc_mess parse_newc(String mess){
         System.out.println(mess);
         mess=mess.substring(0,mess.length()-1);
         System.out.println(mess);
@@ -45,7 +45,7 @@ public class Service_tcp implements Runnable{
             return null;
         }
         try{
-            return new newc_mess(tab[1],Integer.parseInt(tab[2]));
+            return new Newc_mess(tab[1],Integer.parseInt(tab[2]));
         }
         catch(Exception e){
             System.out.println("The message doesn't have the right structure (2)");

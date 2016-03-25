@@ -1,4 +1,4 @@
-public class entity{
+public class Entity{
     String id;
     int udp;
     int tcp;
@@ -7,7 +7,7 @@ public class entity{
     String mdiff_ip;
     int mdiff_port;
 
-    public entity(String identifiant,int t){
+    public Entity(String identifiant,int t){
         id=identifiant;
         udp=4242;
         tcp=t;

@@ -1,8 +1,8 @@
-public class newc_mess{
+public class Newc_mess{
     String ip;
     int port;
     
-    public newc_mess(String i,int p){
+    public Newc_mess(String i,int p){
         ip=i;
         port=p;
     }
