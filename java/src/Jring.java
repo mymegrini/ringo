@@ -11,11 +11,13 @@ public class Jring{
         System.out.println("Give your id");
         Scanner sc = new Scanner(System.in);
         String id = sc.nextLine();
+        System.out.println("Give your tcp port");
+        int k = sc.nextInt();
         while(id.length()>8){
             System.out.println("The maximum length of your id is 8 characters");
             id = sc.nextLine();
         }
-        ent = new entity(id);
+        ent = new entity(id,k);
         if(args.length==0){
             ent.mdiff_ip="255.255.255.255";
             ent.mdiff_port=4444;
@@ -45,15 +47,18 @@ public class Jring{
             PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
             String mess_recv=br.readLine();
             welc_mess data_enter = parse_welc(mess_recv);
-            ent.ip_next=data_enter.ip_next;
-            ent.port_next=data_enter.port_next;
-            ent.mdiff_ip=data_enter.mdiff_ip;
-            ent.mdiff_port=data_enter.mdiff_port;
-            String mess_send = "NEWC "+host_ip().toString()+" "+ent.udp;
-            pw.println(mess_send);
-            mess_recv=br.readLine();
-            if(mess_recv.equals("ACKC")){
-                System.out.println("Connexion Succeed !");
+            if(data_enter!=null){ 
+                ent.ip_next=data_enter.ip_next;
+                ent.port_next=data_enter.port_next;
+                ent.mdiff_ip=data_enter.mdiff_ip;
+                ent.mdiff_port=data_enter.mdiff_port;
+                String mess_send = "NEWC "+host_ip().toString()+" "+ent.udp;
+                pw.println(mess_send);
+                pw.flush();
+                mess_recv=br.readLine();
+                if(mess_recv.equals("ACKC")){
+                    System.out.println("Connexion Succeed !");
+                }
             }
             br.close();
             pw.close();
@@ -87,7 +92,9 @@ public class Jring{
     }
     
     public static welc_mess parse_welc(String mess){
-        mess=mess.substring(0,mess.length()-1);
+        System.out.println("avant sub "+mess);
+        mess=mess.substring(0,mess.length());
+        System.out.println("apres sub "+mess);
         String []tab = mess.split(" ");
         if(tab.length!=5 || !tab[0].equals("WELC")){
             System.out.println("The message doesn't have the right structure (1)");
