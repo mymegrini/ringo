@@ -1,5 +1,5 @@
 CC		= gcc
-CFLAGS 		= -Wall --pedantic -O2 #-std=c11
+CFLAGS 		= -Wall -O2 #--pedantic -std=c11
 CSRC		= $(wildcard *.c)
 OBJS		= $(CSRC:%.c=../bin/%.o)
 CEXE		= ../bin/Cring
