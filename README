@@ -10,6 +10,6 @@ Compilation options :
 
 Usage :
       c/bin/Cring
-      java java/bin/Jring
+      java -cp java/bin Jring
       
 Biga - Megrini - Scotto Di Perto
