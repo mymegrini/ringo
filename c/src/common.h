@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 // TERMINAL COLORS AND FORMATTING
 #define RESET         "\x1b[0m"

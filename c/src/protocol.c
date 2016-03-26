@@ -65,32 +65,6 @@ typedef struct newc_msg {
 } newc_msg;
  
 
-typedef struct protocol_msg {
-    char type[5];
-    int (*action)(char *); // action on message
-} protocol_msg;
-
-
-/***
- * list of supported message and there actions
- */
-protocol_msg pmsg[] = {
-    { "APPL", &parseappmsg },
-    { "", NULL }
-};
-
-/***
- * list of supported applications and there actions
- */
-typedef struct application {
-    char id[9];
-    void (*app)(char *); // action to do, take the message as argument
-} application;
-
-application app[] = {
-    { "", NULL}
-};
-
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
@@ -375,81 +349,6 @@ static void insertionsrv() {
  */
 static void *insertion_thread(void *arg) {
     insertionsrv();
-}
-
-
-/***
- * Parse a packet and call the appropriate function.
- * 
- * @param the packet message
- * @return returned value of the function called
- * @return -1 if the message has already been seen are is not supported
- */
-static int parsemsg(char *message) {
-    if (message[4] != ' ' || message[12] != ' ') {
-        fprintf(stderr, "Message not following the protocol.\n");
-        return -1;
-    }
-    message[4]  = 0;
-    message[12] = 0;
-    char *type = message;
-    char *idm  = &message[5];
-    char *content = &message[13];
-    if (lookup(idm)) {
-        verbose("Message already seen.\n");
-        return -1;
-    }
-    // search action to do
-    for (int i = 0; pmsg[i].type[0] != 0; i++)
-        if (strcmp(type, pmsg[i].type) == 0) {
-            return (pmsg[i].action(content));
-        }
-    // message not supported
-    verbose("Message of type %s not supported.\n", type);
-    // remove message from the list because not supported
-    lookup(idm);
-    return -1;
-}
-
-
-
-/***
- * Call the application function corresponding to an APPL message
- *
- * @param APPL message
- * @return 1 when the app is supported
- * @return 0 when the app is not supported
- * @return -1 when the message doesn't follow the protocol
- */
-static int parseappmsg(char *message) {
-    if (message[4] != ' ') {
-        fprintf(stderr, "APPL message not following the protocol.\n");
-        return -1;
-    }
-    message[4] = 0;
-    char *idapp = message, *content = &message[5];
-    // search app and execute
-    for (int i = 0; app[i].id[0] != 0; i++) 
-        if (strcmp(app[i].id, idapp) == 0) {
-            app[i].app(message);
-            return 1;
-        }
-    // app not found
-    return 0;
-}
-
-
-
-/***
- * Generate a unique message identificator
- *
- * @return message idenfitificator, a char* of strlen 8
- */
-// TODO
-static char *messageid() {
-    char *id = (char *) malloc(9);
-    snprintf(id, 8, "12345678");
-    return id;
 }
 
 
