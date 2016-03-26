@@ -26,15 +26,19 @@
 
 #ifdef DEBUG
 #define debug(funcname, format, ...) \
-    printf("\x1b[1m\x1b[4m\x1b[7mDEBUG IN " __FILE__ " LINE " __LINE__ ":\x1b[0m\n" \
-            "\x1b[4m\x1b[7mIn " funcname "\x1b[0m\n"\
-             "\x1b[7m" format "\x1b[0m", ##__VA_ARGS__)
+            printf(BOLD UNDERLINED REVERSE \
+            "DEBUG IN " __FILE__ \
+            " LINE %d:\n" \
+            RESET UNDERLINED REVERSE \
+            "In " funcname "\n" \
+            RESET REVERSE format "\n" RESET, __LINE__, ##__VA_ARGS__)
 #else
 #define debug(funcname, format, ...)
 #endif
 
 
-#define verbose(format, ...) printf("\x1b[1mverbose\x1b[0m - " \
+
+#define verbose(format, ...) printf(BOLD "verbose" RESET " - " \
        format, ##__VA_ARGS__)
 
 

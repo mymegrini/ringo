@@ -16,8 +16,13 @@ typedef struct entity {
     uint16_t        mdiff_port[NRING];
 } entity;
 
+void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen);
+void create_ring();
 
-void launch_insserv();
+void *insertion_server(void *args);
+void *message_manager(void *args);
+
+
 int insert(const char *host, const char *tcpport);
 void sendpacket(char *content);
 

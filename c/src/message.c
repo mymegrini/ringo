@@ -9,7 +9,7 @@
 // EXTERNAL
 ////////////////////////////////////////////////////////////////////////////////
 extern int parseappmsg(char *message);
-
+static int action_whos(char *content);
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -27,7 +27,8 @@ typedef struct protocol_msg {
  * list of supported message and there actions
  */
 protocol_msg pmsg[] = {
-    { "APPL", &parseappmsg },
+    { "WHOS", action_whos },
+    { "APPL", parseappmsg },
     { "", NULL }
 };
 
@@ -83,10 +84,11 @@ static char* messageid(char* content) {
 static int action_whos(char *content) {
     debug("action_whos(char *content)", "content: %s\n", content);
     if (content[0] != 0) {
-        verbose("Message not followinf the protocol.\n");
+        verbose("Message not following the protocol.\n");
         return -1;
     }
     sendmessage("MEMB", "%s %s %s", ent.id, ent.ip_self, ent.udp);
+    return 0;
 }
 
 
@@ -111,6 +113,7 @@ int parsemsg(char *message) {
     char *type = message;
     char *idm  = &message[5];
     char *content = &message[13];
+    verbose("Parsing message %s of type %s...\n", idm, type);
     //if (lookup(idm)) {
     //    verbose("Message already seen.\n");
     //    return -1;

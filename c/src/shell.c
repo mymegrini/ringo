@@ -10,6 +10,19 @@
 
 #include <stdio.h>
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+// PROTOTYPES
+////////////////////////////////////////////////////////////////////////////////
+
+static void cmd_whos(int argc, char **argv);
+
+
+////////////////////////////////////////////////////////////////////////////////
+// TYPES
+////////////////////////////////////////////////////////////////////////////////
+
 typedef struct cmd {
     char name[32];
     char desc[512];
@@ -17,6 +30,7 @@ typedef struct cmd {
 } command;
 
 
+// TEST
 void echo(int argc, char **argv) {
     
     for ( ++argv; *argv != NULL; ++argv)
@@ -24,10 +38,20 @@ void echo(int argc, char **argv) {
     printf("\n");
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// VARS
+////////////////////////////////////////////////////////////////////////////////
+
 command cmd[] = { 
-    { "echo", "Print a message", &echo },
+    { "echo", "Print a message", echo },
+    { "whos", "Getting to know each other...", cmd_whos },
     { "", "", NULL }
 };
+
+
+////////////////////////////////////////////////////////////////////////////////
+// LOCAL
+////////////////////////////////////////////////////////////////////////////////
 
 static char **split(char *str) {
     char **res = NULL;
@@ -75,13 +99,16 @@ static void exec_cmd(char *str) {
     int argc;
     for (argc = 1; sp[argc] != NULL; ++argc)
         ;
+    debug("exec_cmd(str)", "Looking for \"%s\" command", sp[0]);
     for (int i = 0; cmd[i].name[0] != 0; i++) {
         if (strcmp(cmd[i].name, sp[0]) == 0) {
+            debug("exec_cmd(str)", "Command found.");
             (*cmd[i].exec)(argc, sp);
             free_split(sp);
             return;
         }
     }
+    debug("exec_cmd(str)", "Command not found.");
     system(str);
 }
 
@@ -94,8 +121,9 @@ static void prompt() {
 
 
 static void cmd_whos(int argc, char **argv) {
+    debug("cmd_whos", "entering function...");
     if (argc != 1)
-        fprintf(stderr, "Usage:\t%s");
+        fprintf(stderr, "Usage:\t%s", argv[1]);
     sendmessage("WHOS", "");
 }
 
@@ -109,7 +137,7 @@ void run_shell() {
         char *line = NULL;
         size_t size = 0;
         size = getline(&line, &size, stdin);
-        debug("run_shell()", "%d charaters read:\n%s\n", line);
+        line[size-1] = 0;
         exec_cmd(line);
     }
 }

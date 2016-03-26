@@ -38,10 +38,12 @@ int parseappmsg(char *message) {
     }
     message[4] = 0;
     char *idapp = message, *content = &message[5];
+    verbose("Looking for APPl %s.\n", idapp);
     // search app and execute
     for (int i = 0; app[i].id[0] != 0; i++) 
         if (strcmp(app[i].id, idapp) == 0) {
-            app[i].app(message);
+            verbose("APPL %s found.\n", idapp);
+            app[i].app(content);
             return 1;
         }
     // app not found

@@ -48,10 +48,8 @@ char *getIp(const char *hostname) {
     struct hostent *he;
     struct in_addr **addr_list;
     if ( (he = gethostbyname( hostname ) ) == NULL) {
-#ifdef DEBUG
         debug("getIp(\"%s\")", "gethostbyname(\"%s\") returned NULL\n",
                 hostname, hostname);
-#endif
         return NULL;
     }
 
@@ -66,9 +64,7 @@ char *getIp(const char *hostname) {
         ipresize(ip);
         return ip;
     }
-#ifdef DEBUG
-        debug("getIp(\"%s\")", "no addr find in the list.\n", hostname);
-#endif
+    debug("getIp(\"%s\")", "no addr find in the list.\n", hostname);
     return NULL;
 }
 
