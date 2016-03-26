@@ -14,7 +14,9 @@ extern int parseappmsg(char *message);
 
 typedef struct protocol_msg {
     char type[5];
-    int (*action)(char *); // action on message
+    int (*action)(char *);
+    // action should return -1 when message doesn't follow the protocol
+    // so it's not retransmitted
 } protocol_msg;
 
 
@@ -87,4 +89,9 @@ int parsemsg(char *message) {
 
 
 
+void sendmessage(char *type, char *content) {
+    char buff[513];
+    snprintf(buff, 513, "%s %s", type, content);
+    sendpacket(buff);
+}
 

@@ -463,5 +463,9 @@ void launch_insserv() {
     //pthread_join(th, NULL);
 }
 
+void sendpacket(char *content) {
+    sendto(_ent.socksend, content, 512, 0, (struct sockaddr *) &_ent.receiver,
+            (socklen_t)sizeof(struct sockaddr_in));
+}
 
 

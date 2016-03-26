@@ -1,10 +1,21 @@
 #include "shell.h"
 
+#include "common.h"
+
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 
 #include <stdio.h>
+
+typedef struct cmd {
+    char name[32];
+    char desc[512];
+    void (*exec)(int argc, char **args);
+} command;
+
+
 void echo(int argc, char **argv) {
     
     for ( ++argv; *argv != NULL; ++argv)
@@ -17,7 +28,7 @@ command cmd[] = {
     { "", "", NULL }
 };
 
-char **split(char *str) {
+static char **split(char *str) {
     char **res = NULL;
     char *cpy = strdup(str);
     char *token = strtok(cpy, " ");
@@ -38,7 +49,7 @@ char **split(char *str) {
 
 
 
-void free_split(char **sp) {
+static void free_split(char **sp) {
     char **i;
     for (i = sp; *i != NULL; i++ )
         free(*i);
@@ -47,20 +58,16 @@ void free_split(char **sp) {
 
 
 
-void exec_cmd(char *str) {
+static void exec_cmd(char *str) {
     char **sp = split(str);
     if (sp == NULL) {
-#ifdef DEBUG
         debug("exec_cmd(\"%s\")", "split returned NULL. realloc error.\n", str);
-#endif
         free_split(sp);
         return;
     }
     if (*sp == NULL) {
-#ifdef DEBUG
         debug("exec_cmd(\"%s\")", 
                 "split returned a pointer to NULL. Parsing error.\n", str);
-#endif
         free_split(sp);
         return;
     }
@@ -75,6 +82,34 @@ void exec_cmd(char *str) {
         }
     }
     system(str);
+}
+
+
+static void prompt() {
+    char dirname[256];
+    getcwd(dirname, 256);
+    printf("%s > ", dirname);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// COMMANDS
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+// GLOBAL
+////////////////////////////////////////////////////////////////////////////////
+
+void run_shell() {
+    while(1) {
+        prompt();
+        char *line = NULL;
+        size_t size = 0;
+        size = getline(&line, &size, stdin);
+        debug("run_shell()", "%d charaters read:\n%s\n", line);
+        exec_cmd(line);
+    }
 }
 
 

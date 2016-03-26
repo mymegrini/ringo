@@ -14,5 +14,6 @@ typedef struct entity {
 
 void launch_insserv();
 int insert(const char *host, const char *tcpport);
+void sendpacket(char *content);
 
 #endif /* PROTOCOL_H */
