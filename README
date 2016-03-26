@@ -1,1 +1,15 @@
+Ringo - Networking semester project
+
+Implements a network based on a ring-shaped communication protocol  
+
+Compilation options :
+	    make
+	    make C
+	    make Java
+	    make clean
+
+Usage :
+      c/bin/Cring
+      java -cp java/bin Jring
+      
 Biga - Megrini - Scotto Di Perto

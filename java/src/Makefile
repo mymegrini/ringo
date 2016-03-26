@@ -1,15 +1,14 @@
 JC		= javac
 JSRC		= $(wildcard *.java)
 CLSS		= $(JSRC:%.java=../bin/%.class)
-JEXE		= ../bin/Jring.class
+BIN		= ../bin
 
 
 
-
-all		: $(JEXE)
+all		: $(CLSS)
 
 ../bin/%.class 	: %.java
-	$(JC) -o $@ $<
+	$(JC) -d $(BIN) $<
 
 clean		:
 	rm -f $(JEXE) $(CLSS)
