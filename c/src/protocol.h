@@ -3,6 +3,7 @@
 
 typedef struct entity {
     char            id[9]; // 8th char max, 9th is 0
+    char            ip_self[16];
     unsigned short  udp;
     unsigned short  tcp;
     char            ip_next[16];
