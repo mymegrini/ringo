@@ -1,6 +1,7 @@
 #include "message.h"
 #include "common.h"
 #include "protocol.h"
+#include "stdint.h"
 
 #include <stdarg.h>
 
@@ -37,16 +38,45 @@ extern entity ent;
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
 
-/***
+/**
  * Generate a unique message identificator
  *
+ * @param content message content to be included in hash
  * @return message idenfitificator, a char* of strlen 8
  */
-// TODO
-static char *messageid() {
-    char *id = (char *) malloc(9);
-    snprintf(id, 8, "12345678");
-    return id;
+static char* messageid(char* content) {
+
+    static uint32_t counter = 0;
+    uint64_t h = 5381;
+    char* hash = malloc(9*sizeof(char));
+    int i;
+    char c;
+
+    /* hash * 33 + c */
+    // hashing counter
+    h = ((h << 5) + h) + counter;
+    // hashing ip and port
+    for(i=0; i<16; i++) h = ((h << 5) + h) + ent.ip_self[i];  
+    h = ((h << 5) + h) + ent.udp;
+    // hashing content
+    while((c = *content++)) h = ((h << 5) + h) + c;
+
+    // creating hash using human readable characters
+    for(i=0; i<8; i++){
+        c = h % 62;
+        if (c<10) hash[i] = c+48;      //digits
+        else if (c<36) hash[i] = c+97; //lowercase letters
+        else if (c<62) hash[i] = c+65; //uppercase letters
+        else hash[i] = 0;
+    
+        h = h >> 6;
+    }
+    hash[8] = 0;
+
+    verbose("Created message id : %s.\n", hash);
+  
+    counter++;
+    return hash;
 }
 
 
