@@ -61,3 +61,9 @@ int yesnod(char *question, int yes) {
     free(ans);
     return response;
 }
+
+
+void printpacket(char *packet) {
+    printf("---\n%s\n---\n", packet);
+}
+

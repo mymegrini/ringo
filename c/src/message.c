@@ -2,6 +2,8 @@
 #include "common.h"
 #include "protocol.h"
 
+#include <stdarg.h>
+
 ////////////////////////////////////////////////////////////////////////////////
 // EXTERNAL
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,6 +50,14 @@ static char *messageid() {
 }
 
 
+static int action_whos(char *content) {
+    debug("action_whos(char *content)", "content: %s\n", content);
+    if (content[0] != 0) {
+        verbose("Message not followinf the protocol.\n");
+        return -1;
+    }
+    sendmessage("MEMB", "%s %s %s", ent.id, ent.ip_self, ent.udp);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,9 +99,15 @@ int parsemsg(char *message) {
 
 
 
-void sendmessage(char *type, char *content) {
+void sendmessage(char *type, char *format, ...) {
     char buff[513];
-    snprintf(buff, 513, "%s %s", type, content);
+    char content[499];
+    va_list aptr;
+    va_start(aptr, format);
+    vsnprintf(content, 499, format, aptr);
+    va_end(aptr);
+    char *id = messageid(content);
+    snprintf(buff, 513, "%s %s %s", type, id, content);
     sendpacket(buff);
 }
 

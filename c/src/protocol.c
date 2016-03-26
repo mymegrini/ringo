@@ -30,23 +30,23 @@ int parseappmsg(char *message);
  */
 // TODO replace current entity by an array.
 entity ent = { .id = "Bryan", .udp = 4242, .tcp = 4343,
-    .ip_next = "127.000.000.100", .port_next = 4243,
-    .mdiff_ip = "255.255.255.255", .mdiff_port = 8888
+    .ip_next = { "127.000.000.100" }, .port_next = { 4243, 0 },
+    .mdiff_ip = { "255.255.255.255", "" }, .mdiff_port = { 8888, 0 }
 };
 
 typedef struct _entity {
-    int socksend;
-    struct sockaddr_in receiver;
+    int socksend[NRING];
+    struct sockaddr_in receiver[NRING];
     int socklisten;
 } _entity;
 
 _entity _ent;
 
 typedef struct welc_msg {
-    char ip[16];
-    int  port;
-    char ip_diff[16];
-    int  port_diff;
+    char     ip[16];
+    uint16_t port;
+    char     ip_diff[16];
+    uint16_t port_diff;
 } welc_msg;
 
 typedef struct newc_msg {
@@ -55,6 +55,7 @@ typedef struct newc_msg {
 } newc_msg;
  
 
+int nring = 0;
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,7 +65,7 @@ typedef struct newc_msg {
  *
  * @return the string representing current entity
  */
-static char *entitytostr() {
+static char *entitytostr(int ring) {
     char *str = (char *)malloc(350);
     char *id = malloc(50), *udp = malloc(50), *tcp = malloc(50),
          *ip = malloc(50), *np = malloc(50), *mdip = malloc(50), 
@@ -72,10 +73,10 @@ static char *entitytostr() {
     sprintf(id, "%30s - %s", "\x1b[4mid\x1b[0m", ent.id);
     sprintf(udp, "%30s - %d", "\x1b[4mudp listening port\x1b[0m", ent.udp);
     sprintf(tcp, "%30s - %d", "\x1b[4mtcp listening port\x1b[0m", ent.tcp);
-    sprintf(ip, "%30s - %s", "\x1b[4mip of next entity\x1b[0m", ent.ip_next);
-    sprintf(np, "%30s - %d", "\x1b[4mport of next entity\x1b[0m", ent.port_next);
-    sprintf(mdip, "%30s - %s", "\x1b[4mmultidiff ip\x1b[0m", ent.mdiff_ip);
-    sprintf(mdp, "%30s - %d", "\x1b[4mmultidiff port\x1b[0m", ent.mdiff_port);
+    sprintf(ip, "%30s - %s", "\x1b[4mip of next entity\x1b[0m", ent.ip_next[ring]);
+    sprintf(np, "%30s - %d", "\x1b[4mport of next entity\x1b[0m", ent.port_next[ring]);
+    sprintf(mdip, "%30s - %s", "\x1b[4mmultidiff ip\x1b[0m", ent.mdiff_ip[ring]);
+    sprintf(mdp, "%30s - %d", "\x1b[4mmultidiff port\x1b[0m", ent.mdiff_port[ring]);
     sprintf(str, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n", id, udp, tcp, ip, np, mdip, mdp);
     free(id);free(udp);free(tcp);free(ip);free(np);free(mdip);free(mdp);
     return str;
@@ -215,8 +216,8 @@ static newc_msg *parse_newc(const char *n_msg) {
 static char *prepare_welc() {
     char *msg = (char *)malloc(50);
     sprintf(msg, "WELC %s %s %s %s\n",
-            ent.ip_next, itoa4(ent.port_next), 
-            ent.mdiff_ip, itoa4(ent.mdiff_port));
+            ent.ip_next[nring], itoa4(ent.port_next[nring]), 
+            ent.mdiff_ip[nring], itoa4(ent.mdiff_port[nring]));
     return msg;
 }
 
@@ -307,20 +308,20 @@ static void insertionsrv() {
             verbose("Sending error message...\n");
             
         }
-        memcpy(&_ent.receiver.sin_addr, &next_addr, sizeof(struct in_addr));
-        _ent.receiver.sin_port = newc->port;
-        close(_ent.socksend);
+        memcpy(&_ent.receiver[nring].sin_addr, &next_addr, sizeof(struct in_addr));
+        _ent.receiver[nring].sin_port = newc->port;
+        close(_ent.socksend[nring]);
         verbose("Creating new socket for receiver...\n");
-        _ent.socksend = socket(PF_INET, SOCK_DGRAM, 0);
+        _ent.socksend[nring] = socket(PF_INET, SOCK_DGRAM, 0);
         verbose("Socket created.\n");
         verbose("Actualization done.\n");
         
         // modifying entity
         verbose("Modifying current entity...\n");
-        verbose("Current entity :\n%s\n", entitytostr());
-        ent.port_next = newc->port;
-        strcpy(ent.ip_next, newc->ip);
-        verbose("Modified entity :\n%s\n", entitytostr());
+        verbose("Current entity :\n%s\n", entitytostr(nring));
+        ent.port_next[nring] = newc->port;
+        strcpy(ent.ip_next[nring], newc->ip);
+        verbose("Modified entity :\n%s\n", entitytostr(nring));
         free(newc);
         // ACKC confirmation sending
         verbose("Sending ACKC confirmation message...\n");
@@ -344,6 +345,22 @@ static void *insertion_thread(void *arg) {
 
 
 
+static void *message_manager_thread() {
+    char buff[513];
+    verbose("Message manager launched.\n");
+    while (1) {
+        int rec = recv(_ent.socklisten, buff, 512, 0);
+        verbose("Packet received.\n");
+        if (rec != 512) {
+            verbose("Packet size not respected."\
+                    "Length found: %d\n", rec);
+            printpacket(buff);
+            continue;
+        }
+
+    }
+    return NULL;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
@@ -412,12 +429,12 @@ int insert(const char *host, const char *tcpport) {
         return 0;
     }
     verbose("Modifying current entity...");
-    verbose("Current entity:\n%s\n", entitytostr());
-    ent.port_next = welc->port;
-    ent.mdiff_port = welc->port_diff;
-    strcpy(ent.ip_next, welc->ip);
-    strcpy(ent.mdiff_ip, welc->ip_diff);
-    verbose("Modified entity:\n%s\n", entitytostr());
+    verbose("Current entity:\n%s\n", entitytostr(nring));
+    ent.port_next[nring] = welc->port;
+    ent.mdiff_port[nring] = welc->port_diff;
+    strcpy(ent.ip_next[nring], welc->ip);
+    strcpy(ent.mdiff_ip[nring], welc->ip_diff);
+    verbose("Modified entity:\n%s\n", entitytostr(nring));
     // Socket creation
     verbose("Creating sockets for UDP communication...\n");
     _ent.socklisten = socket(PF_INET, SOCK_DGRAM, 0);
@@ -434,16 +451,16 @@ int insert(const char *host, const char *tcpport) {
         return 0;
     }
     verbose("Binding done.\n");
-    _ent.socksend   = socket(PF_INET, SOCK_DGRAM, 0);
+    _ent.socksend[nring]   = socket(PF_INET, SOCK_DGRAM, 0);
     verbose("Socket for udp sending created.\n");
     verbose("Preparing structure for receiver address...\n");
     bzero(&_ent.receiver, sizeof(struct sockaddr_in));
-    _ent.receiver.sin_family = AF_INET;
-    _ent.receiver.sin_port   = ent.port_next;
-    if (inet_aton(ent.ip_next, &_ent.receiver.sin_addr) == -1) {
+    _ent.receiver[nring].sin_family = AF_INET;
+    _ent.receiver[nring].sin_port   = ent.port_next[nring];
+    if (inet_aton(ent.ip_next[nring], &_ent.receiver[nring].sin_addr) == -1) {
         fprintf(stderr,
                 "Error converting ip %s to network address. Insertion failed.\n",
-                ent.ip_next);
+                ent.ip_next[nring]);
         return 0;
     }
     // TODO multi diff
@@ -465,8 +482,11 @@ void launch_insserv() {
 }
 
 void sendpacket(char *content) {
-    sendto(_ent.socksend, content, 512, 0, (struct sockaddr *) &_ent.receiver,
-            (socklen_t)sizeof(struct sockaddr_in));
+    for (int i = 0; i < nring+1; ++i)
+        sendto(_ent.socksend[i], content, 512, 0,
+                (struct sockaddr *) &_ent.receiver[i],
+                (socklen_t)sizeof(struct sockaddr_in));
 }
+
 
 

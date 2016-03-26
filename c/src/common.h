@@ -45,5 +45,6 @@ int isnumeric(char *str);
 char *itoa4(int i);
 int yesno(char *question);
 int yesnod(char *question, int yes);
+void printpacket(char *packet);
 
 #endif /* COMMON_H */
