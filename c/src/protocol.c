@@ -25,16 +25,6 @@ static int parseappmsg(char *message);
 // TYPES
 ////////////////////////////////////////////////////////////////////////////////
 
-typedef struct entity {
-    char            id[9]; // 8th char max, 9th is 0
-    unsigned short  udp;
-    unsigned short  tcp;
-    char            ip_next[16];
-    unsigned short  port_next;
-    char            mdiff_ip[16];
-    unsigned short  mdiff_port;
-} entity;
-
 /**
  * Current entity
  */
