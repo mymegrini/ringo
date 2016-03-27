@@ -1,5 +1,7 @@
 *
 !*.java
+.*
+#*
 !Makefile
-test.java
+test*
 !.gitignore
