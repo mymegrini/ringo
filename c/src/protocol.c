@@ -303,22 +303,33 @@ static void insertionsrv() {
         verbose("Insertion server: parsing successful.\n");
         // Actualize udp communication
         verbose("Insertion server: actualizing socket informations for next entity...\n");
-        struct in_addr next_addr;
-        if (inet_aton(newc->ip, &next_addr) == -1) {
-            fprintf(stderr,
-                    "Error converting ip %s to network.Insertion failed", 
-                    newc->ip);
-            verbose("Insertion server: sending error message...\n");
-            
+        // receiver (next entity) socket
+        verbose("Preparing structure for receiver address...\n");
+        char *port = itoa4(newc->port);
+        struct addrinfo hints;
+        bzero(&hints, sizeof(struct addrinfo));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype=SOCK_DGRAM;
+        struct addrinfo *first_info;
+#ifdef DEBUG
+        if (getaddrinfo(newc->ip, port, &hints, &first_info) == -1) {
+            debug("create_ring()", 
+                    UNDERLINED
+                    "getaddrinfo(\"localhost\", port, &hints, &first_info)\n" RESET \
+                    "Returned -1 for port \"%s\".",
+                    port);
+            exit(1);
         }
-        memcpy(&_ent.receiver[nring].sin_addr, &next_addr, sizeof(struct in_addr));
-        _ent.receiver[nring].sin_port = newc->port;
-        close(_ent.socksend[nring]);
-        verbose("Insertion server: creating new socket for receiver...\n");
-        _ent.socksend[nring] = socket(PF_INET, SOCK_DGRAM, 0);
-        verbose("Insertion server: socket created.\n");
-        verbose("Insertion server: actualization done.\n");
-        
+#else
+        getaddrinfo("localhost", port, &hints, &first_info);
+#endif
+        verbose("Structure prepared.\n");
+        verbose("Replacing current structure...\n");
+        memcpy(&_ent.receiver[nring], first_info->ai_addr, sizeof(struct sockaddr_in));
+        freeaddrinfo(first_info);
+        free(port);
+        verbose("Current structure replaced.\n");
+
         // modifying entity
         verbose("Insertion server: modifying current entity...\n");
         verbose("Insertion server: current entity :\n%s\n", entitytostr(nring));
@@ -425,6 +436,7 @@ int insert(const char *host, const char *tcpport) {
     strcpy(ent.ip_next[nring], welc->ip);
     strcpy(ent.mdiff_ip[nring], welc->ip_diff);
     verbose("Modified entity:\n%s\n", entitytostr(nring));
+    freeaddrinfo(first_info);
     // Socket creation
     verbose("Creating sockets for UDP communication...\n");
     _ent.socklisten = socket(PF_INET, SOCK_DGRAM, 0);
@@ -444,15 +456,26 @@ int insert(const char *host, const char *tcpport) {
     _ent.socksend[nring]   = socket(PF_INET, SOCK_DGRAM, 0);
     verbose("Socket for udp sending created.\n");
     verbose("Preparing structure for receiver address...\n");
-    bzero(&_ent.receiver, sizeof(struct sockaddr_in));
-    _ent.receiver[nring].sin_family = AF_INET;
-    _ent.receiver[nring].sin_port   = ent.port_next[nring];
-    if (inet_aton(ent.ip_next[nring], &_ent.receiver[nring].sin_addr) == -1) {
-        fprintf(stderr,
-                "Error converting ip %s to network address. Insertion failed.\n",
-                ent.ip_next[nring]);
-        return 0;
+    // receiver (next entity) socket
+    char *port = itoa4(ent.port_next[nring]);
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype=SOCK_DGRAM;
+#ifdef DEBUG
+    if (getaddrinfo(ent.ip_next[nring], port, &hints, &first_info) == -1) {
+        debug("insert()", 
+                UNDERLINED
+                "getaddrinfo(ent.ip_next[nring], port, &hints, &first_info)\n" RESET \
+                "Returned -1 for host %s at port \"%s\".",
+                ent.ip_next[nring], port);
+        exit(1);
     }
+#else
+    getaddrinfo(ent.ip_next[nring], port, &hints, &first_info);
+#endif
+    memcpy(&_ent.receiver[nring], first_info->ai_addr, sizeof(struct sockaddr_in));
+    freeaddrinfo(first_info);
+    free(port);
     // TODO multi diff
     verbose("Structure prepared.\n");
     verbose("Socket for UDP communication prepared.");
@@ -506,12 +529,18 @@ void *message_manager(void *args) {
 
 void sendpacket(char *content) {
     debug("sendpacket(char *content)", "Sending packet:\n---\n%s\n---\n...\n", content);
-    for (int i = 0; i < nring+1; ++i) {
+    for (int i = 0; i <= nring; ++i) {
         sendto(_ent.socksend[i], content, 512, 0,
                 (struct sockaddr *) &_ent.receiver[i],
                 (socklen_t)sizeof(struct sockaddr_in));
+#ifdef DEBUG
+        debug("sendpacket(content)", "Packet sent to ip %s at port %d.",
+                inet_ntoa(_ent.receiver[i].sin_addr), 
+                ntohs(_ent.receiver[i].sin_port));
+#else
         verbose("Packet sent to %s at port %u.\n",
                 ent.ip_next[i], ent.port_next[i]);
+#endif
     }
 }
 
@@ -540,7 +569,8 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen) {
     strcpy(ent.mdiff_ip[0], "255.255.255.255");
     // mdiff port
     ent.mdiff_port[0] = 6666;
-    
+
+    debug("init_entity", "%s\n", entitytostr(0));
 }
 
 
@@ -576,18 +606,27 @@ void create_ring() {
     // receiver (next entity) socket
     verbose("Preparing structure for receiver address...\n");
     _ent.receiver[nring].sin_family = AF_INET;
-    _ent.receiver[nring].sin_port   = ent.port_next[nring];
+    char *port = itoa4(ent.port_next[nring]);
+    struct addrinfo hints;
+    bzero(&hints, sizeof(struct addrinfo));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype=SOCK_DGRAM;
+    struct addrinfo *first_info;
 #ifdef DEBUG
-    if (!inet_aton(ent.ip_next[0], &_ent.receiver[nring].sin_addr)) {
+    if (getaddrinfo(ent.ip_self, port, &hints, &first_info) == -1) {
         debug("create_ring()", 
-                "inet_aton(ent.ip_next[0], &addr_local): can't resolve ip" \
-               "\"%s\" (receiver).\n",
-                ent.ip_next[0]);
+                UNDERLINED
+                "getaddrinfo(\"localhost\", port, &hints, &first_info)\n" RESET \
+                "Returned -1 for port \"%s\".",
+                port);
         exit(1);
     }
 #else
-    inet_aton(ent.ip_next[0], &_ent.receiver[nring].sin_addr);
+    getaddrinfo(ent.ip_self, port, &hints, &first_info);
 #endif
+    memcpy(&_ent.receiver[nring], first_info->ai_addr, sizeof(struct sockaddr_in));
+    freeaddrinfo(first_info);
+    free(port);
     verbose("Sockets created.\n");
 
     // lauch message manager thread
@@ -600,3 +639,5 @@ void create_ring() {
     verbose("Ring created.\n");
 
 }
+
+
