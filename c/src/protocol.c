@@ -483,9 +483,15 @@ void *insertion_server(void *arg) {
  */
 void *message_manager(void *args) {
     char buff[513];
-    verbose("Message manager launched.\n");
+    verbose(UNDERLINED "Message manager launched.\n" RESET);
     while (1) {
         int rec = recv(_ent.socklisten, buff, 512, 0);
+#ifdef DEBUG
+        if (rec > 0) {
+            buff[rec] = 0;
+            debug("message_manager", "Packet received:\n---\n%s\n---\n", buff);
+        }
+#endif
         if (rec == 512) {
             verbose("Packet received.\n");
             char *packet = strndup(buff, 512);
@@ -511,6 +517,10 @@ void sendpacket(char *content) {
 
 
 
+/**
+ * Initialize entity with given attributes.
+ * ip_next and port_next are set to ip_self and udp_listen.
+ */
 void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen) {
     // id
     strncpy(ent.id, id, 8);
@@ -522,17 +532,71 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen) {
     ent.udp = udp_listen;
     // tcp_listen
     ent.tcp = tcp_listen;
+    // ip_next[0]
+    strcpy(ent.ip_next[0], ent.ip_self);
+    // port_next init
+    ent.port_next[0] = ent.udp;
+    // mdiff_ip
+    strcpy(ent.mdiff_ip[0], "255.255.255.255");
+    // mdiff port
+    ent.mdiff_port[0] = 6666;
+    
 }
 
 
+
+/**
+ * Create a ring.
+ *
+ * It consists of creating the sockets for sending message and listening, then
+ * launching the message manager and the insertion server.
+ */
 void create_ring() {
     ++nring;
-    // ip_next init
-    strcpy(ent.ip_next[nring], ent.ip_self);
-    // port_next init
-    ent.port_next[nring] = ent.udp;
-    // TODO
-    strcpy(ent.mdiff_ip[nring], "255.255.255.255");
-    ent.mdiff_port[nring] = 6666;
-    insert(ent.ip_self, itoa4(ent.udp));
+    debug("create_ring()", "Ring index: %d.\nEntity:\n%s\n", nring, entitytostr(nring));
+    // Socket creation
+    verbose("Creating sockets for UDP communication...\n");
+    // listening socket
+    _ent.socklisten = socket(PF_INET, SOCK_DGRAM, 0);
+    verbose("Socket for udp listening created.\n");
+    verbose("Binding socket for listening...\n");
+    struct sockaddr_in address_sock;
+    address_sock.sin_family = AF_INET;
+    address_sock.sin_port = htons(ent.udp);
+    address_sock.sin_addr.s_addr = htonl(INADDR_ANY);
+    int r=bind(_ent.socklisten,(struct sockaddr *)&address_sock,
+            sizeof(struct sockaddr_in));
+    if (r == -1) {
+        fprintf(stderr, "Binding error. Ring creation failed.\n");
+        exit(1);
+    }
+    verbose("Binding done.\n");
+    _ent.socksend[nring]   = socket(PF_INET, SOCK_DGRAM, 0);
+    verbose("Socket for udp sending created.\n");
+    // receiver (next entity) socket
+    verbose("Preparing structure for receiver address...\n");
+    _ent.receiver[nring].sin_family = AF_INET;
+    _ent.receiver[nring].sin_port   = ent.port_next[nring];
+#ifdef DEBUG
+    if (!inet_aton(ent.ip_next[0], &_ent.receiver[nring].sin_addr)) {
+        debug("create_ring()", 
+                "inet_aton(ent.ip_next[0], &addr_local): can't resolve ip" \
+               "\"%s\" (receiver).\n",
+                ent.ip_next[0]);
+        exit(1);
+    }
+#else
+    inet_aton(ent.ip_next[0], &_ent.receiver[nring].sin_addr);
+#endif
+    verbose("Sockets created.\n");
+
+    // lauch message manager thread
+    pthread_t t_message_manager;
+    pthread_create(&t_message_manager, NULL, message_manager, NULL);
+    // lauch insertion server thread
+    pthread_t t_insertion_server;
+    pthread_create(&t_insertion_server, NULL, insertion_server, NULL);
+
+    verbose("Ring created.\n");
+
 }
