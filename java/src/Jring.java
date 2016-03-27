@@ -27,12 +27,9 @@ public class Jring{
         }
         try{
             ServerSocket server = new ServerSocket(ent.tcp);
-            while(true){
-                Socket socket = server.accept();
-                Service_tcp serv_tcp = new Service_tcp(socket,ent);
-                Thread t = new Thread(serv_tcp);
-                t.start();
-            }
+            Tcp_thread mode = new Tcp_thread(server,ent);
+            Thread t = new Thread(mode);
+            t.start();
         }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
