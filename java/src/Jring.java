@@ -4,8 +4,10 @@ import java.io.*;
 
 public class Jring{
     static Entity ent;
+    // static ArrayList<String> mess_list;
     
     public static void main(String[] args){
+        //mess_list = new
         InetAddress a =host_ip();
         System.out.println(a.toString());
         System.out.println("Give your id");
@@ -26,10 +28,30 @@ public class Jring{
             insert(args[0],Integer.parseInt(args[1]));
         }
         try{
-            ServerSocket server = new ServerSocket(ent.tcp);
-            Tcp_thread mode = new Tcp_thread(server,ent);
-            Thread t = new Thread(mode);
-            t.start();
+            //Tcp
+            Tcp_thread tcp_mode = new Tcp_thread(ent);
+            Thread tcp_t = new Thread(tcp_mode);
+            tcp_t.start();
+            //Udp
+            Udp_thread udp_mode = new Udp_thread(ent,a);
+            Thread udp_t = new Thread(udp_mode);
+            udp_t.start();
+            //Send a new message
+            String mess_send;
+            byte[] data = new byte[512];
+            DatagramSocket dso = new DatagramSocket();
+            InetSocketAddress next_ia = new InetSocketAddress(ent.ip_next,ent.port_next);
+            DatagramPacket packet_send;
+            while(true){
+                mess_send=sc.nextLine();
+                data=mess_send.getBytes();
+                packet_send = new DatagramPacket(data,data.length,next_ia);
+                dso.send(packet_send);
+                String []tab = mess_send.split(" ");
+                if(tab.length==6 && tab[0].equals("GBYE")){
+                    
+                }
+            }
         }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
@@ -89,9 +111,9 @@ public class Jring{
     }
     
     public static Welc_mess parse_welc(String mess){
-        System.out.println("avant sub "+mess);
-        mess=mess.substring(0,mess.length());
-        System.out.println("apres sub "+mess);
+        //System.out.println("avant sub "+mess);
+        // mess=mess.substring(0,mess.length());
+        //System.out.println("apres sub "+mess);
         String []tab = mess.split(" ");
         if(tab.length!=5 || !tab[0].equals("WELC")){
             System.out.println("The message doesn't have the right structure (1)");
