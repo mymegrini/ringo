@@ -136,8 +136,15 @@ void sendmessage(char *type, char *format, ...) {
     va_start(aptr, format);
     vsnprintf(content, 499, format, aptr);
     va_end(aptr);
+    // creating new id and adding it to list of known ids
     char *id = messageid(content);
-
+#ifdef DEBUG
+    int r =
+#endif
+        lookup(id);
+#ifdef DEBUG
+    if (r==0) debug("sendmessage", "Detected a hash collision: %s\n", id);
+#endif
     if (strlen(content))
       snprintf(buff, 513, "%s %s %s", type, id, content);
     else snprintf(buff, 513, "%s %s", type, id);
