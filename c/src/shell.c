@@ -86,7 +86,9 @@ static void free_split(char **sp) {
 static void exec_cmd(char *str) {
     char **sp = split(str);
     if (sp == NULL) {
+#ifdef DEBUG
         debug("exec_cmd(\"%s\")", "split returned NULL. realloc error.\n", str);
+#endif
         free_split(sp);
         return;
     }
@@ -97,16 +99,22 @@ static void exec_cmd(char *str) {
     int argc;
     for (argc = 1; sp[argc] != NULL; ++argc)
         ;
+#ifdef DEBUG
     debug("exec_cmd(str)", "Looking for \"%s\" command", sp[0]);
+#endif
     for (int i = 0; cmd[i].name[0] != 0; i++) {
         if (strcmp(cmd[i].name, sp[0]) == 0) {
+#ifdef DEBUG
             debug("exec_cmd(str)", "Command found.");
+#endif
             (*cmd[i].exec)(argc, sp);
             free_split(sp);
             return;
         }
     }
+#ifdef DEBUG
     debug("exec_cmd(str)", "Command not found.");
+#endif
     system(str);
 }
 
@@ -119,7 +127,9 @@ static void prompt() {
 
 
 static void cmd_whos(int argc, char **argv) {
+#ifdef DEBUG
     debug("cmd_whos", "entering function...");
+#endif
     if (argc != 1)
         fprintf(stderr, "Usage:\t%s", argv[1]);
     sendmessage("WHOS", "");
