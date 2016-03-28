@@ -2,6 +2,7 @@
 #include "common.h"
 #include "protocol.h"
 #include "stdint.h"
+#include "listmsg.h"
 
 #include <stdarg.h>
 
@@ -103,7 +104,7 @@ static int action_whos(char *content) {
  * 
  * @param the packet message
  * @return returned value of the function called
- * @return -1 if the message has already been seen are is not supported
+ * @return -1 if the message has already been seen or is not supported
  */
 int parsemsg(char *message) {
     if (message[4] != ' ') {
@@ -116,11 +117,11 @@ int parsemsg(char *message) {
     char *idm  = &message[5];
     char *content = &message[13];
     verbose("Parsing message %s of type %s...\n", idm, type);
-    //if (lookup(idm)) {
-    //    verbose("Message already seen.\n");
-    //    return -1;
-    //}
-    // search action to do
+    if (lookup(idm)) {
+        verbose("Message already seen.\n");
+        return -1;
+    }
+    search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
         if (strcmp(type, pmsg[i].type) == 0) {
             return (pmsg[i].action(content));
