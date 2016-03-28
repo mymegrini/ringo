@@ -51,7 +51,7 @@ static char* messageid(char* content) {
     uint64_t h = 5381;
     char* hash = malloc(9*sizeof(char));
     int i;
-    char c;
+    uint8_t c;
 
     /* hash * 33 + c */
     // hashing counter
@@ -65,12 +65,14 @@ static char* messageid(char* content) {
     // creating hash using human readable characters
     for(i=0; i<8; i++){
         c = h % 62;
+	verbose("c = %d", c);
         if (c<10) hash[i] = c+48;      //digits
-        else if (c<36) hash[i] = c+97; //lowercase letters
-        else if (c<62) hash[i] = c+65; //uppercase letters
+        else if (c<36) hash[i] = c-10+97; //lowercase letters
+        else if (c<62) hash[i] = c-36+65; //uppercase letters
         else hash[i] = 0;
+	verbose("c = %d", hash[i]);
     
-        h = h >> 6;
+        h = h / 62;
     }
     hash[8] = 0;
 
