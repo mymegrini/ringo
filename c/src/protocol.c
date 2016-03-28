@@ -352,8 +352,11 @@ static void insertionsrv() {
 static void *packet_treatment(void *args) {
     char *packet = (char *)args;
     packet[512] = 0;
+    char *packet_before_treatment = strdup(packet);
     if (parsemsg(packet) != -1)
-        sendpacket(packet);
+        sendpacket(packet_before_treatment);
+    free(packet);
+    free(packet_before_treatment);
     return NULL;
 }
 
