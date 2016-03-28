@@ -104,7 +104,7 @@ static int action_whos(char *content) {
  * @return -1 if the message has already been seen are is not supported
  */
 int parsemsg(char *message) {
-    if (message[4] != ' ' || (message[12] != ' ' && message[12] != 0)) {
+    if (message[4] != ' ') {
         fprintf(stderr, "Message not following the protocol.\n");
         return -1;
     }
