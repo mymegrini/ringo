@@ -91,8 +91,6 @@ static void exec_cmd(char *str) {
         return;
     }
     if (*sp == NULL) {
-        debug("exec_cmd(\"%s\")", 
-                "split returned a pointer to NULL. Parsing error.\n", str);
         free_split(sp);
         return;
     }
