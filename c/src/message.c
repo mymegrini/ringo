@@ -108,8 +108,8 @@ int parsemsg(char *message) {
     message[4]  = 0;
     message[13] = 0;
     char *type = message;
-    char *idm  = strdup(&message[5]);
-    char *content = &message[14];
+    char *idm  = strdup(message+5);
+    char *content = message+14;
     verbose("Parsing message %s of type %s...\n", idm, type);
     if (lookup(idm)) {
         verbose("Message already seen.\n");
