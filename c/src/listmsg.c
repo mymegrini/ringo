@@ -61,6 +61,9 @@ void freelist() {
  * @return 1 if found, 0 else
  */
 int lookup(char *idm) {
+#ifdef DEBUG
+    debug("lookup", "idm = %s\n", idm);
+#endif
     // empty list
     if (isempty(l)) {
         l.first = newnode(idm, NULL);

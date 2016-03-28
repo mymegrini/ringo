@@ -112,16 +112,16 @@ int parsemsg(char *message) {
         return -1;
     }
     message[4]  = 0;
-    message[12] = 0;
+    message[13] = 0;
     char *type = message;
-    char *idm  = &message[5];
-    char *content = &message[13];
+    char *idm  = strdup(&message[5]);
+    char *content = &message[14];
     verbose("Parsing message %s of type %s...\n", idm, type);
     if (lookup(idm)) {
         verbose("Message already seen.\n");
         return -1;
     }
-    search action to do
+    // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
         if (strcmp(type, pmsg[i].type) == 0) {
             return (pmsg[i].action(content));
