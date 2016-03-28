@@ -143,7 +143,7 @@ void sendmessage(char *type, char *format, ...) {
 #endif
         lookup(id);
 #ifdef DEBUG
-    if (r==0) debug("sendmessage", "Detected a hash collision: %s\n", id);
+    if (r==1) debug("sendmessage", "Detected a hash collision: %s\n", id);
 #endif
     if (strlen(content))
       snprintf(buff, 513, "%s %s %s", type, id, content);
