@@ -605,7 +605,6 @@ void create_ring() {
     verbose("Socket for udp sending created.\n");
     // receiver (next entity) socket
     verbose("Preparing structure for receiver address...\n");
-    _ent.receiver[nring].sin_family = AF_INET;
     char *port = itoa4(ent.port_next[nring]);
     struct addrinfo hints;
     bzero(&hints, sizeof(struct addrinfo));
