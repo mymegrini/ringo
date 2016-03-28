@@ -83,7 +83,7 @@ static char* messageid(char* content) {
 
 static int action_whos(char *content) {
     debug("action_whos(char *content)", "content: %s\n", content);
-    if (content[0] != 0) {
+    if (content[0] == 0) {
         verbose("Message not following the protocol.\n");
         return -1;
     }
