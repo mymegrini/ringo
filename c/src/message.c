@@ -83,13 +83,7 @@ static char* messageid(char* content) {
 
 
 static int action_whos(char *content) {
-#ifdef DEBUG
-    debug("action_whos(char *content)", "content: %s\n", content);
-#endif
-    if (content[0] == 0) {
-        verbose("Message not following the protocol.\n");
-        return -1;
-    }
+  
     sendmessage("MEMB", "%s %s %d", ent.id, ent.ip_self, ent.udp);
     return 0;
 }
