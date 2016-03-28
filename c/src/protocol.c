@@ -448,7 +448,7 @@ int insert(const char *host, const char *tcpport) {
     struct sockaddr_in address_sock;
     address_sock.sin_family = AF_INET;
     address_sock.sin_port = htons(ent.udp);
-    address_sock.sin_addr = addr->sin_addr; // Bind udp socket to the address from tcp connection
+    address_sock.sin_addr.s_addr = htonl(INADDR_ANY);
     int r=bind(_ent.socklisten,(struct sockaddr *)&address_sock,
             sizeof(struct sockaddr_in));
     if (r == -1) {
