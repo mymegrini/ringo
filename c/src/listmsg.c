@@ -70,22 +70,21 @@ int lookup(char *idm) {
     }
     // found in first position
     if (strcmp(l.first->idm, idm) == 0) {
-        node *n = l.first;
-        l.first = l.first->next;
-        freenode(n);
-        --l.size;
+        //node *n = l.first;
+        //l.first = l.first->next;
+        //freenode(n);
+        //--l.size;
         return 1;
     }
     // find elsewhere
     for (node *i = l.first; i->next != NULL; i = i->next) {
         if (strcmp(i->next->idm, idm) == 0) {
             // actualise last element if needed
-            if (i->next == l.last)
-                l.last = i;
-            node *n = i->next;
-            i->next = i->next->next;
-            freenode(n);
-            --l.size;
+            //if (i->next == l.last) l.last = i;
+            //node *n = i->next;
+            //i->next = i->next->next;
+            //freenode(n);
+            //--l.size;
             return 1;
         }
     }
