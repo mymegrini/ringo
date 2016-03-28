@@ -481,12 +481,20 @@ int insert(const char *host, const char *tcpport) {
     free(port);
     // TODO multi diff
     verbose("Structure prepared.\n");
-    verbose("Socket for UDP communication prepared.");
+    verbose("Socket for UDP communication prepared.\n");
     verbose("Insertion done.\n");
 
+    // lauch message manager thread
     verbose("Starting message manager...\n");
-    launch_message_manager();
+    pthread_t t_message_manager;
+    pthread_create(&t_message_manager, NULL, message_manager, NULL);
     verbose("Message manager started.\n");
+    // lauch insertion server thread
+    verbose("Starting insertion server...\n");
+    pthread_t t_insertion_server;
+    pthread_create(&t_insertion_server, NULL, insertion_server, NULL);
+    verbose("Insertion manager started.\n");
+
     return 1;
 }
 

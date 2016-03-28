@@ -18,17 +18,15 @@ int main(int argc, char *argv[])
     // void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen)
 
     if (argc == 1) {
-        init_entity("Bryan", 4242, 4343);
+        init_entity("Bryan", 6262, 6363);
         create_ring();
         run_shell();
     }
     else {
         init_entity("Peter", 5252, 5353);
         if (insert(argv[1], argv[2])) {
-            pthread_t t_message_manager;
-            pthread_create(&t_message_manager, NULL, message_manager, NULL);
             run_shell();
-        }
+        } else 
         printf("Oops !\n");
     }
     return 0;
