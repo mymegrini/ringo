@@ -142,7 +142,11 @@ void sendmessage(char *type, char *format, ...) {
     vsnprintf(content, 499, format, aptr);
     va_end(aptr);
     char *id = messageid(content);
-    snprintf(buff, 513, "%s %s %s", type, id, content);
+
+    if (strlen(content))
+      snprintf(buff, 513, "%s %s %s", type, id, content);
+    else snprintf(buff, 513, "%s %s", type, id);
+    
     sendpacket(buff);
 }
 
