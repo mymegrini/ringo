@@ -352,8 +352,11 @@ static void insertionsrv() {
 static void *packet_treatment(void *args) {
     char *packet = (char *)args;
     packet[512] = 0;
+    char *packet_before_treatment = strdup(packet);
     if (parsemsg(packet) != -1)
-        sendpacket(packet);
+        sendpacket(packet_before_treatment);
+    free(packet);
+    free(packet_before_treatment);
     return NULL;
 }
 
@@ -605,7 +608,6 @@ void create_ring() {
     verbose("Socket for udp sending created.\n");
     // receiver (next entity) socket
     verbose("Preparing structure for receiver address...\n");
-    _ent.receiver[nring].sin_family = AF_INET;
     char *port = itoa4(ent.port_next[nring]);
     struct addrinfo hints;
     bzero(&hints, sizeof(struct addrinfo));

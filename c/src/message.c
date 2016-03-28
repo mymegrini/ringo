@@ -51,7 +51,7 @@ static char* messageid(char* content) {
     uint64_t h = 5381;
     char* hash = malloc(9*sizeof(char));
     int i;
-    char c;
+    uint8_t c;
 
     /* hash * 33 + c */
     // hashing counter
@@ -66,11 +66,11 @@ static char* messageid(char* content) {
     for(i=0; i<8; i++){
         c = h % 62;
         if (c<10) hash[i] = c+48;      //digits
-        else if (c<36) hash[i] = c+97; //lowercase letters
-        else if (c<62) hash[i] = c+65; //uppercase letters
+        else if (c<36) hash[i] = c-10+97; //lowercase letters
+        else if (c<62) hash[i] = c-36+65; //uppercase letters
         else hash[i] = 0;
     
-        h = h >> 6;
+        h = h / 62;
     }
     hash[8] = 0;
 
@@ -83,11 +83,11 @@ static char* messageid(char* content) {
 
 static int action_whos(char *content) {
     debug("action_whos(char *content)", "content: %s\n", content);
-    if (content[0] != 0) {
+    if (content[0] == 0) {
         verbose("Message not following the protocol.\n");
         return -1;
     }
-    sendmessage("MEMB", "%s %s %s", ent.id, ent.ip_self, ent.udp);
+    sendmessage("MEMB", "%s %s %d", ent.id, ent.ip_self, ent.udp);
     return 0;
 }
 
@@ -104,7 +104,7 @@ static int action_whos(char *content) {
  * @return -1 if the message has already been seen are is not supported
  */
 int parsemsg(char *message) {
-    if (message[4] != ' ' || message[12] != ' ') {
+    if (message[4] != ' ') {
         fprintf(stderr, "Message not following the protocol.\n");
         return -1;
     }
