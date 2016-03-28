@@ -87,7 +87,7 @@ static int action_whos(char *content) {
         verbose("Message not following the protocol.\n");
         return -1;
     }
-    sendmessage("MEMB", "%s %s %s", ent.id, ent.ip_self, ent.udp);
+    sendmessage("MEMB", "%s %s %d", ent.id, ent.ip_self, ent.udp);
     return 0;
 }
 
