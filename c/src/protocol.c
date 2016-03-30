@@ -361,10 +361,6 @@ static void *packet_treatment(void *args) {
 }
 
 
-static void launch_message_manager() {
-    pthread_t t_message_manager;
-    pthread_create(&t_message_manager, NULL, message_manager, NULL);
-}
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
@@ -377,22 +373,30 @@ static void launch_message_manager() {
  */
 int insert(const char *host, const char *tcpport) {
     // preparing the structure
-    struct sockaddr_in *addr;
+    struct sockaddr_in addr;
+    struct in_addr ip;
     struct addrinfo *first_info;
     struct addrinfo hints;
-    bzero(&hints, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    if (getaddrinfo(host, tcpport, &hints, &first_info) != 0 ||
-            first_info == NULL) {
-        fprintf(stderr, 
-                "Can't get address of %s at port %s.\n", host, tcpport);
-        return 0;
+    if (inet_aton(host, &ip)) {
+         addr.sin_family = AF_INET;
+         addr.sin_port = htons(atoi(tcpport));
+         addr.sin_addr = ip;
+    } else {
+        bzero(&hints, sizeof(struct addrinfo));
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
+        if (getaddrinfo(host, tcpport, &hints, &first_info) != 0 ||
+                first_info == NULL) {
+            fprintf(stderr, 
+                    "Can't get address of %s at port %s.\n", host, tcpport);
+            return 0;
+        }
+        addr = *((struct sockaddr_in *) first_info->ai_addr);
+        freeaddrinfo(first_info);
     }
-    addr = (struct sockaddr_in *) first_info->ai_addr;
     // socket creation
     int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (connect(sock, (struct sockaddr *)addr,
+    if (connect(sock, (struct sockaddr *)&addr,
                 (socklen_t)sizeof(struct sockaddr_in)) != 0)
     {
         close(sock);
@@ -439,7 +443,6 @@ int insert(const char *host, const char *tcpport) {
     strcpy(ent.ip_next[nring], welc->ip);
     strcpy(ent.mdiff_ip[nring], welc->ip_diff);
     verbose("Modified entity:\n%s\n", entitytostr(nring));
-    freeaddrinfo(first_info);
     // Socket creation
     verbose("Creating sockets for UDP communication...\n");
     _ent.socklisten = socket(PF_INET, SOCK_DGRAM, 0);
@@ -562,6 +565,7 @@ void sendpacket(char *content) {
  * ip_next and port_next are set to ip_self and udp_listen.
  */
 void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen) {
+    debug("init_entity", "args: %s %u %u", id, udp_listen, tcp_listen);
     // id
     strncpy(ent.id, id, 8);
     // ip_self
@@ -575,7 +579,7 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen) {
     // ip_next[0]
     strcpy(ent.ip_next[0], ent.ip_self);
     // port_next init
-    ent.port_next[0] = ent.udp;
+    ent.port_next[0] = udp_listen;
     // mdiff_ip
     strcpy(ent.mdiff_ip[0], "255.255.255.255");
     // mdiff port
