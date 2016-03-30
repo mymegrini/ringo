@@ -19,7 +19,8 @@ public class Service_tcp implements Runnable{
             pw.println(mess);
             pw.flush();
             mess=br.readLine();
-            Newc_mess data = parse_newc(mess);
+            //System.out.println(mess);
+            Newc_mess data = Newc_mess.parse_newc(mess);
             if(data!=null){
                 ent.ip_next=data.ip;
                 ent.port_next=data.port;
@@ -33,24 +34,6 @@ public class Service_tcp implements Runnable{
         catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
-        }
-    }
-
-    public Newc_mess parse_newc(String mess){
-        System.out.println(mess);
-        mess=mess.substring(0,mess.length()-1);
-        System.out.println(mess);
-        String []tab = mess.split(" ");
-        if(tab.length!=3 || !tab[0].equals("NEWC")){
-            System.out.println("The message doesn't have the right structure (1)");
-            return null;
-        }
-        try{
-            return new Newc_mess(tab[1],Integer.parseInt(tab[2]));
-        }
-        catch(Exception e){
-            System.out.println("The message doesn't have the right structure (2)");
-            return null;
         }
     }
 }

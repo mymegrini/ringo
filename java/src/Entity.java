@@ -7,9 +7,9 @@ public class Entity{
     String mdiff_ip;
     int mdiff_port;
 
-    public Entity(String identifiant,int t){
+    public Entity(String identifiant,int u,int t){
         id=identifiant;
-        udp=4242;
+        udp=u;
         tcp=t;
     }
     
