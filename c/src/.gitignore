@@ -3,5 +3,6 @@
 !*.c
 .*
 #*
+test*
 !Makefile
 !.gitignore
