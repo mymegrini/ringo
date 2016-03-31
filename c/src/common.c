@@ -85,6 +85,7 @@ char *ipnozeros(const char *ip) {
     char *nozeros = strdup(ip);
     int j = 0;
     int lz = 0;
+    int nlz = 0;
     for (int i = 0; i < 16; i++) {
         if ( ! (ip[i] == '0' && lz) ) {
             nozeros[j++] = ip[i];
@@ -93,6 +94,10 @@ char *ipnozeros(const char *ip) {
             else
                 lz = 0;
         }
+        else if (++nlz == 3) {
+            nozeros[j++] = ip[i];
+            nlz = 0;
+        } 
     }
     return nozeros;
 }
