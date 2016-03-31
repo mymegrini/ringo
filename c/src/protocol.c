@@ -305,29 +305,32 @@ static void insertionsrv() {
         verbose("Insertion server: actualizing socket informations for next entity...\n");
         // receiver (next entity) socket
         verbose("Preparing structure for receiver address...\n");
-        char *port = itoa4(newc->port);
-        struct addrinfo hints;
-        bzero(&hints, sizeof(struct addrinfo));
-        hints.ai_family = AF_INET;
-        hints.ai_socktype=SOCK_DGRAM;
-        struct addrinfo *first_info;
+        //char *port = itoa4(newc->port);
+        //struct addrinfo hints;
+        //bzero(&hints, sizeof(struct addrinfo));
+        //hints.ai_family = AF_INET;
+        //hints.ai_socktype=SOCK_DGRAM;
+        //struct addrinfo *first_info;
+        struct in_addr iaddr;
+        char *ipnz = ipnozeros(newc->ip);
 #ifdef DEBUG
-        if (getaddrinfo(newc->ip, port, &hints, &first_info) == -1) {
-            debug("create_ring()", 
-                    UNDERLINED
-                    "getaddrinfo(\"localhost\", port, &hints, &first_info)\n" RESET \
-                    "Returned -1 for port \"%s\".",
-                    port);
-            exit(1);
+        if (inet_aton(ipnz, &iaddr) == 0) {
+            debug("insertionsrv()", "inet_aton failed with ip \"%s\".", newc->ip);
+            continue;
         }
 #else
-        getaddrinfo("localhost", port, &hints, &first_info);
+        inet_aton(ipnz, &iaddr);
 #endif
+        _ent.receiver[nring].sin_family = AF_INET;
+        _ent.receiver[nring].sin_port = htons(newc->port);
+        _ent.receiver[nring].sin_addr = iaddr;
         verbose("Structure prepared.\n");
         verbose("Replacing current structure...\n");
-        memcpy(&_ent.receiver[nring], first_info->ai_addr, sizeof(struct sockaddr_in));
-        freeaddrinfo(first_info);
-        free(port);
+        //memcpy(&_ent.receiver[nring], first_info->ai_addr, sizeof(struct sockaddr));
+        // TODO bug with freeaddrinfo
+        // freeaddrinfo(first_info);
+        debug("insertionsrv()", "passed");
+        //free(port);
         verbose("Current structure replaced.\n");
 
         // modifying entity
@@ -463,25 +466,20 @@ int insert(const char *host, const char *tcpport) {
     verbose("Socket for udp sending created.\n");
     verbose("Preparing structure for receiver address...\n");
     // receiver (next entity) socket
-    char *port = itoa4(ent.port_next[nring]);
-    bzero(&hints, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype=SOCK_DGRAM;
+    struct in_addr iaddr;
+    char *ipnz = ipnozeros(ent.ip_next[nring]);
 #ifdef DEBUG
-    if (getaddrinfo(ent.ip_next[nring], port, &hints, &first_info) == -1) {
-        debug("insert()", 
-                UNDERLINED
-                "getaddrinfo(ent.ip_next[nring], port, &hints, &first_info)\n" RESET \
-                "Returned -1 for host %s at port \"%s\".",
-                ent.ip_next[nring], port);
-        exit(1);
+    if (!inet_aton(ipnz, &iaddr)) {
+        debug("insert", "inet_aton returned 0 with ip \"%s\".\n", ipnz);
+        free(ipnz);
+        return 0;
     }
 #else
-    getaddrinfo(ent.ip_next[nring], port, &hints, &first_info);
+    inet_aton(ipnz, &iaddr);
 #endif
-    memcpy(&_ent.receiver[nring], first_info->ai_addr, sizeof(struct sockaddr_in));
-    freeaddrinfo(first_info);
-    free(port);
+    _ent.receiver[nring].sin_family = AF_INET;
+    _ent.receiver[nring].sin_port = htons(ent.port_next[nring]);
+    _ent.receiver[nring].sin_addr = iaddr;
     // TODO multi diff
     verbose("Structure prepared.\n");
     verbose("Socket for UDP communication prepared.\n");
@@ -627,7 +625,7 @@ void create_ring() {
     hints.ai_socktype=SOCK_DGRAM;
     struct addrinfo *first_info;
 #ifdef DEBUG
-    if (getaddrinfo(ent.ip_self, port, &hints, &first_info) == -1) {
+    if (getaddrinfo("localhost", port, &hints, &first_info) == -1) {
         debug("create_ring()", 
                 UNDERLINED
                 "getaddrinfo(\"localhost\", port, &hints, &first_info)\n" RESET \
@@ -636,10 +634,12 @@ void create_ring() {
         exit(1);
     }
 #else
-    getaddrinfo(ent.ip_self, port, &hints, &first_info);
+    getaddrinfo("localhost", port, &hints, &first_info);
 #endif
     memcpy(&_ent.receiver[nring], first_info->ai_addr, sizeof(struct sockaddr_in));
-    freeaddrinfo(first_info);
+    // TODO bug with freeadrinfo
+    //freeaddrinfo(first_info);
+    //debug("create_ring()", "passed");
     free(port);
     verbose("Sockets created.\n");
 

@@ -63,7 +63,6 @@ int main(int argc, char *argv[])
     }
 
     get_info();
-    int udp = atoi(udp_listen);
     init_entity(id, atoi(udp_listen), atoi(tcp_listen));
     
     if (flag_insert) {

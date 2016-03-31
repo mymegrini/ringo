@@ -46,10 +46,12 @@
 #define BUFSIZE 100
 
 
-int isnumeric(char *str);
+int isnumeric(const char *str);
 char *itoa4(int i);
-int yesno(char *question);
-int yesnod(char *question, int yes);
-void printpacket(char *packet);
+int yesno(const char *question);
+int yesnod(const char *question, const int yes);
+void printpacket(const char *packet);
+int isip(const char *str);
+char *ipnozeros(const char *ip);
 
 #endif /* COMMON_H */
