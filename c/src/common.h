@@ -52,5 +52,6 @@ int yesno(const char *question);
 int yesnod(const char *question, const int yes);
 void printpacket(const char *packet);
 int isip(const char *str);
+char *ipnozeros(const char *ip);
 
 #endif /* COMMON_H */
