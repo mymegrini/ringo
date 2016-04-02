@@ -81,7 +81,6 @@ static char **split(char *str) {
 }
 
 
-
 static void free_split(char **sp) {
     char **i;
     for (i = sp; *i != NULL; i++ )

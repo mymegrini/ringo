@@ -51,130 +51,41 @@ int nring = -1;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-/**
- * Parse a NEWC message
- * 
- * @param NEWC message
- * @return a newc_msg *, or NULL when message doesn't follow protocol
- */
+
+
 static welc_msg *parse_welc(const char *w_msg) {
-    char *msg = strdup(w_msg);
-    debug("parse_welc(const char *w_msg)", "w_msg : \"%s\"\n", w_msg);
-#ifdef DEBUG
-#define parse_test(test, format, ...) \
-    if (test) { \
-        debug("parse_welc(\"%s\")", #test " -> " format, msg, ##__VA_ARGS__); \
-        free(welc); \
-        free(msg); \
-        return NULL; \
+    if (w_msg[4] != ' ' || w_msg[20] != ' ' || w_msg[25] != ' ' ||
+            w_msg[41] != ' ' || w_msg[46] != 0)
+        return NULL;
+    welc_msg *welc = malloc(sizeof(welc_msg));
+    char type[5], port[5], port_mdiff[5];
+    int r = sscanf(w_msg, "%s %s %s %s %s", type, welc->ip, port, 
+            welc->ip_diff, port_mdiff);
+    if (r != 3 || strcmp("NEWC", type) != 0 ||
+            !isip(welc->ip) || !isport(port) || !isip(welc->ip_diff) ||
+                !isport(port_mdiff)) {
+        free(welc);
+        return NULL;
     }
-#else
-#define parse_test(test, format, ...) \
-    if (test) { \
-        free(welc); \
-        free(msg); \
-        return NULL; \
-    }
-#endif
-    welc_msg *welc = (welc_msg *)malloc(sizeof(welc_msg));
-    // token 1: WELC
-    char *token = strtok(msg, " ");
-    parse_test(token == NULL, 
-            "first call to strtok returned NULL, \"WELC\" required.\n");
-    parse_test(strcmp(token, "WELC") != 0, 
-            "token = \"%s\", \"WELC\" required.\n",
-            token);
-    // token 2: ip
-    token = strtok(NULL, " ");
-    parse_test(token == NULL, 
-            "second call to strtok returned NULL, ip required.\n");
-    parse_test(strlen(token) != 15,
-            "ip length must be of 15.\nFound: \"%s\"\nLength: %zu\n", token, strlen(token));
-    strncpy(welc->ip, token, 16);
-    // token 3: port
-    token = strtok(NULL, " ");
-    parse_test(token == NULL, 
-            "third call to strtok returned NULL, port required.\n");
-    parse_test(!isnumeric(token),
-            "non int found, port required.\n");
-    welc->port = atoi(token);
-    // token 4: multidiff ip
-    token = strtok(NULL, " ");
-    parse_test(token == NULL, 
-            "fourth call to strtok returned NULL, multi-diff ip required.\n");
-    parse_test(strlen(token) != 15,
-            "multi diff ip length must be of 15.\nFound: \"%s\"\nLength: %zu\n", token, strlen(token));
-    strncpy(welc->ip_diff, token, 16);
-    // token 5: multidiff port
-    token = strtok(NULL, " ");
-    parse_test(token == NULL, 
-            "fifth call to strtok returned NULL, port required.\n");
-    parse_test(!isnumeric(token),
-            "non int found, multi-diff port required.\n");
-    welc->port_diff = atoi(token);
-    // test for non valid extra things
-    parse_test(strtok(NULL, " ") != NULL,
-            "unvalid extra informations found : %s", token);
-#undef parse_test
-    free(msg);
+    welc->port = atoi(port);
     return welc;
 }
 
 
-/**
- * Parse a NEWC message
- * 
- * @param NEWC message
- * @return a newc_msg *, or NULL when message doesn't follow protocol
- */
 static newc_msg *parse_newc(const char *n_msg) {
-    char *msg = strdup(n_msg);
-#ifdef DEBUG
-#define parse_test(test, format, ...) \
-    if (test) { \
-        debug("parse_newc(\"%s\")", #test " -> " format, msg, ##__VA_ARGS__); \
-        free(newc); \
-        free(msg); \
-        return NULL; \
+    if (n_msg[4] != ' ' || n_msg[20] != ' ' || n_msg[25] != 0)
+        return NULL;
+    newc_msg *newc = malloc(sizeof(newc_msg));
+    char type[5];
+    char port[5];
+    int r = sscanf(n_msg, "%s %s %s", type, newc->ip, port);
+    if (r != 3 || strcmp("WELC", type) != 0 || !isip(newc->ip) || !isport(port)) {
+        free(newc);
+        return NULL;
     }
-#else
-#define parse_test(test, format, ...) \
-    if (test) { \
-        free(newc); \
-        free(msg); \
-        return NULL; \
-    }
-#endif
-    newc_msg *newc = (newc_msg *)malloc(sizeof(newc_msg));
-    // token 1: WELC
-    char *token = strtok(msg, " ");
-    parse_test(token == NULL, 
-            "first call to strtok returned NULL, \"NEWC\" required.\n");
-    parse_test(strcmp(token, "NEWC") != 0, 
-            "token = \"%s\", \"NEWC\" required.\n",
-            token);
-    // token 2: ip
-    token = strtok(NULL, " ");
-    parse_test(token == NULL, 
-            "second call to strtok returned NULL, ip required.\n");
-    parse_test(strlen(token) != 15,
-            "ip length must be of 15.\n");
-    strncpy(newc->ip, token, 16);
-    // token 3: port
-    token = strtok(NULL, " ");
-    parse_test(token == NULL, 
-            "third call to strtok returned NULL, port required.\n");
-    parse_test(!isnumeric(token),
-            "non int found, port required.\n");
-    newc->port = atoi(token);
-    // test for non valid extra things
-    parse_test(strtok(NULL, " ") != NULL,
-            "unvalid extra informations found : %s", token);
-#undef parse_test
-    free(msg);
+    newc->port = atoi(port);
     return newc;
 }
-
 
 
 /**
@@ -316,10 +227,8 @@ static void insertionsrv() {
 static void *packet_treatment(void *args) {
     char *packet = (char *)args;
     packet[512] = 0;
-    char *packet_before_treatment = strdup(packet);
     parsemsg(packet);
     free(packet);
-    free(packet_before_treatment);
     return NULL;
 }
 
