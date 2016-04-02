@@ -101,16 +101,18 @@ static int action_whos(char *content) {
 
 static int action_gbye(char *content) {
 
-    char *ip = NULL, *port_str = NULL, *ip_next = NULL, *port_next = NULL;
-
-    int j = sscanf(content, "%s %s %s %s", ip, port_str, ip_next, port_next);
-    if (sscanf(content, "%s %s %s %s", ip, port_str, ip_next, port_next) != 4 ||
+    if (content[15] != ' ' || content[20] != ' ' || content[36] != ' ') {
+        debug("action_gbye", "problem with spaces");
+        return 1;
+    }
+    char ip[16], port_str[5], ip_next[16], port_next[5];
+    int r = sscanf(content, "%s %s %s %s", ip, port_str, ip_next, port_next);
+    if (r != 4 ||
         !isip(ip) || !isport(port_str) || !isip(ip_next) || !isport(port_next)) {
         // don't retransmit message
         debug("action_gbye", "sscanf test not passed, j = %d.\nip:\"%s\"\n"
-                "port:\"%s\"\nip_next:\"%s\"\nport_next:\"%s\"\ncontent:\"%s\"\n", j, ip, port_str,
+                "port:\"%s\"\nip_next:\"%s\"\nport_next:\"%s\"\ncontent:\"%s\"\n", r, ip, port_str,
                 ip_next, port_next, content);
-        free(ip); free(port_str); free(ip_next); free(port_next);
         return 1;
     }
     // retransmit message
@@ -136,7 +138,7 @@ static int action_gbye(char *content) {
             struct sockaddr_in entity_leaving = _ent.receiver[i];
 
             _ent.receiver[i].sin_family = AF_INET;
-            _ent.receiver[i].sin_port = htons(port);
+            _ent.receiver[i].sin_port = htons(port2);
             _ent.receiver[i].sin_addr = iaddr;
             verbose("Structure prepared.\n");
             verbose("Replacing current structure...\n");
@@ -144,7 +146,7 @@ static int action_gbye(char *content) {
             verbose("Insertion server: modifying current entity...\n");
             verbose("Insertion server: current entity :\n%s\n", entitytostr(i));
             ent.port_next[i] = port2;
-            strcpy(ent.ip_next[nring], ip_next);
+            strcpy(ent.ip_next[i], ip_next);
             verbose("Insertion server: modified entity :\n%s\n", entitytostr(i));
             sendmessage(&entity_leaving, "EYBG", "");
         }

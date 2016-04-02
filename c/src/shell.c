@@ -151,7 +151,7 @@ static void cmd_gbye(int argc, char **argv) {
     close_tcpserver();
     char *udp = itoa4(ent.udp);
     char *port_next = itoa4(ent.port_next[nring]);
-    sendmessage_all("GBYE", "%s %s %s %s %s", ent.ip_self, udp, ent.ip_next[nring],
+    sendmessage_all("GBYE", "%s %s %s %s", ent.ip_self, udp, ent.ip_next[nring],
             port_next);
     wait_goodbye = 1;
     verbose("Waiting for EYBG message...");
