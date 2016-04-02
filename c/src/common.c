@@ -70,7 +70,7 @@ void printpacket(const char *packet) {
 
 
 int isip(const char *str) {
-    if (str[15] == 0 && str[3] == '.' && str[7] == '.' && str[11] == '.') {
+    if (strlen(str) == 15 && str[3] == '.' && str[7] == '.' && str[11] == '.') {
         return 
             isdigit(str[0]) && isdigit(str[1]) && isdigit(str[2]) &&
             isdigit(str[4]) && isdigit(str[5]) && isdigit(str[6]) &&
@@ -80,6 +80,12 @@ int isip(const char *str) {
     return 0;
 }
 
+
+int isport(const char *str) {
+    return strlen(str) == 4 &&
+        isdigit(str[0]) && isdigit(str[1]) && isdigit(str[2]) &&
+        isdigit(str[3]);
+}
 
 char *ipnozeros(const char *ip) {
     char *nozeros = strdup(ip);

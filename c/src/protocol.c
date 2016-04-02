@@ -11,11 +11,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-
 #include <pthread.h>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -32,12 +27,6 @@ void *message_manager(void *args);
  * Current entity
  */
 entity ent;
-
-typedef struct _entity {
-    int socksend[NRING];
-    struct sockaddr_in receiver[NRING];
-    int socklisten;
-} _entity;
 
 _entity _ent;
 
@@ -60,28 +49,6 @@ int nring = -1;
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Return a string representing current entity.
- *
- * @return the string representing current entity
- */
-static char *entitytostr(int ring) {
-    char *str = (char *)malloc(350);
-    char *id = malloc(50), *udp = malloc(50), *tcp = malloc(50),
-         *ip = malloc(50), *np = malloc(50), *mdip = malloc(50), 
-         *mdp = malloc(50);
-    sprintf(id, "%30s - %s", "\x1b[4mid\x1b[0m", ent.id);
-    sprintf(udp, "%30s - %d", "\x1b[4mudp listening port\x1b[0m", ent.udp);
-    sprintf(tcp, "%30s - %d", "\x1b[4mtcp listening port\x1b[0m", ent.tcp);
-    sprintf(ip, "%30s - %s", "\x1b[4mip of next entity\x1b[0m", ent.ip_next[ring]);
-    sprintf(np, "%30s - %d", "\x1b[4mport of next entity\x1b[0m", ent.port_next[ring]);
-    sprintf(mdip, "%30s - %s", "\x1b[4mmultidiff ip\x1b[0m", ent.mdiff_ip[ring]);
-    sprintf(mdp, "%30s - %d", "\x1b[4mmultidiff port\x1b[0m", ent.mdiff_port[ring]);
-    sprintf(str, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n", id, udp, tcp, ip, np, mdip, mdp);
-    free(id);free(udp);free(tcp);free(ip);free(np);free(mdip);free(mdp);
-    return str;
-}
 
 
 /**
@@ -266,6 +233,7 @@ static void insertionsrv() {
         perror("Listen error.");
         exit(1);
     }
+    _ent.socktcp = sock;
     while (1) {
         // wait for connection
         verbose("Insertion server: waiting for client...\n");
@@ -305,12 +273,6 @@ static void insertionsrv() {
         verbose("Insertion server: actualizing socket informations for next entity...\n");
         // receiver (next entity) socket
         verbose("Preparing structure for receiver address...\n");
-        //char *port = itoa4(newc->port);
-        //struct addrinfo hints;
-        //bzero(&hints, sizeof(struct addrinfo));
-        //hints.ai_family = AF_INET;
-        //hints.ai_socktype=SOCK_DGRAM;
-        //struct addrinfo *first_info;
         struct in_addr iaddr;
         char *ipnz = ipnozeros(newc->ip);
 #ifdef DEBUG
@@ -326,8 +288,6 @@ static void insertionsrv() {
         _ent.receiver[nring].sin_port = htons(newc->port);
         _ent.receiver[nring].sin_addr = iaddr;
         verbose("Structure prepared.\n");
-        verbose("Replacing current structure...\n");
-        //memcpy(&_ent.receiver[nring], first_info->ai_addr, sizeof(struct sockaddr));
         // TODO bug with freeaddrinfo
         // freeaddrinfo(first_info);
         debug("insertionsrv()", "passed");
@@ -358,7 +318,7 @@ static void *packet_treatment(void *args) {
     packet[512] = 0;
     char *packet_before_treatment = strdup(packet);
     if (parsemsg(packet) != -1)
-        sendpacket(packet_before_treatment);
+        sendpacket_all(packet_before_treatment);
     free(packet);
     free(packet_before_treatment);
     return NULL;
@@ -368,6 +328,29 @@ static void *packet_treatment(void *args) {
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Return a string representing current entity.
+ *
+ * @return the string representing current entity
+ */
+char *entitytostr(int ring) {
+    char *str = (char *)malloc(350);
+    char *id = malloc(50), *udp = malloc(50), *tcp = malloc(50),
+         *ip = malloc(50), *np = malloc(50), *mdip = malloc(50), 
+         *mdp = malloc(50);
+    sprintf(id, "%30s - %s", "\x1b[4mid\x1b[0m", ent.id);
+    sprintf(udp, "%30s - %d", "\x1b[4mudp listening port\x1b[0m", ent.udp);
+    sprintf(tcp, "%30s - %d", "\x1b[4mtcp listening port\x1b[0m", ent.tcp);
+    sprintf(ip, "%30s - %s", "\x1b[4mip of next entity\x1b[0m", ent.ip_next[ring]);
+    sprintf(np, "%30s - %d", "\x1b[4mport of next entity\x1b[0m", ent.port_next[ring]);
+    sprintf(mdip, "%30s - %s", "\x1b[4mmultidiff ip\x1b[0m", ent.mdiff_ip[ring]);
+    sprintf(mdp, "%30s - %d", "\x1b[4mmultidiff port\x1b[0m", ent.mdiff_port[ring]);
+    sprintf(str, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n", id, udp, tcp, ip, np, mdip, mdp);
+    free(id);free(udp);free(tcp);free(ip);free(np);free(mdip);free(mdp);
+    return str;
+}
+
 /**
  * Protocol for insertion of current entity into a ring.
  *
@@ -463,7 +446,7 @@ int insert(const char *host, const char *tcpport) {
         return 0;
     }
     verbose("Binding done.\n");
-    _ent.socksend[nring]   = socket(PF_INET, SOCK_DGRAM, 0);
+    _ent.socksend = socket(PF_INET, SOCK_DGRAM, 0);
     verbose("Socket for udp sending created.\n");
     verbose("Preparing structure for receiver address...\n");
     // receiver (next entity) socket
@@ -539,14 +522,14 @@ void *message_manager(void *args) {
 }
 
 
-void sendpacket(char *content) {
-    debug("sendpacket(char *content)", "Sending packet:\n---\n%s\n---\n...\n", content);
+void sendpacket_all(char *content) {
+    debug("sendpacket_all(char *content)", "Sending packet:\n---\n%s\n---\n...\n", content);
     for (int i = 0; i <= nring; ++i) {
-        sendto(_ent.socksend[i], content, 512, 0,
+        sendto(_ent.socksend, content, 512, 0,
                 (struct sockaddr *) &_ent.receiver[i],
                 (socklen_t)sizeof(struct sockaddr_in));
 #ifdef DEBUG
-        debug("sendpacket(content)", "Packet sent to ip %s at port %d.",
+        debug("sendpacket_all(content)", "Packet sent to ip %s at port %d.",
                 inet_ntoa(_ent.receiver[i].sin_addr), 
                 ntohs(_ent.receiver[i].sin_port));
 #else
@@ -557,6 +540,14 @@ void sendpacket(char *content) {
 }
 
 
+void sendpacket(char *content, struct sockaddr_in *receiver) {
+    debug("sendpacket(char *content, struct sockaddr_in *receiver)", 
+            "Sending personnal packet:\n---\n%s\n---\n...\n", content);
+    sendto(_ent.socksend, content, 512, 0,
+            (struct sockaddr *) receiver,
+            (socklen_t)sizeof(struct sockaddr_in));
+    verbose("Packet sent.\n");
+}
 
 /**
  * Initialize entity with given attributes.
@@ -614,7 +605,7 @@ void create_ring() {
         exit(1);
     }
     verbose("Binding done.\n");
-    _ent.socksend[nring]   = socket(PF_INET, SOCK_DGRAM, 0);
+    _ent.socksend  = socket(PF_INET, SOCK_DGRAM, 0);
     verbose("Socket for udp sending created.\n");
     // receiver (next entity) socket
     verbose("Preparing structure for receiver address...\n");

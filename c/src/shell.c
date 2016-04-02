@@ -3,11 +3,13 @@
 #include "common.h"
 #include "message.h"
 #include "protocol.h"
+#include "thread.h"
 
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
+#include <pthread.h>
 
 #include <stdio.h>
 
@@ -53,6 +55,7 @@ command cmd[] = {
 
 extern int nring;
 extern entity ent;
+extern int wait_goodbye;
 
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
@@ -136,18 +139,22 @@ static void cmd_whos(int argc, char **argv) {
         fprintf(stderr, "Usage:\t%s", argv[1]);
         return ;
     }
-    sendmessage("WHOS", "");
+    sendmessage_all("WHOS", "");
 }
 
+// TODO add parameter to choose the ring
 static void cmd_gbye(int argc, char **argv) {
     if (argc != 1) {
         fprintf(stderr, "Usage:\t%s", argv[1]);
         return;
     }
+    close_tcpserver();
     char *udp = itoa4(ent.udp);
     char *port_next = itoa4(ent.port_next[nring]);
-    sendmessage("GBYE", "%s %s %s %s %s", ent.ip_self, udp, ent.ip_next[nring],
+    sendmessage_all("GBYE", "%s %s %s %s %s", ent.ip_self, udp, ent.ip_next[nring],
             port_next);
+    wait_goodbye = 1;
+    verbose("Waiting for EYBG message...");
 }
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL

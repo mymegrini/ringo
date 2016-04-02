@@ -3,6 +3,7 @@
 #include "protocol.h"
 #include "stdint.h"
 #include "listmsg.h"
+#include "thread.h"
 
 #include <stdarg.h>
 #include <sys/time.h>
@@ -12,6 +13,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 extern int parseappmsg(char *message);
 static int action_whos(char *content);
+static int action_gbye(char *content);
+static int action_eybg(char *content);
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -31,15 +34,21 @@ typedef struct protocol_msg {
 protocol_msg pmsg[] = {
     { "WHOS", action_whos },
     { "APPL", parseappmsg },
+    { "GBYE", action_gbye },
+    { "EYBG", action_eybg },
     { "", NULL }
 };
 
 
 extern entity ent;
+extern int nring;
+extern _entity _ent;
+int wait_goodbye = 0;
 
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
+
 
 /**
  * Generate a unique message identificator
@@ -85,12 +94,73 @@ static char* messageid(char* content) {
 
 static int action_whos(char *content) {
   
-    sendmessage("MEMB", "%s %s %d", ent.id, ent.ip_self, ent.udp);
+    sendmessage_all("MEMB", "%s %s %d", ent.id, ent.ip_self, ent.udp);
     return 0;
 }
 
 
+static int action_gbye(char *content) {
 
+    char *ip = NULL, *port_str = NULL, *ip_next = NULL, *port_next = NULL;
+
+    int j = sscanf(content, "%s %s %s %s", ip, port_str, ip_next, port_next);
+    if (sscanf(content, "%s %s %s %s", ip, port_str, ip_next, port_next) != 4 ||
+        !isip(ip) || !isport(port_str) || !isip(ip_next) || !isport(port_next)) {
+        // don't retransmit message
+        debug("action_gbye", "sscanf test not passed, j = %d.\nip:\"%s\"\n"
+                "port:\"%s\"\nip_next:\"%s\"\nport_next:\"%s\"\ncontent:\"%s\"\n", j, ip, port_str,
+                ip_next, port_next, content);
+        free(ip); free(port_str); free(ip_next); free(port_next);
+        return 1;
+    }
+    // retransmit message
+    int port = atoi(port_str);
+    int i;
+    verbose("looking for correspondance with current entity...\n");
+    for (i = 0; i < nring + 1; ++i)
+        if (strcmp(ip, ent.ip_next[i]) == 0 && port == ent.port_next[i]) {
+            verbose("Preparing structure for receiver address...\n");
+            struct in_addr iaddr;
+            char *ipnz = ipnozeros(ip);
+#ifdef DEBUG
+            if (inet_aton(ipnz, &iaddr) == 0) {
+                debug("insertionsrv()", "inet_aton failed with ip \"%s\".", ipnz);
+                continue;
+            }
+#else
+            inet_aton(ipnz, &iaddr);
+#endif
+            free(ipnz);
+
+            int port2 = atoi(port_next);
+            struct sockaddr_in entity_leaving = _ent.receiver[i];
+
+            _ent.receiver[i].sin_family = AF_INET;
+            _ent.receiver[i].sin_port = htons(port);
+            _ent.receiver[i].sin_addr = iaddr;
+            verbose("Structure prepared.\n");
+            verbose("Replacing current structure...\n");
+            // modifying entity
+            verbose("Insertion server: modifying current entity...\n");
+            verbose("Insertion server: current entity :\n%s\n", entitytostr(i));
+            ent.port_next[i] = port2;
+            strcpy(ent.ip_next[nring], ip_next);
+            verbose("Insertion server: modified entity :\n%s\n", entitytostr(i));
+            sendmessage(&entity_leaving, "EYBG", "");
+        }
+    return 0;
+}
+
+static int action_eybg(char *content) {
+
+    if (wait_goodbye) {
+        close_tcpserver();
+        close_messagemanager();
+        printf("Goodbye !\n");
+        exit(0);
+    }
+    return 0;
+}
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
@@ -131,7 +201,7 @@ int parsemsg(char *message) {
 
 
 
-void sendmessage(char *type, char *format, ...) {
+void sendmessage_all(char *type, char *format, ...) {
     char buff[513];
     char content[499];
     va_list aptr;
@@ -151,6 +221,30 @@ void sendmessage(char *type, char *format, ...) {
       snprintf(buff, 513, "%s %s %s", type, id, content);
     else snprintf(buff, 513, "%s %s", type, id);
     
-    sendpacket(buff);
+    sendpacket_all(buff);
+}
+
+
+void sendmessage(struct sockaddr_in *receiver, char *type, char *format, ...) {
+    char buff[513];
+    char content[499];
+    va_list aptr;
+    va_start(aptr, format);
+    vsnprintf(content, 499, format, aptr);
+    va_end(aptr);
+    // creating new id and adding it to list of known ids
+    char *id = messageid(content);
+#ifdef DEBUG
+    int r =
+#endif
+        lookup(id);
+#ifdef DEBUG
+    if (r==1) debug("sendmessage", "Detected a hash collision: %s\n", id);
+#endif
+    if (strlen(content))
+      snprintf(buff, 513, "%s %s %s", type, id, content);
+    else snprintf(buff, 513, "%s %s", type, id);
+    
+    sendpacket(buff, receiver);
 }
 

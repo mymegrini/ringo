@@ -13,4 +13,8 @@ struct threads {
 extern struct threads threads;
 
 
+void close_tcpserver();
+void close_messagemanager();
+
+
 #endif /* THREAD_H */
