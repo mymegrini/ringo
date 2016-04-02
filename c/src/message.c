@@ -15,6 +15,7 @@ extern int parseappmsg(char *message, char *content);
 static int action_whos(char *message, char *content);
 static int action_gbye(char *message, char *content);
 static int action_eybg(char *message, char *content);
+static int action_memb(char *message, char *content);
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -36,6 +37,7 @@ protocol_msg pmsg[] = {
     { "APPL", parseappmsg },
     { "GBYE", action_gbye },
     { "EYBG", action_eybg },
+    { "MEMB", action_memb },
     { "", NULL }
 };
 
@@ -169,6 +171,12 @@ static int action_eybg(char *message, char *content) {
         debug("action_eybg", "entity received EYBG whereas not waiting for it.");
         sendpacket_all(message);
     }
+    return 0;
+}
+
+static int action_memb(char* message, char* content) {
+
+    sendpacket_all(message);
     return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
