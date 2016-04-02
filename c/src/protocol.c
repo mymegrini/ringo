@@ -478,7 +478,7 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen) {
     // port_next init
     ent.port_next[0] = udp_listen;
     // mdiff_ip
-    strcpy(ent.mdiff_ip[0], "255.255.255.255");
+    strcpy(ent.mdiff_ip[0], "239.0.0.1");
     // mdiff port
     ent.mdiff_port[0] = 6666;
 
@@ -535,12 +535,43 @@ void create_ring() {
 #else
     getaddrinfo("localhost", port, &hints, &first_info);
 #endif
-    memcpy(&_ent.receiver[nring], first_info->ai_addr, sizeof(struct sockaddr_in));
+    _ent.receiver[nring] = *(struct sockaddr_in *)first_info->ai_addr;
     // TODO bug with freeadrinfo
     //freeaddrinfo(first_info);
     //debug("create_ring()", "passed");
     free(port);
     verbose("Sockets created.\n");
+
+    // multidiffusion
+    _ent.sockmdiff = socket(PF_INET, SOCK_DGRAM, 0);
+    // authorize multidiff on same machine
+    int ok = 1;
+    r = setsockopt(_ent.sockmdiff, SOL_SOCKET, SO_REUSEPORT, &ok, sizeof(ok));
+    if (r == -1) {
+        fprintf(stderr, "Multicast on same machine not working.\n");
+        exit(1);
+    }
+    struct sockaddr_in addr_sock;
+    addr_sock.sin_family = AF_INET;
+    addr_sock.sin_port = htons(ent.mdiff_port[nring]);
+    addr_sock.sin_addr.s_addr = htonl(INADDR_ANY);
+    r = bind(_ent.sockmdiff, (struct sockaddr *) &addr_sock, 
+            sizeof(struct sockaddr_in));
+    if (r == -1) {
+        fprintf(stderr, "Binding error with multicast socket.\n");
+        exit(1);
+    }
+    struct ip_mreq mreq;
+    if (! inet_aton(ent.mdiff_ip[nring], &mreq.imr_multiaddr)) {
+        fprintf(stderr, "Multicast ip \"%s\" not valid.\n", ent.mdiff_ip[nring]);
+        exit(1);
+    }
+    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+    r = setsockopt(_ent.sockmdiff, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+    if (r == -1) {
+        fprintf(stderr, "Can't subscribe to multicast on \"%s\"\n", ent.mdiff_ip[nring]);
+        exit(1);
+    }
 
     // lauch message manager thread
     pthread_create(&threads.message_manager, NULL, message_manager, NULL);
