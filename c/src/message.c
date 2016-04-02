@@ -222,15 +222,12 @@ int parsemsg(char *message) {
     return -1;
 }
 
+static void makemessage(char* buff, const char* type,
+			const char* format, va_list aptr) {
 
-
-void sendmessage_all(char *type, char *format, ...) {
-    char buff[513];
     char content[499];
-    va_list aptr;
-    va_start(aptr, format);
+
     vsnprintf(content, 499, format, aptr);
-    va_end(aptr);
     // creating new id and adding it to list of known ids
     char id[9];
     messageid(id, content);
@@ -239,11 +236,23 @@ void sendmessage_all(char *type, char *format, ...) {
 #endif
         lookup(id);
 #ifdef DEBUG
-    if (r==1) debug("sendmessage", "Detected a hash collision: %s\n", id);
+    if (r==1) debug("makemessage", "Detected a hash collision: %s\n", id);
 #endif
     if (strlen(content))
       snprintf(buff, 513, "%s %s %s", type, id, content);
     else snprintf(buff, 513, "%s %s", type, id);
+
+    return;
+}
+
+
+void sendmessage_all(char *type, char *format, ...) {
+    char buff[513];
+    va_list aptr;
+
+    va_start(aptr, format);
+    makemessage(buff, type, format, aptr);
+    va_end(aptr);
     
     sendpacket_all(buff);
 }
@@ -251,23 +260,11 @@ void sendmessage_all(char *type, char *format, ...) {
 
 void sendmessage(struct sockaddr_in *receiver, char *type, char *format, ...) {
     char buff[513];
-    char content[499];
     va_list aptr;
+
     va_start(aptr, format);
-    vsnprintf(content, 499, format, aptr);
+    makemessage(buff, type, format, aptr);
     va_end(aptr);
-    // creating new id and adding it to list of known ids
-    char *id = messageid(content);
-#ifdef DEBUG
-    int r =
-#endif
-        lookup(id);
-#ifdef DEBUG
-    if (r==1) debug("sendmessage", "Detected a hash collision: %s\n", id);
-#endif
-    if (strlen(content))
-      snprintf(buff, 513, "%s %s %s", type, id, content);
-    else snprintf(buff, 513, "%s %s", type, id);
     
     sendpacket(buff, receiver);
 }
