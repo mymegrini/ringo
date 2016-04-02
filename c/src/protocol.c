@@ -317,8 +317,7 @@ static void *packet_treatment(void *args) {
     char *packet = (char *)args;
     packet[512] = 0;
     char *packet_before_treatment = strdup(packet);
-    if (parsemsg(packet) != -1)
-        sendpacket_all(packet_before_treatment);
+    parsemsg(packet);
     free(packet);
     free(packet_before_treatment);
     return NULL;

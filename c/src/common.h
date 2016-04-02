@@ -46,6 +46,8 @@
 #define BUFSIZE 100
 
 
+#define CTNT_OFFST 5
+
 int isnumeric(const char *str);
 char *itoa4(int i);
 int yesno(const char *question);

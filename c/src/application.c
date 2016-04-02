@@ -31,20 +31,24 @@ application app[] = {
  * @return 0 when the app is not supported
  * @return -1 when the message doesn't follow the protocol
  */
-int parseappmsg(char *message) {
-    if (message[4] != ' ') {
+int parseappmsg(char *message, char *content) {
+    if (message[CTNT_OFFST+4] != ' ') {
         fprintf(stderr, "APPL message not following the protocol.\n");
         return -1;
     }
+    int r;
     message[4] = 0;
-    char *idapp = message, *content = &message[5];
-    verbose("Looking for APPl %s.\n", idapp);
+    char idapp[5];
+    strncpy(idapp, content, 5);
+    char *app_content = &message[5];
+    verbose("Looking for APPL %s.\n", idapp);
     // search app and execute
     for (int i = 0; app[i].id[0] != 0; i++) 
         if (strcmp(app[i].id, idapp) == 0) {
             verbose("APPL %s found.\n", idapp);
-            app[i].app(content);
-            return 1;
+            app[i].app(app_content);
+            r = 1;
+            break;
         }
     // app not found
     return 0;

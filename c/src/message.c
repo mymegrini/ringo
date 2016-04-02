@@ -11,10 +11,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 // EXTERNAL
 ////////////////////////////////////////////////////////////////////////////////
-extern int parseappmsg(char *message);
-static int action_whos(char *content);
-static int action_gbye(char *content);
-static int action_eybg(char *content);
+extern int parseappmsg(char *message, char *content);
+static int action_whos(char *message, char *content);
+static int action_gbye(char *message, char *content);
+static int action_eybg(char *message, char *content);
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -22,7 +22,7 @@ static int action_eybg(char *content);
 
 typedef struct protocol_msg {
     char type[5];
-    int (*action)(char *);
+    int (*action)(char *, char *);
     // action should return -1 when message doesn't follow the protocol
     // so it's not retransmitted
 } protocol_msg;
@@ -92,30 +92,34 @@ static char* messageid(char* content) {
 }
 
 
-static int action_whos(char *content) {
+static int action_whos(char *message, char *content) {
   
-    sendmessage_all("MEMB", "%s %s %d", ent.id, ent.ip_self, ent.udp);
+    if (*content) {
+        debug("action_whos", "content should be empty: \"%s\" = %d", content, *content);
+        return 1;
+    } else {
+        sendpacket_all(message);
+        sendmessage_all("MEMB", "%s %s %d", ent.id, ent.ip_self, ent.udp);
+    }
     return 0;
 }
 
 
-static int action_gbye(char *content) {
+static int action_gbye(char *message, char *content) {
 
+    // don't retransmit message
     if (content[15] != ' ' || content[20] != ' ' || content[36] != ' ') {
-        debug("action_gbye", "problem with spaces");
         return 1;
     }
     char ip[16], port_str[5], ip_next[16], port_next[5];
     int r = sscanf(content, "%s %s %s %s", ip, port_str, ip_next, port_next);
     if (r != 4 ||
         !isip(ip) || !isport(port_str) || !isip(ip_next) || !isport(port_next)) {
-        // don't retransmit message
-        debug("action_gbye", "sscanf test not passed, j = %d.\nip:\"%s\"\n"
-                "port:\"%s\"\nip_next:\"%s\"\nport_next:\"%s\"\ncontent:\"%s\"\n", r, ip, port_str,
-                ip_next, port_next, content);
+        debug("action_gbye", "GBYE not following the protocol, content: \"%s\"", content);
         return 1;
     }
     // retransmit message
+    sendpacket_all(message);
     int port = atoi(port_str);
     int i;
     verbose("looking for correspondance with current entity...\n");
@@ -153,13 +157,17 @@ static int action_gbye(char *content) {
     return 0;
 }
 
-static int action_eybg(char *content) {
+static int action_eybg(char *message, char *content) {
 
     if (wait_goodbye) {
         close_tcpserver();
         close_messagemanager();
         printf("Goodbye !\n");
         exit(0);
+    }
+    else {
+        debug("action_eybg", "entity received EYBG whereas not waiting for it.");
+        sendpacket_all(message);
     }
     return 0;
 }
@@ -181,9 +189,12 @@ int parsemsg(char *message) {
     }
     message[4]  = 0;
     message[13] = 0;
-    char *type = message;
-    char *idm  = strdup(message+5);
+    char type[5];
+    strncpy(type, message, 5);
+    char idm[9];
+    strncpy(idm, message, 9);
     char *content = message+14;
+
     verbose("Parsing message %s of type %s...\n", idm, type);
     if (lookup(idm)) {
         verbose("Message already seen.\n");
@@ -192,7 +203,7 @@ int parsemsg(char *message) {
     // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
         if (strcmp(type, pmsg[i].type) == 0) {
-            return (pmsg[i].action(content));
+            return (pmsg[i].action(message, content));
         }
     // message not supported
     verbose("Message of type %s not supported.\n", type);
