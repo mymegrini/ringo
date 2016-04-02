@@ -99,6 +99,15 @@ int lookup(char *idm) {
 }
 
 
+void add(char *idm) {
+    if (isempty(l)) {
+        l.first = l.last = newnode(idm, NULL);
+    }
+    else {
+
+    }
+}
+
 void printmsg() {
     printf(UNDERLINED "LIST:" RESET "\n");
     if (isempty(l))

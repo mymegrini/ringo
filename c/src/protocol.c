@@ -4,6 +4,7 @@
 #include "listmsg.h"
 #include "network.h"
 #include "message.h"
+#include "thread.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,7 +31,6 @@ void *message_manager(void *args);
 /**
  * Current entity
  */
-// TODO replace current entity by an array.
 entity ent;
 
 typedef struct _entity {
@@ -321,6 +321,7 @@ static void insertionsrv() {
 #else
         inet_aton(ipnz, &iaddr);
 #endif
+        free(ipnz);
         _ent.receiver[nring].sin_family = AF_INET;
         _ent.receiver[nring].sin_port = htons(newc->port);
         _ent.receiver[nring].sin_addr = iaddr;
@@ -477,6 +478,7 @@ int insert(const char *host, const char *tcpport) {
 #else
     inet_aton(ipnz, &iaddr);
 #endif
+    free(ipnz);
     _ent.receiver[nring].sin_family = AF_INET;
     _ent.receiver[nring].sin_port = htons(ent.port_next[nring]);
     _ent.receiver[nring].sin_addr = iaddr;
@@ -487,13 +489,11 @@ int insert(const char *host, const char *tcpport) {
 
     // lauch message manager thread
     verbose("Starting message manager...\n");
-    pthread_t t_message_manager;
-    pthread_create(&t_message_manager, NULL, message_manager, NULL);
+    pthread_create(&threads.message_manager, NULL, message_manager, NULL);
     verbose("Message manager started.\n");
     // lauch insertion server thread
     verbose("Starting insertion server...\n");
-    pthread_t t_insertion_server;
-    pthread_create(&t_insertion_server, NULL, insertion_server, NULL);
+    pthread_create(&threads.tcp_server, NULL, insertion_server, NULL);
     verbose("Insertion manager started.\n");
 
     return 1;
@@ -644,11 +644,9 @@ void create_ring() {
     verbose("Sockets created.\n");
 
     // lauch message manager thread
-    pthread_t t_message_manager;
-    pthread_create(&t_message_manager, NULL, message_manager, NULL);
+    pthread_create(&threads.message_manager, NULL, message_manager, NULL);
     // lauch insertion server thread
-    pthread_t t_insertion_server;
-    pthread_create(&t_insertion_server, NULL, insertion_server, NULL);
+    pthread_create(&threads.tcp_server, NULL, insertion_server, NULL);
 
     verbose("Ring created.\n");
 

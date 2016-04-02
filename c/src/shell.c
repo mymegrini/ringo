@@ -2,6 +2,7 @@
 
 #include "common.h"
 #include "message.h"
+#include "protocol.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -17,6 +18,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 static void cmd_whos(int argc, char **argv);
+static void cmd_gbye(int argc, char **argv);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,9 +47,12 @@ void echo(int argc, char **argv) {
 command cmd[] = { 
     { "echo", "Print a message", echo },
     { "whos", "Getting to know each other...", cmd_whos },
+    { "gbye", "Quit a ring.", cmd_gbye },
     { "", "", NULL }
 };
 
+extern int nring;
+extern entity ent;
 
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
@@ -127,14 +132,23 @@ static void prompt() {
 
 
 static void cmd_whos(int argc, char **argv) {
-#ifdef DEBUG
-    debug("cmd_whos", "entering function...");
-#endif
-    if (argc != 1)
+    if (argc != 1) {
         fprintf(stderr, "Usage:\t%s", argv[1]);
+        return ;
+    }
     sendmessage("WHOS", "");
 }
 
+static void cmd_gbye(int argc, char **argv) {
+    if (argc != 1) {
+        fprintf(stderr, "Usage:\t%s", argv[1]);
+        return;
+    }
+    char *udp = itoa4(ent.udp);
+    char *port_next = itoa4(ent.port_next[nring]);
+    sendmessage("GBYE", "%s %s %s %s %s", ent.ip_self, udp, ent.ip_next[nring],
+            port_next);
+}
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
