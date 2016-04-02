@@ -22,9 +22,10 @@ typedef struct entity {
 } entity;
 
 typedef struct _entity {
+    int socklisten;
     int socksend;
     struct sockaddr_in receiver[NRING];
-    int socklisten;
+    int sockmdiff;
     int socktcp;
 } _entity;
 
