@@ -94,9 +94,10 @@ static void messageid(char* hash, const char* content) {
 
 
 static int action_whos(char *message, char *content) {
-  
-    if (*content) {
-        debug("action_whos", "content should be empty: \"%s\" = %d", content, *content);
+
+    if (strlen(message) > 13) {
+        debug("action_whos", "content should be empty: \"%s\" = %d",
+              content, *content);
         return 1;
     } else {
         sendpacket_all(message);
@@ -194,18 +195,20 @@ int parsemsg(char *message) {
         fprintf(stderr, "Message not following the protocol.\n");
         return -1;
     }
-    message[4]  = 0;
-    message[13] = 0;
+    //message[4]  = 0;
+    //message[13] = 0;
     char type[5];
-    strncpy(type, message, 5);
+    strncpy(type, message, 4);
+    type[4] = 0;
     char idm[9];
-    strncpy(idm, message, 9);
+    strncpy(idm, message+5, 8);
+    idm[8] = 0;
     char *content = message+14;
 
     verbose("Parsing message %s of type %s...\n", idm, type);
     if (lookup(idm)) {
         verbose("Message already seen.\n");
-        return -1;
+        return 0;
     }
     // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
