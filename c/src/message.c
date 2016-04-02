@@ -56,13 +56,13 @@ int wait_goodbye = 0;
  * Generate a unique message identificator
  *
  * @param content message content to be included in hash
+ * @param hash will contain message hash id
  * @return message idenfitificator, a char* of strlen 8
  */
-static char* messageid(char* content) {
+static void messageid(char* hash, const char* content) {
 
     struct timeval time;
     uint64_t h = 5381;
-    char* hash = malloc(9*sizeof(char));
     int i;
     uint8_t c;
 
@@ -90,7 +90,6 @@ static char* messageid(char* content) {
     hash[8] = 0;
 
     debug("messageid", "Created message id : %s.\n", hash);
-    return hash;
 }
 
 
@@ -230,7 +229,8 @@ void sendmessage_all(char *type, char *format, ...) {
     vsnprintf(content, 499, format, aptr);
     va_end(aptr);
     // creating new id and adding it to list of known ids
-    char *id = messageid(content);
+    char id[9];
+    messageid(id, content);
 #ifdef DEBUG
     int r =
 #endif
