@@ -5,6 +5,7 @@
 #include "listmsg.h"
 
 #include <stdarg.h>
+#include <sys/time.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // EXTERNAL
@@ -48,15 +49,17 @@ extern entity ent;
  */
 static char* messageid(char* content) {
 
-    static uint32_t counter = 0;
+    struct timeval time;
     uint64_t h = 5381;
     char* hash = malloc(9*sizeof(char));
     int i;
     uint8_t c;
 
     /* hash * 33 + c */
-    // hashing counter
-    h = ((h << 5) + h) + counter;
+    // hashing time
+    gettimeofday(&time, NULL);
+    h = ((h << 5) + h) + (uint16_t)time.tv_sec;
+    h = ((h << 5) + h) + (uint16_t)time.tv_usec;
     // hashing ip and port
     for(i=0; i<16; i++) h = ((h << 5) + h) + ent.ip_self[i];  
     h = ((h << 5) + h) + ent.udp;
@@ -75,9 +78,7 @@ static char* messageid(char* content) {
     }
     hash[8] = 0;
 
-    verbose("Created message id : %s.\n", hash);
-  
-    counter++;
+    debug("messageid", "Created message id : %s.\n", hash);
     return hash;
 }
 

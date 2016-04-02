@@ -2,14 +2,14 @@ import java.util.*;
 import java.net.*;
 import java.io.*;
 
-public class Tcp_thread implements Runnable{
+public class Tcp_thread implements Runnable {
     Entity ent;
 
     public Tcp_thread(Entity e){
         ent=e;
     }
     
-    public void run(){
+    public void run() {
         try{
             ServerSocket server = new ServerSocket(ent.tcp);
             while(true){
@@ -18,7 +18,8 @@ public class Tcp_thread implements Runnable{
                 Thread t = new Thread(serv_tcp);
                 t.start();
             }
-        }catch(Exception e){
+        }
+        catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
         }
