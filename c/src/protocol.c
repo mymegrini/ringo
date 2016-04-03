@@ -55,13 +55,14 @@ int nring = -1;
 
 static welc_msg *parse_welc(const char *w_msg) {
     if (w_msg[4] != ' ' || w_msg[20] != ' ' || w_msg[25] != ' ' ||
-            w_msg[41] != ' ' || w_msg[46] != 0)
+            w_msg[41] != ' ' || w_msg[46] != 0) {
         return NULL;
+    }
     welc_msg *welc = malloc(sizeof(welc_msg));
     char type[5], port[5], port_mdiff[5];
     int r = sscanf(w_msg, "%s %s %s %s %s", type, welc->ip, port, 
             welc->ip_diff, port_mdiff);
-    if (r != 3 || strcmp("NEWC", type) != 0 ||
+    if (r != 5 || strcmp("WELC", type) != 0 ||
             !isip(welc->ip) || !isport(port) || !isip(welc->ip_diff) ||
                 !isport(port_mdiff)) {
         free(welc);
@@ -79,7 +80,7 @@ static newc_msg *parse_newc(const char *n_msg) {
     char type[5];
     char port[5];
     int r = sscanf(n_msg, "%s %s %s", type, newc->ip, port);
-    if (r != 3 || strcmp("WELC", type) != 0 || !isip(newc->ip) || !isport(port)) {
+    if (r != 3 || strcmp("NEWC", type) != 0 || !isip(newc->ip) || !isport(port)) {
         free(newc);
         return NULL;
     }
@@ -478,7 +479,7 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen) {
     // port_next init
     ent.port_next[0] = udp_listen;
     // mdiff_ip
-    strcpy(ent.mdiff_ip[0], "239.0.0.1");
+    strcpy(ent.mdiff_ip[0], "239.000.000.001");
     // mdiff port
     ent.mdiff_port[0] = 6666;
 
@@ -562,16 +563,19 @@ void create_ring() {
         exit(1);
     }
     struct ip_mreq mreq;
-    if (! inet_aton(ent.mdiff_ip[nring], &mreq.imr_multiaddr)) {
-        fprintf(stderr, "Multicast ip \"%s\" not valid.\n", ent.mdiff_ip[nring]);
+    char *ipnz = ipnozeros(ent.mdiff_ip[nring]);
+    if (! inet_aton(ipnz, &mreq.imr_multiaddr)) {
+        fprintf(stderr, "Multicast ip \"%s\" not valid.\n", ipnz);
+        free(ipnz);
         exit(1);
     }
     mreq.imr_interface.s_addr = htonl(INADDR_ANY);
     r = setsockopt(_ent.sockmdiff, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
     if (r == -1) {
-        fprintf(stderr, "Can't subscribe to multicast on \"%s\"\n", ent.mdiff_ip[nring]);
+        fprintf(stderr, "Can't subscribe to multicast on \"%s\"\n", ipnz);
         exit(1);
     }
+    free(ipnz);
 
     // lauch message manager thread
     pthread_create(&threads.message_manager, NULL, message_manager, NULL);
