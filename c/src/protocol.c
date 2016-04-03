@@ -431,23 +431,6 @@ void *message_manager(void *args) {
 }
 
 
-void sendpacket_all(char *content) {
-    debug("sendpacket_all(char *content)", "Sending packet:\n---\n%s\n---\n...\n", content);
-    for (int i = 0; i <= nring; ++i) {
-        sendto(_ent.socksend, content, 512, 0,
-                (struct sockaddr *) &_ent.receiver[i],
-                (socklen_t)sizeof(struct sockaddr_in));
-#ifdef DEBUG
-        debug("sendpacket_all(content)", "Packet sent to ip %s at port %d.",
-                inet_ntoa(_ent.receiver[i].sin_addr), 
-                ntohs(_ent.receiver[i].sin_port));
-#else
-        verbose("Packet sent to %s at port %u.\n",
-                ent.ip_next[i], ent.port_next[i]);
-#endif
-    }
-}
-
 
 void sendpacket(char *content, struct sockaddr_in *receiver) {
     debug("sendpacket(char *content, struct sockaddr_in *receiver)", 

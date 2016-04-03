@@ -223,7 +223,7 @@ int parsemsg(char *message) {
 }
 
 static void makemessage(char* buff, const char* type,
-			const char* format, va_list aptr) {
+        const char* format, va_list aptr) {
 
     char content[499];
 
@@ -253,8 +253,9 @@ void sendmessage_all(char *type, char *format, ...) {
     va_start(aptr, format);
     makemessage(buff, type, format, aptr);
     va_end(aptr);
-    
-    sendpacket_all(buff);
+
+    for (int i = 0; i < nring+1; ++i)
+        sendpacket(buff, &_ent.receiver[i]);
 }
 
 
