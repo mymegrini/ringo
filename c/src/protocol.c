@@ -434,12 +434,23 @@ void *message_manager(void *args) {
 
 void sendpacket(char *content, struct sockaddr_in *receiver) {
     debug("sendpacket(char *content, struct sockaddr_in *receiver)", 
-            "Sending personnal packet:\n---\n%s\n---\n...\n", content);
+            "Sending packet one ring:\n---\n%s\n---\n...\n", content);
     sendto(_ent.socksend, content, 512, 0,
             (struct sockaddr *) receiver,
             (socklen_t)sizeof(struct sockaddr_in));
     verbose("Packet sent.\n");
 }
+
+void sendpacket_all(char *content) {
+    debug("sendpacket_all(char *content)", 
+            "Sending packet multiple ring:\n---\n%s\n---\n...\n", content);
+    for (int i = 0; i < nring + 1; ++i)
+        sendto(_ent.socksend, content, 512, 0,
+                (struct sockaddr *)&_ent.receiver[i],
+                (socklen_t)sizeof(struct sockaddr_in));
+    verbose("Packets sent.\n");
+}
+
 
 /**
  * Initialize entity with given attributes.

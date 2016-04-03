@@ -254,8 +254,7 @@ void sendmessage_all(char *type, char *format, ...) {
     makemessage(buff, type, format, aptr);
     va_end(aptr);
 
-    for (int i = 0; i < nring+1; ++i)
-        sendpacket(buff, &_ent.receiver[i]);
+    sendpacket_all(buff);
 }
 
 
