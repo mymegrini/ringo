@@ -11,11 +11,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // EXTERNAL
 ////////////////////////////////////////////////////////////////////////////////
-extern int parseappmsg(char *message, char *content);
-static int action_whos(char *message, char *content);
-static int action_gbye(char *message, char *content);
-static int action_eybg(char *message, char *content);
-static int action_memb(char *message, char *content);
+extern int parseappmsg(char *message, char *content, ...);
+static int action_whos(char *message, char *content, ...);
+static int action_gbye(char *message, char *content, ...);
+static int action_eybg(char *message, char *content, ...);
+static int action_memb(char *message, char *content, ...);
+static int action_test(char *message, char *content, ...);
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -23,7 +24,7 @@ static int action_memb(char *message, char *content);
 
 typedef struct protocol_msg {
     char type[5];
-    int (*action)(char *, char *);
+    int (*action)(char *, char *, ...);
     // action should return -1 when message doesn't follow the protocol
     // so it's not retransmitted
 } protocol_msg;
@@ -38,6 +39,7 @@ protocol_msg pmsg[] = {
     { "GBYE", action_gbye },
     { "EYBG", action_eybg },
     { "MEMB", action_memb },
+    { "TEST", action_test },
     { "", NULL }
 };
 
@@ -46,6 +48,7 @@ extern entity ent;
 extern int nring;
 extern _entity _ent;
 int wait_goodbye = 0;
+extern int ring_check[NRING];
 
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
@@ -93,7 +96,7 @@ static void messageid(char* hash) {
 }
 
 
-static int action_whos(char *message, char *content) {
+static int action_whos(char *message, char *content, ...) {
 
     if (strlen(message) > 13) {
         debug("action_whos", "content should be empty: \"%s\" = %d",
@@ -107,7 +110,7 @@ static int action_whos(char *message, char *content) {
 }
 
 
-static int action_gbye(char *message, char *content) {
+static int action_gbye(char *message, char *content, ...) {
 
     // don't retransmit message
     if (content[15] != ' ' || content[20] != ' ' || content[36] != ' ') {
@@ -159,7 +162,7 @@ static int action_gbye(char *message, char *content) {
     return 0;
 }
 
-static int action_eybg(char *message, char *content) {
+static int action_eybg(char *message, char *content, ...) {
 
     if (wait_goodbye) {
         close_tcpserver();
@@ -174,11 +177,43 @@ static int action_eybg(char *message, char *content) {
     return 0;
 }
 
-static int action_memb(char* message, char* content) {
+static int action_memb(char* message, char* content, ...) {
 
     sendpacket_all(message);
     return 0;
 }
+
+static int action_test(char *message, char *content, ...) {
+    if (content[15] != ' ' || content[20] != 0) {
+        debug("action_test", "content not following the protocol."\
+                "content: \"%s\"");
+        return 1;
+    }
+    va_list args;
+    va_start(args, 1);
+    char *lookup_flag = va_arg(args, char*);
+    va_end(args);
+
+    if (lookup_flag) {
+        char mdiff_port[5];
+        for (int i = 0; i < nring + 1; ++i) {
+            itoa4(mdiff_port, ent.mdiff_port[i]);
+            // find ring associated with message and actualize the checking
+            if (strncmp(content, ent.mdiff_ip[i], 15) == 0 &&
+                    strncmp(&content[16], mdiff_port, 4) == 0) {
+                ring_check[i] = 1;
+                return 0;
+            }
+        }
+    }
+    else {
+        sendpacket_all(message);
+    }
+
+    return 0;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
@@ -208,7 +243,10 @@ int parsemsg(char *message) {
     verbose("Parsing message %s of type %s...\n", idm, type);
     if (lookup(idm)) {
         verbose("Message already seen.\n");
-        return 0;
+        if (strcmp(type, "TEST") == 0)
+            return action_test(message, content);
+        else
+            return 0;
     }
     // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)

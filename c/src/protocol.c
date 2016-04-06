@@ -13,6 +13,7 @@
 
 #include <pthread.h>
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // PROTOTYPES
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,6 +46,13 @@ typedef struct newc_msg {
 
 
 int nring = -1;
+
+char ring_check[NRING];
+
+#define TIMEOUT 10
+unsigned timeout = TIMEOUT;
+
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
@@ -96,9 +104,12 @@ static newc_msg *parse_newc(const char *n_msg) {
  */
 static char *prepare_welc() {
     char *msg = (char *)malloc(50);
+    char port_next[5], mdiff_port[5];
+    itoa4(port_next, ent.port_next[nring]);
+    itoa4(mdiff_port, ent.mdiff_port[nring]);
     sprintf(msg, "WELC %s %s %s %s\n",
-            ent.ip_next[nring], itoa4(ent.port_next[nring]), 
-            ent.mdiff_ip[nring], itoa4(ent.mdiff_port[nring]));
+            ent.ip_next[nring], port_next,
+            ent.mdiff_ip[nring], mdiff_port);
     return msg;
 }
 
@@ -111,7 +122,9 @@ static char *prepare_welc() {
  */
 static char *prepare_newc() {
     char *msg = (char *)malloc(30);
-    sprintf(msg, "NEWC %s %s\n", ent.ip_self, itoa4(ent.udp));
+    char udp[5];
+    itoa4(udp, ent.udp);
+    sprintf(msg, "NEWC %s %s\n", ent.ip_self, udp);
     return msg;
 }
 
@@ -231,6 +244,33 @@ static void *packet_treatment(void *args) {
     parsemsg(packet);
     free(packet);
     return NULL;
+}
+
+static void test_ring() {
+    // initialize ring_check array
+    memset(ring_check, 0, NRING);
+    char port_diff[5];
+    // send test messages in each rings
+    for (int i = 0; i < nring + 1; i++) {
+        itoa4(port_diff, ent.mdiff_port[i]);
+        sendmessage(&_ent.receiver[i],
+                "TEST", "%s %s", ent.mdiff_ip[i], port_diff);
+    }
+    debug("test_ring", "timeout beginning...");
+    sleep(timeout);
+    debug("test_ring", "end of timeout.");
+
+    for (int i = 0; i < nring + 1; i++) {
+        if (ring_check[i]) {
+            debug("test_ring", "ring %d: checked.", i);
+            continue;
+        }
+        else {
+            debug("test_ring", "ring %d: checking failed. Ring broken.", i);
+            continue;
+        }
+    }
+    
 }
 
 
@@ -379,14 +419,15 @@ int insert(const char *host, const char *tcpport) {
     verbose("Socket for UDP communication prepared.\n");
     verbose("Insertion done.\n");
 
-    // lauch message manager thread
-    verbose("Starting message manager...\n");
-    pthread_create(&threads.message_manager, NULL, message_manager, NULL);
-    verbose("Message manager started.\n");
-    // lauch insertion server thread
-    verbose("Starting insertion server...\n");
-    pthread_create(&threads.tcp_server, NULL, insertion_server, NULL);
-    verbose("Insertion manager started.\n");
+    init_threads();
+    /*// lauch message managerthread*/
+    /*verbose("Starting message manager...\n");*/
+    /*pthread_create(&threads.message_manager, NULL, message_manager, NULL);*/
+    /*verbose("Message manager started.\n");*/
+    /*// lauch insertion server thread*/
+    /*verbose("Starting insertion server...\n");*/
+    /*pthread_create(&threads.tcp_server, NULL, insertion_server, NULL);*/
+    /*verbose("Insertion manager started.\n");*/
 
     return 1;
 }
@@ -512,7 +553,8 @@ void create_ring() {
     verbose("Socket for udp sending created.\n");
     // receiver (next entity) socket
     verbose("Preparing structure for receiver address...\n");
-    char *port = itoa4(ent.port_next[nring]);
+    char port[5];
+    itoa4(port, ent.port_next[nring]);
     struct addrinfo hints;
     bzero(&hints, sizeof(struct addrinfo));
     hints.ai_family = AF_INET;
@@ -534,7 +576,6 @@ void create_ring() {
     // TODO bug with freeadrinfo
     //freeaddrinfo(first_info);
     //debug("create_ring()", "passed");
-    free(port);
     verbose("Sockets created.\n");
 
     // multidiffusion
@@ -571,13 +612,21 @@ void create_ring() {
     }
     free(ipnz);
 
-    // lauch message manager thread
-    pthread_create(&threads.message_manager, NULL, message_manager, NULL);
-    // lauch insertion server thread
-    pthread_create(&threads.tcp_server, NULL, insertion_server, NULL);
+    init_threads();
+    /*// lauch message manager thread*/
+    /*pthread_create(&threads.message_manager, NULL, message_manager, NULL);*/
+    /*// lauch insertion server thread*/
+    /*pthread_create(&threads.tcp_server, NULL, insertion_server, NULL);*/
 
     verbose("Ring created.\n");
 
 }
 
 
+void* ring_tester(void *args) {
+    unsigned interval = 10;
+    while (1) {
+        sleep(interval);
+        test_ring();
+    }
+}
