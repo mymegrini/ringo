@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
     init_entity(id, atoi(udp_listen), atoi(tcp_listen));
     
     if (flag_insert) {
-        if (!insert(host_addr, host_port)) {
+        if (!join(host_addr, host_port)) {
             fprintf(stderr, "An error occur on insertion.\n");
             return EXIT_FAILURE;
         }

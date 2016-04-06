@@ -43,6 +43,7 @@ typedef struct newc_msg {
     int port;
 } newc_msg;
  
+typedef welc_msg dupl_msg;
 
 
 int nring = -1;
@@ -60,7 +61,6 @@ unsigned timeout = TIMEOUT;
 
 
 
-
 static welc_msg *parse_welc(const char *w_msg) {
     if (w_msg[4] != ' ' || w_msg[20] != ' ' || w_msg[25] != ' ' ||
             w_msg[41] != ' ' || w_msg[46] != 0) {
@@ -70,7 +70,7 @@ static welc_msg *parse_welc(const char *w_msg) {
     char type[5], port[5], port_mdiff[5];
     int r = sscanf(w_msg, "%s %s %s %s %s", type, welc->ip, port, 
             welc->ip_diff, port_mdiff);
-    if (r != 5 || strcmp("WELC", type) != 0 ||
+    if (r != 5 || 
             !isip(welc->ip) || !isport(port) || !isip(welc->ip_diff) ||
                 !isport(port_mdiff)) {
         free(welc);
@@ -88,12 +88,17 @@ static newc_msg *parse_newc(const char *n_msg) {
     char type[5];
     char port[5];
     int r = sscanf(n_msg, "%s %s %s", type, newc->ip, port);
-    if (r != 3 || strcmp("NEWC", type) != 0 || !isip(newc->ip) || !isport(port)) {
+    if (r != 3 || !isip(newc->ip) || !isport(port)) {
         free(newc);
         return NULL;
     }
     newc->port = atoi(port);
     return newc;
+}
+
+
+static dupl_msg *parse_dupl(const char *d_msg) {
+    return parse_welc(d_msg);
 }
 
 
@@ -129,7 +134,109 @@ static char *prepare_newc() {
 }
 
 
+static void insert(int ring, char *n_msg, int sock2)
+{
+    verbose("Insertion server: parsing NEWC message...\n");
+    newc_msg *newc = parse_newc(n_msg);
+    free(n_msg);
+    if (newc == NULL) {
+        fprintf(stderr, "Protocol error: bad response from client.\nInsertion failed.\n");
+        free(newc);
+        close(sock2);
+        return;
+    }
+    verbose("Insertion server: NEWC parsing successful.\n");
+    // Actualize udp communication
+    verbose("Insertion server: actualizing socket informations for next entity...\n");
+    // receiver (next entity) socket
+    verbose("Preparing structure for receiver address...\n");
+    struct sockaddr_in receiver;
+    char ipnz[16];
+    ipnozeros(ipnz, newc->ip);
+#ifdef DEBUG
+    if (!
+#endif
+            getsockaddr_in(&receiver, ipnz, newc->port, 1)
+#ifdef DEBUG
+            ) {
+        debug("insertionsrv", "Can't retrieve sockaddr_in !");
+        return;
+    }
+#endif
+#ifndef DEBUG
+    ;
+#endif
+    _ent.receiver[ring] = receiver;
+    verbose("Structure prepared.\n");
+    verbose("Current structure replaced.\n");
+    // modifying entity
+    verbose("Insertion server: modifying current entity...\n");
+    verbose("Insertion server: current entity :\n%s\n", entitytostr(ring));
+    ent.port_next[ring] = newc->port;
+    strcpy(ent.ip_next[ring], newc->ip);
+    verbose("Insertion server: modified entity :\n%s\n", entitytostr(ring));
+    free(newc);
+    // ACKC confirmation sending
+    verbose("Insertion server: sending ACKC confirmation message...\n");
+    send(sock2, "ACKC\n", 5, 0);
+    verbose("Insertion server: message sent.\n");
+    // closing connection
+    close(sock2);
+    verbose("Insertion server: connection closed.\n");
+}
 
+static void dupplicate(char *d_msg, int sock2) {
+    verbose("Insertion server: parsing DUPL message...\n");
+    dupl_msg *dupl = parse_dupl(d_msg);
+    free(d_msg);
+    if (dupl == NULL) {
+        fprintf(stderr, "Protocol error: bad response from client.\nInsertion failed.\n");
+        free(dupl);
+        close(sock2);
+        return;
+    }
+    verbose("Insertion server: DUPL parsing successful.\n");
+    // Actualize udp communication
+    verbose("Insertion server: actualizing socket informations for next entity...\n");
+    // receiver (next entity) socket
+    verbose("Preparing structure for receiver address...\n");
+    struct in_addr iaddr;
+    char ipnz[16];
+    ipnozeros(ipnz, dupl->ip);
+#ifdef DEBUG
+    if (inet_aton(ipnz, &iaddr) == 0) {
+        debug("insertionsrv()", "inet_aton failed with ip \"%s\".", dupl->ip);
+        close(sock2);
+        return;
+    }
+#else
+    inet_aton(ipnz, &iaddr);
+#endif
+    _ent.receiver[nring+1].sin_family = AF_INET;
+    _ent.receiver[nring+1].sin_port = htons(dupl->port);
+    _ent.receiver[nring+1].sin_addr = iaddr;
+    verbose("Structure prepared.\n");
+    // TODO bug with freeaddrinfo
+    // freeaddrinfo(first_info);
+    debug("insertionsrv()", "passed");
+    //free(port);
+    verbose("Current structure replaced.\n");
+
+    // modifying entity
+    verbose("Insertion server: modifying current entity...\n");
+    verbose("Insertion server: current entity :\n%s\n", entitytostr(nring+1));
+    ent.port_next[nring+1] = dupl->port;
+    strcpy(ent.ip_next[nring+1], dupl->ip);
+    verbose("Insertion server: modified entity :\n%s\n", entitytostr(nring+1));
+    free(dupl);
+    // ACKC confirmation sending
+    verbose("Insertion server: sending ACKC confirmation message...\n");
+    send(sock2, "ACKC\n", 5, 0);
+    verbose("Insertion server: message sent.\n");
+    // closing connection
+    close(sock2);
+    verbose("Insertion server: connection closed.\n");
+}
 /**
  * Server waiting for new entity insertions
  */
@@ -184,55 +291,10 @@ static void insertionsrv() {
         verbose("Insertion server: waiting for NEWC message...\n");
         msg = receptLine(sock2);
         verbose("Insertion server: received : \"%s\".\n", msg);
-        verbose("Insertion server: parsing message...\n");
-        newc_msg *newc = parse_newc(msg);
-        free(msg);
-        if (newc == NULL) {
-            fprintf(stderr, "Protocol error: bad response from client.\nInsertion failed.\n");
-            free(newc);
-            close(sock2);
-            continue;
-        }
-        verbose("Insertion server: parsing successful.\n");
-        // Actualize udp communication
-        verbose("Insertion server: actualizing socket informations for next entity...\n");
-        // receiver (next entity) socket
-        verbose("Preparing structure for receiver address...\n");
-        struct in_addr iaddr;
-        char *ipnz = ipnozeros(newc->ip);
-#ifdef DEBUG
-        if (inet_aton(ipnz, &iaddr) == 0) {
-            debug("insertionsrv()", "inet_aton failed with ip \"%s\".", newc->ip);
-            continue;
-        }
-#else
-        inet_aton(ipnz, &iaddr);
-#endif
-        free(ipnz);
-        _ent.receiver[nring].sin_family = AF_INET;
-        _ent.receiver[nring].sin_port = htons(newc->port);
-        _ent.receiver[nring].sin_addr = iaddr;
-        verbose("Structure prepared.\n");
-        // TODO bug with freeaddrinfo
-        // freeaddrinfo(first_info);
-        debug("insertionsrv()", "passed");
-        //free(port);
-        verbose("Current structure replaced.\n");
-
-        // modifying entity
-        verbose("Insertion server: modifying current entity...\n");
-        verbose("Insertion server: current entity :\n%s\n", entitytostr(nring));
-        ent.port_next[nring] = newc->port;
-        strcpy(ent.ip_next[nring], newc->ip);
-        verbose("Insertion server: modified entity :\n%s\n", entitytostr(nring));
-        free(newc);
-        // ACKC confirmation sending
-        verbose("Insertion server: sending ACKC confirmation message...\n");
-        send(sock2, "ACKC\n", 5, 0);
-        verbose("Insertion server: message sent.\n");
-        // closing connection
-        close(sock2);
-        verbose("Insertion server: connection closed.\n");
+        if (strncmp(msg, "NEWC", 4) == 0)
+            insert(nring, msg, sock2);
+        else if (strncmp(msg, "DUPL", 4))
+            dupplicate(msg, sock2);
     }
 }
 
@@ -307,28 +369,12 @@ char *entitytostr(int ring) {
  * @param port of the entity on the ring
  * @return 1 if insertion succed, 0 else
  */
-int insert(const char *host, const char *tcpport) {
+int join(const char *host, const char *tcpport) {
     // preparing the structure
     struct sockaddr_in addr;
-    struct in_addr ip;
-    struct addrinfo *first_info;
-    struct addrinfo hints;
-    if (inet_aton(host, &ip)) {
-         addr.sin_family = AF_INET;
-         addr.sin_port = htons(atoi(tcpport));
-         addr.sin_addr = ip;
-    } else {
-        bzero(&hints, sizeof(struct addrinfo));
-        hints.ai_family = AF_INET;
-        hints.ai_socktype = SOCK_STREAM;
-        if (getaddrinfo(host, tcpport, &hints, &first_info) != 0 ||
-                first_info == NULL) {
-            fprintf(stderr, 
-                    "Can't get address of %s at port %s.\n", host, tcpport);
-            return 0;
-        }
-        addr = *((struct sockaddr_in *) first_info->ai_addr);
-        freeaddrinfo(first_info);
+    if (!getsockaddr_in(&addr, host, atoi(tcpport), 0)) {
+        verbose("Can't get address of %s at port %s.\n", host, tcpport);
+        return 0;
     }
     // socket creation
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -384,14 +430,8 @@ int insert(const char *host, const char *tcpport) {
     _ent.socklisten = socket(PF_INET, SOCK_DGRAM, 0);
     verbose("Socket for udp listening created.\n");
     verbose("Binding socket for listening...\n");
-    struct sockaddr_in address_sock;
-    address_sock.sin_family = AF_INET;
-    address_sock.sin_port = htons(ent.udp);
-    address_sock.sin_addr.s_addr = htonl(INADDR_ANY);
-    int r=bind(_ent.socklisten,(struct sockaddr *)&address_sock,
-            sizeof(struct sockaddr_in));
-    if (r == -1) {
-        fprintf(stderr, "Binding error. Insertion failed.\n");
+    if (!bind_udplisten(_ent.socklisten, ent.udp)) {
+        fprintf(stderr, "Binding error, insertion failed.\n");
         return 0;
     }
     verbose("Binding done.\n");
@@ -399,36 +439,30 @@ int insert(const char *host, const char *tcpport) {
     verbose("Socket for udp sending created.\n");
     verbose("Preparing structure for receiver address...\n");
     // receiver (next entity) socket
-    struct in_addr iaddr;
-    char *ipnz = ipnozeros(ent.ip_next[nring]);
-#ifdef DEBUG
-    if (!inet_aton(ipnz, &iaddr)) {
-        debug("insert", "inet_aton returned 0 with ip \"%s\".\n", ipnz);
-        free(ipnz);
+    if (!getsockaddr_in(&_ent.receiver[nring], ent.ip_next[nring],
+                ent.port_next[nring], 1)) {
+        verbose("Can't communicate with address %s on port %d.\n",
+                ent.ip_next[nring], ent.port_next[nring]);
         return 0;
     }
-#else
-    inet_aton(ipnz, &iaddr);
-#endif
-    free(ipnz);
-    _ent.receiver[nring].sin_family = AF_INET;
-    _ent.receiver[nring].sin_port = htons(ent.port_next[nring]);
-    _ent.receiver[nring].sin_addr = iaddr;
-    // TODO multi diff
+    // multi diff
+    verbose("Subscribing to channel %s...\n", ent.mdiff_ip[nring]);
+    _ent.sockmdiff[nring] = socket(AF_INET, SOCK_DGRAM, 0);
+    char mdiff_ip[16];
+    ipnozeros(mdiff_ip, ent.mdiff_ip[nring]);
+    if (!multicast_subscribe(_ent.sockmdiff[nring], ent.mdiff_port[nring],
+               mdiff_ip)) {
+        fprintf(stderr, 
+                "can't subscribe to multicast channel ip %s on port %d\n",
+                mdiff_ip, ent.mdiff_port[nring]);
+        return 0;
+    }
+    verbose("Entity subscribed to channel.\n");
     verbose("Structure prepared.\n");
     verbose("Socket for UDP communication prepared.\n");
     verbose("Insertion done.\n");
 
     init_threads();
-    /*// lauch message managerthread*/
-    /*verbose("Starting message manager...\n");*/
-    /*pthread_create(&threads.message_manager, NULL, message_manager, NULL);*/
-    /*verbose("Message manager started.\n");*/
-    /*// lauch insertion server thread*/
-    /*verbose("Starting insertion server...\n");*/
-    /*pthread_create(&threads.tcp_server, NULL, insertion_server, NULL);*/
-    /*verbose("Insertion manager started.\n");*/
-
     return 1;
 }
 
@@ -538,13 +572,7 @@ void create_ring() {
     _ent.socklisten = socket(PF_INET, SOCK_DGRAM, 0);
     verbose("Socket for udp listening created.\n");
     verbose("Binding socket for listening...\n");
-    struct sockaddr_in address_sock;
-    address_sock.sin_family = AF_INET;
-    address_sock.sin_port = htons(ent.udp);
-    address_sock.sin_addr.s_addr = htonl(INADDR_ANY);
-    int r=bind(_ent.socklisten,(struct sockaddr *)&address_sock,
-            sizeof(struct sockaddr_in));
-    if (r == -1) {
+    if (!bind_udplisten(_ent.socklisten, ent.udp)) {
         fprintf(stderr, "Binding error. Ring creation failed.\n");
         exit(1);
     }
@@ -553,77 +581,41 @@ void create_ring() {
     verbose("Socket for udp sending created.\n");
     // receiver (next entity) socket
     verbose("Preparing structure for receiver address...\n");
-    char port[5];
-    itoa4(port, ent.port_next[nring]);
-    struct addrinfo hints;
-    bzero(&hints, sizeof(struct addrinfo));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype=SOCK_DGRAM;
-    struct addrinfo *first_info;
-#ifdef DEBUG
-    if (getaddrinfo("localhost", port, &hints, &first_info) == -1) {
-        debug("create_ring()", 
-                UNDERLINED
-                "getaddrinfo(\"localhost\", port, &hints, &first_info)\n" RESET \
-                "Returned -1 for port \"%s\".",
-                port);
-        exit(1);
+    if (!getsockaddr_in(&_ent.receiver[nring], "localhost", ent.port_next[nring],
+                0)) {
+        fprintf(stderr, "Can't access to localhost on port %d.\n"
+                "Ring creation failed.\n", ent.port_next[nring]);
     }
-#else
-    getaddrinfo("localhost", port, &hints, &first_info);
-#endif
-    _ent.receiver[nring] = *(struct sockaddr_in *)first_info->ai_addr;
-    // TODO bug with freeadrinfo
-    //freeaddrinfo(first_info);
-    //debug("create_ring()", "passed");
     verbose("Sockets created.\n");
 
     // multidiffusion
-    _ent.sockmdiff = socket(PF_INET, SOCK_DGRAM, 0);
+    _ent.sockmdiff[nring] = socket(PF_INET, SOCK_DGRAM, 0);
     // authorize multidiff on same machine
+    verbose("Subscibing to multicast channel %s on port %d...\n", 
+            ent.mdiff_ip[nring], ent.mdiff_port[nring]);
     int ok = 1;
-    r = setsockopt(_ent.sockmdiff, SOL_SOCKET, SO_REUSEPORT, &ok, sizeof(ok));
+    int r = setsockopt(_ent.sockmdiff[nring], SOL_SOCKET, SO_REUSEPORT, &ok, sizeof(ok));
     if (r == -1) {
         fprintf(stderr, "Multicast on same machine not working.\n");
         exit(1);
     }
-    struct sockaddr_in addr_sock;
-    addr_sock.sin_family = AF_INET;
-    addr_sock.sin_port = htons(ent.mdiff_port[nring]);
-    addr_sock.sin_addr.s_addr = htonl(INADDR_ANY);
-    r = bind(_ent.sockmdiff, (struct sockaddr *) &addr_sock, 
-            sizeof(struct sockaddr_in));
-    if (r == -1) {
-        fprintf(stderr, "Binding error with multicast socket.\n");
+    if (!multicast_subscribe(_ent.sockmdiff[nring], ent.mdiff_port[nring],
+                ent.mdiff_ip[nring])) {
+        fprintf(stderr, "Can't subscribe to channel ip %s on port %d.\n"
+                "Ring creation failed.\n", ent.mdiff_ip[nring],
+                ent.mdiff_port[nring]);
         exit(1);
     }
-    struct ip_mreq mreq;
-    char *ipnz = ipnozeros(ent.mdiff_ip[nring]);
-    if (! inet_aton(ipnz, &mreq.imr_multiaddr)) {
-        fprintf(stderr, "Multicast ip \"%s\" not valid.\n", ipnz);
-        free(ipnz);
-        exit(1);
-    }
-    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
-    r = setsockopt(_ent.sockmdiff, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
-    if (r == -1) {
-        fprintf(stderr, "Can't subscribe to multicast on \"%s\"\n", ipnz);
-        exit(1);
-    }
-    free(ipnz);
+    verbose("Subscribed to multicast channel.\n");
 
     init_threads();
-    /*// lauch message manager thread*/
-    /*pthread_create(&threads.message_manager, NULL, message_manager, NULL);*/
-    /*// lauch insertion server thread*/
-    /*pthread_create(&threads.tcp_server, NULL, insertion_server, NULL);*/
 
     verbose("Ring created.\n");
 
 }
 
 
-void* ring_tester(void *args) {
+void *ring_tester(void *args) {
     unsigned interval = 10;
     while (1) {
         sleep(interval);

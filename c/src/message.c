@@ -132,7 +132,8 @@ static int action_gbye(char *message, char *content, ...) {
         if (strcmp(ip, ent.ip_next[i]) == 0 && port == ent.port_next[i]) {
             verbose("Preparing structure for receiver address...\n");
             struct in_addr iaddr;
-            char *ipnz = ipnozeros(ip);
+            char ipnz[16];
+            ipnozeros(ipnz, ip);
 #ifdef DEBUG
             if (inet_aton(ipnz, &iaddr) == 0) {
                 debug("insertionsrv()", "inet_aton failed with ip \"%s\".", ipnz);
@@ -141,7 +142,6 @@ static int action_gbye(char *message, char *content, ...) {
 #else
             inet_aton(ipnz, &iaddr);
 #endif
-            free(ipnz);
 
             int port2 = atoi(port_next);
             struct sockaddr_in entity_leaving = _ent.receiver[i];
@@ -186,11 +186,11 @@ static int action_memb(char* message, char* content, ...) {
 static int action_test(char *message, char *content, ...) {
     if (content[15] != ' ' || content[20] != 0) {
         debug("action_test", "content not following the protocol."\
-                "content: \"%s\"");
+                "content: \"%s\"", content);
         return 1;
     }
     va_list args;
-    va_start(args, 1);
+    va_start(args, content);
     char *lookup_flag = va_arg(args, char*);
     va_end(args);
 

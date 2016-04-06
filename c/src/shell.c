@@ -148,8 +148,9 @@ static void cmd_gbye(int argc, char **argv) {
         return;
     }
     close_tcpserver();
-    char *udp = itoa4(ent.udp);
-    char *port_next = itoa4(ent.port_next[nring]);
+    char udp[5], port_next[5];
+    itoa4(udp, ent.udp);
+    itoa4(port_next, ent.port_next[nring]);
     sendmessage_all("GBYE", "%s %s %s %s", ent.ip_self, udp, ent.ip_next[nring],
             port_next);
     wait_goodbye = 1;

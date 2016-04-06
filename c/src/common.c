@@ -30,7 +30,7 @@ int isnumeric(const char *str) {
  *    return s;
  *}
  */
-void *itoa4(char *s, int i) {
+void itoa4(char *s, int i) {
     s[4] = 0;
     s[3] = 48 + i % 10;
     i /= 10;
@@ -82,7 +82,8 @@ void printpacket(const char *packet) {
 
 
 int isip(const char *str) {
-    if (strlen(str) == 15 && str[3] == '.' && str[7] == '.' && str[11] == '.') {
+    if (//strlen(str) == 15 && 
+            str[3] == '.' && str[7] == '.' && str[11] == '.') {
         return 
             isdigit(str[0]) && isdigit(str[1]) && isdigit(str[2]) &&
             isdigit(str[4]) && isdigit(str[5]) && isdigit(str[6]) &&
@@ -94,16 +95,14 @@ int isip(const char *str) {
 
 
 int isport(const char *str) {
-    return strlen(str) == 4 &&
+    return //strlen(str) == 4 &&
         isdigit(str[0]) && isdigit(str[1]) && isdigit(str[2]) &&
         isdigit(str[3]);
 }
 
-char *ipnozeros(const char *ip) {
-    char *nozeros = strdup(ip);
+void ipnozeros(char *nozeros, const char *ip) {
     int j = 0;
     int lz = 0;
-    int nlz = 0;
     for (int i = 0; i < 16; i++) {
         if ( ! (ip[i] == '0' && lz) ) {
             nozeros[j++] = ip[i];
@@ -112,10 +111,8 @@ char *ipnozeros(const char *ip) {
             else
                 lz = 0;
         }
-        else if (++nlz == 3) {
+        else if (ip[i+1] == '.') {
             nozeros[j++] = ip[i];
-            nlz = 0;
         } 
     }
-    return nozeros;
 }

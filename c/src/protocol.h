@@ -27,7 +27,7 @@ typedef struct _entity {
     int socklisten;
     int socksend;
     struct sockaddr_in receiver[NRING];
-    int sockmdiff;
+    int sockmdiff[NRING];
     int socktcp;
 } _entity;
 
@@ -40,7 +40,7 @@ void *message_manager(void *args);
 void* ring_tester(void *args);
 
 
-int insert(const char *host, const char *tcpport);
+int join(const char *host, const char *tcpport);
 void sendpacket_all(char *content);
 void sendpacket(char *content, struct sockaddr_in *receiver);
 

@@ -36,7 +36,7 @@ int parseappmsg(char *message, char *content) {
         fprintf(stderr, "APPL message not following the protocol.\n");
         return -1;
     }
-    int r;
+    int r = 0;
     message[4] = 0;
     char idapp[5];
     strncpy(idapp, content, 5);
@@ -50,8 +50,7 @@ int parseappmsg(char *message, char *content) {
             r = 1;
             break;
         }
-    // app not found
-    return 0;
+    return r;
 }
 
 

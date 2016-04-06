@@ -50,12 +50,12 @@
 
 int isnumeric(const char *str);
 //char *itoa4(int i);
-void *itoa4(char *s, int i);
+void itoa4(char *s, int i);
 int yesno(const char *question);
 int yesnod(const char *question, const int yes);
 void printpacket(const char *packet);
 int isip(const char *str);
 int isport(const char *str);
-char *ipnozeros(const char *ip);
+void ipnozeros(char *nozeros, const char *ip);
 
 #endif /* COMMON_H */
