@@ -309,7 +309,7 @@ static void insertionsrv() {
         verbose("Insertion server: received : \"%s\".\n", msg);
         if (strncmp(msg, "NEWC", 4) == 0)
             insert(nring, msg, sock2);
-        else if (strncmp(msg, "DUPL", 4))
+        else if (strncmp(msg, "DUPL", 4) == 0)
             dupplicate(msg, sock2);
         else
             verbose("Message not supported: \"%s\".\n", msg);
@@ -525,7 +525,6 @@ int dupplicate_rqst(const char *host, const char *tcpport) {
     // set up ip_next directly so only port will be missing
     char *ip_next = inet_ntoa(addr.sin_addr);
     char *ipsized = ipresize(ip_next);
-    free(ip_next);
     strcpy(ent.ip_next[nring], ipsized);
     free(ipsized);
     // WELC message reception
@@ -552,7 +551,7 @@ int dupplicate_rqst(const char *host, const char *tcpport) {
     verbose("Waiting for ACKC confirmation message...\n");
     msg = receptLine(sock);
     verbose("Message received: \"%s\".\n", msg);
-    if (strcmp(msg, "ACKC") != 0 || strlen(msg) != 10) {
+    if (strncmp(msg, "ACKC ", 5) != 0 || strlen(msg) != 9) {
         fprintf(stderr, "Protocol error: bad response from server.\n"
                 "Insertion failed.\n");
         free(welc);
