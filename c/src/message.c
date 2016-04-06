@@ -59,7 +59,7 @@ int wait_goodbye = 0;
  * @param hash will contain message hash id
  * @return message idenfitificator, a char* of strlen 8
  */
-static void messageid(char* hash, const char* content) {
+static void messageid(char* hash) {
 
     struct timeval time;
     uint64_t h = 5381;
@@ -75,7 +75,7 @@ static void messageid(char* hash, const char* content) {
     for(i=0; i<16; i++) h = ((h << 5) + h) + ent.ip_self[i];  
     h = ((h << 5) + h) + ent.udp;
     // hashing content
-    while((c = *content++)) h = ((h << 5) + h) + c;
+    // while((c = *content++)) h = ((h << 5) + h) + c;
 
     // creating hash using human readable characters
     for(i=0; i<8; i++){
@@ -227,10 +227,14 @@ static void makemessage(char* buff, const char* type,
 
     char content[499];
 
+    // creating message content
     vsnprintf(content, 499, format, aptr);
-    // creating new id and adding it to list of known ids
+    
+    // creating new id
     char id[9];
-    messageid(id, content);
+    messageid(id);
+
+    // adding id to list of known ids, and checking for collisions
 #ifdef DEBUG
     int r =
 #endif
@@ -238,6 +242,8 @@ static void makemessage(char* buff, const char* type,
 #ifdef DEBUG
     if (r==1) debug("makemessage", "Detected a hash collision: %s\n", id);
 #endif
+
+    // creating message
     if (strlen(content))
       snprintf(buff, 513, "%s %s %s", type, id, content);
     else snprintf(buff, 513, "%s %s", type, id);
