@@ -93,32 +93,32 @@ void get_info() {
     if (flag_insert) {
         if (host_addr == NULL) {
             printf("Choose the adress/hostname of entity on the ring you'd like to join: ");
-            getline(&host_addr, &size, stdin);
+            if (getline(&host_addr, &size, stdin)==-1) perror("getline");
             host_addr[strlen(host_addr)-1] = 0;
             size = 0;
         }
         if (host_port == NULL) {
             printf("Chosee the port used to connect with entity on the ring: ");
-            getline(&host_port, &size, stdin);
+            if (getline(&host_port, &size, stdin)==-1) perror("getline");
             host_port[strlen(host_port)-1] = 0;
             size = 0;
         }
     }
     if (udp_listen == NULL) {
         printf("Chosee the UDP port you want to use to get messages from the ring (1024-9999): ");
-        getline(&udp_listen, &size, stdin);
+        if (getline(&udp_listen, &size, stdin)==-1) perror("getline");
         udp_listen[strlen(udp_listen)-1] = 0; 
         size = 0;
     }
     if (tcp_listen == NULL) {
         printf("Chosee the TCP port you want to use to let other client join the ring from your position (1024-9999): ");
-        getline(&tcp_listen, &size, stdin);
+        if (getline(&tcp_listen, &size, stdin)==-1) perror("getline");
         tcp_listen[strlen(tcp_listen)-1] = 0;
         size = 0;
     }
     if (id == NULL) {
         printf("Chosee a nickname (8 chars): ");
-        getline(&id, &size, stdin);
+        if (getline(&id, &size, stdin)==-1) perror("getline");
         id[strlen(id)-1] = 0;
     }
 

@@ -122,13 +122,13 @@ static void exec_cmd(char *str) {
 #ifdef DEBUG
     debug("exec_cmd(str)", "Command not found.");
 #endif
-    system(str);
+    if(system(str)) return;
 }
 
 
 static void prompt() {
     char dirname[256];
-    getcwd(dirname, 256);
+    if (!getcwd(dirname, 256)) return;
     printf("%s > ", dirname);
 }
 
