@@ -1,8 +1,8 @@
 *
 !*.h
 !*.c
+!Make*
 .*
 #*
 test*
-!Makefile
 !.gitignore
