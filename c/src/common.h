@@ -49,7 +49,8 @@
 #define CTNT_OFFST 5
 
 int isnumeric(const char *str);
-char *itoa4(int i);
+//char *itoa4(int i);
+void *itoa4(char *s, int i);
 int yesno(const char *question);
 int yesnod(const char *question, const int yes);
 void printpacket(const char *packet);

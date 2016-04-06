@@ -16,8 +16,21 @@ int isnumeric(const char *str) {
 }
 
 
-char *itoa4(int i) {
-    char *s = (char *)malloc(5);
+/*
+ *char *itoa4(int i) {
+ *    char *s = (char *)malloc(5);
+ *    s[4] = 0;
+ *    s[3] = 48 + i % 10;
+ *    i /= 10;
+ *    s[2] = 48 + i % 10;
+ *    i /= 10;
+ *    s[1] = 48 + i % 10;
+ *    i /= 10;
+ *    s[0] = 48 + i;
+ *    return s;
+ *}
+ */
+void *itoa4(char *s, int i) {
     s[4] = 0;
     s[3] = 48 + i % 10;
     i /= 10;
@@ -26,7 +39,6 @@ char *itoa4(int i) {
     s[1] = 48 + i % 10;
     i /= 10;
     s[0] = 48 + i;
-    return s;
 }
 
 

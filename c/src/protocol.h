@@ -8,6 +8,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
+
+
 #define NRING 2
 
 typedef struct entity {
@@ -35,6 +37,7 @@ void create_ring();
 
 void *insertion_server(void *args);
 void *message_manager(void *args);
+void* ring_tester(void *args);
 
 
 int insert(const char *host, const char *tcpport);
