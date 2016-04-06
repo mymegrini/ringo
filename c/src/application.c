@@ -37,6 +37,7 @@ int parseappmsg(char *message, char *content) {
         return -1;
     }
     int r = 0;
+    // int r;
     message[4] = 0;
     char idapp[5];
     strncpy(idapp, content, 5);
