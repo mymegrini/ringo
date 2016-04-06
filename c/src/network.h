@@ -1,11 +1,14 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include <netinet/in.h>
 char *getIp(const char *hostname);
 
 char *getLocalIp();
 
 char *receptLine(const int sock);
+
+char *ipresize(char *ip);
 
 /**
  * subscribe socket sock to multicast ip channel on port port.

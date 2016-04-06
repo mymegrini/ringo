@@ -1,3 +1,4 @@
+#include "network.h"
 #include "common.h"
 
 #include <stdio.h>
@@ -5,7 +6,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <netdb.h>
 #include <arpa/inet.h>
 
@@ -14,10 +14,35 @@
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
 
-static char *ipresize(char *ip) {
-    char *cpy     = strdup(ip);
+char *ipresize(char *ip) {
+    int len = strlen(ip);
+    char *ipr = malloc(16);
+    int j = 14;
+    int width = 0;
+    for (int i = len-1; i >= 0 ; --i) {
+        if (ip[i] == '.') {
+            for ( ; width < 3; ++width)
+                ipr[j--] = '0';
+            ipr[j--] = '.';
+            width = 0;
+        }
+        else {
+            ipr[j--] = ip[i];
+            ++width;
+        }
+    }
+    for ( ; width < 3; ++width)
+        ipr[j--] = '0';
+    ipr[15] = 0;
 
-    //ip            = (char *)realloc((void*)ip, 16);
+    return ipr;
+}
+
+
+char *ipresize2(char *ip2) {
+    char *cpy     = strdup(ip2);
+
+    char *ip      = (char *)malloc(16);
     char *token   = strtok(cpy, ".");
     int  len      = strlen(token);
     int i = 0;
@@ -61,8 +86,9 @@ char *getIp(const char *hostname) {
         // Take the first one
         strcpy(ip, inet_ntoa(*addr_list[i]));
         // Adjust size
-        ipresize(ip);
-        return ip;
+        char *ipr = ipresize(ip);
+        free(ip);
+        return ipr;
     }
     debug("getIp(\"%s\")", "no addr find in the list.\n", hostname);
     return NULL;
@@ -93,11 +119,17 @@ char *receptLine(const int sock) {
 
 
 int multicast_subscribe(int sock, int port, char *ip) {
+    int ok = 1;
+    int r = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &ok, sizeof(ok));
+    if (r == -1) {
+        fprintf(stderr, "Multicast on same machine not working.\n");
+        exit(1);
+    }
     struct sockaddr_in addr_sock;
     addr_sock.sin_family = AF_INET;
     addr_sock.sin_port = htons(port);
     addr_sock.sin_addr.s_addr = htonl(INADDR_ANY);
-    int r = bind(sock, (struct sockaddr *) &addr_sock, 
+    r = bind(sock, (struct sockaddr *) &addr_sock, 
             sizeof(struct sockaddr_in));
     if (r == -1) {
         fprintf(stderr, "Binding error with multicast socket.\n");

@@ -14,13 +14,17 @@
 void usage(char *argv0);
 void get_info();
 
+#define MODE_CREATE 0
+#define MODE_JOIN   1
+#define MODE_DUPL   2
 
 
 #define OPT_UDP    'u'
 #define OPT_TCP    't'
 #define OPT_ID     'i'
 #define OPT_JOIN   'j'
-#define OPT_STRING "u:t:i:j"
+#define OPT_DUPL   'd'
+#define OPT_STRING "u:t:i:jd"
 
 
 
@@ -34,9 +38,9 @@ struct option options[] = {
 
 
 char *udp_listen = NULL, *tcp_listen = NULL, *id = NULL,
-     *host_addr = NULL, *host_port = NULL;
-
-int flag_insert = 0;
+     *host_addr = NULL, *host_port = NULL, *mdiff_ip = NULL, *mdiff_port = NULL;
+int mport;
+int mode = MODE_CREATE;
 
 
 int main(int argc, char *argv[])
@@ -54,7 +58,10 @@ int main(int argc, char *argv[])
                 id = optarg;
                 break;
             case OPT_JOIN:
-                flag_insert = 1;
+                mode = MODE_JOIN;
+                break;
+            case OPT_DUPL:
+                mode = MODE_DUPL;
                 break;
             default:
                 usage(argv[0]);
@@ -63,17 +70,26 @@ int main(int argc, char *argv[])
     }
 
     get_info();
-    init_entity(id, atoi(udp_listen), atoi(tcp_listen));
+    init_entity(id, atoi(udp_listen), atoi(tcp_listen), mdiff_ip, mport);
+    debug("main", "init entity passed");
     
-    if (flag_insert) {
-        if (!join(host_addr, host_port)) {
-            fprintf(stderr, "An error occur on insertion.\n");
-            return EXIT_FAILURE;
-        }
-    } else {
-        create_ring();
+    switch(mode) {
+        case MODE_CREATE:
+            create_ring();
+            break;
+        case MODE_JOIN:
+            if (!join(host_addr, host_port)) {
+                fprintf(stderr, "An error occur on insertion.\n");
+                return EXIT_FAILURE;
+            }
+            break;
+        case MODE_DUPL:
+            if (!dupplicate_rqst(host_addr, host_port)) {
+                fprintf(stderr, "An error occur on insertion.\n");
+                return EXIT_FAILURE;
+            }
+            break;
     }
-
     run_shell();
 
     return EXIT_FAILURE;
@@ -90,7 +106,7 @@ void usage(char *argv0) {
 
 void get_info() {
     size_t size = 0;
-    if (flag_insert) {
+    if (mode) {
         if (host_addr == NULL) {
             printf("Choose the adress/hostname of entity on the ring you'd like to join: ");
             if (getline(&host_addr, &size, stdin)==-1) perror("getline");
@@ -98,28 +114,53 @@ void get_info() {
             size = 0;
         }
         if (host_port == NULL) {
-            printf("Chosee the port used to connect with entity on the ring: ");
+            printf("Choose the port used to connect with entity on the ring: ");
             if (getline(&host_port, &size, stdin)==-1) perror("getline");
             host_port[strlen(host_port)-1] = 0;
             size = 0;
         }
     }
     if (udp_listen == NULL) {
-        printf("Chosee the UDP port you want to use to get messages from the ring (1024-9999): ");
+        printf("Choose the UDP port you want to use to get messages from the ring (1024-9999): ");
         if (getline(&udp_listen, &size, stdin)==-1) perror("getline");
         udp_listen[strlen(udp_listen)-1] = 0; 
         size = 0;
     }
     if (tcp_listen == NULL) {
-        printf("Chosee the TCP port you want to use to let other client join the ring from your position (1024-9999): ");
+        printf("Choose the TCP port you want to use (1024-9999): ");
         if (getline(&tcp_listen, &size, stdin)==-1) perror("getline");
         tcp_listen[strlen(tcp_listen)-1] = 0;
         size = 0;
     }
     if (id == NULL) {
-        printf("Chosee a nickname (8 chars): ");
+        printf("Choose a nickname (8 chars): ");
         if (getline(&id, &size, stdin)==-1) perror("getline");
         id[strlen(id)-1] = 0;
+        size = 0;
+    }
+    if (mode != MODE_JOIN && mdiff_ip == NULL) {
+        printf("Choose a multi diffusion ip (default 239.0.0.1): ");
+        if (getline(&mdiff_ip, &size, stdin)==-1) perror("getline");
+        mdiff_ip[strlen(mdiff_ip)-1] = 0;
+        if (mdiff_ip[0] == 0) {
+            mdiff_ip = realloc(mdiff_ip, 16);
+            strcpy(mdiff_ip, "239.0.0.1");
+        }
+        size = 0;
+    }
+    if (mode != MODE_JOIN && mdiff_port == NULL) {
+        printf("Choose a multi diffusion port (default 6666): ");
+        if (getline(&mdiff_port, &size, stdin)==-1) perror("getline");
+        mdiff_port[strlen(mdiff_port)-1] = 0;
+        if (mdiff_port[0] == 0)
+            mport = 6666;
+        else
+            mport = atoi(mdiff_port);
+        
+    }
+    if (mode == MODE_JOIN) {
+        mdiff_ip = NULL;
+        mport = 0;
     }
 
 }

@@ -32,7 +32,8 @@ typedef struct _entity {
 } _entity;
 
 char *entitytostr(int ring);
-void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen);
+void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen, 
+        char *mdiff_ip, uint16_t mdiff_port);
 void create_ring();
 
 void *insertion_server(void *args);
@@ -41,6 +42,7 @@ void* ring_tester(void *args);
 
 
 int join(const char *host, const char *tcpport);
+int dupplicate_rqst(const char *host, const char *tcpport);
 void sendpacket_all(char *content);
 void sendpacket(char *content, struct sockaddr_in *receiver);
 
