@@ -3,6 +3,11 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <sys/time.h>
 
 int isnumeric(const char *str) {
     while(*str)
@@ -115,4 +120,87 @@ void ipnozeros(char *nozeros, const char *ip) {
             nozeros[j++] = ip[i];
         } 
     }
+}
+
+
+static void itoa(char *str, int n) {
+    int i;
+    for (i = 0; n > 0; ++i, n /= 10)
+        str[i] = '0' + n % 10;
+    str[i] = 0;
+}
+
+
+static void fifo_path(char *name) {
+    strcpy(name, "/tmp/ringo_xterm");
+    struct timeval t;
+    gettimeofday(&t, NULL);
+    char istr[20];
+    itoa(istr, t.tv_sec);
+    strcat(name, istr);
+    itoa(istr, t.tv_usec);
+    strcat(name, istr);
+}
+
+static int fd_xterm = -1;
+
+void init_outputxterm() {
+    char path[60];
+    fifo_path(path);
+    printf("FIFO NAME: \"%s\"\n", path);
+    mkfifo(path, 0600);
+    char cat_cmd[80];
+    strcpy(cat_cmd, "/usr/bin/cat ");
+    strcat(cat_cmd, path);
+    switch (fork()) {
+        case -1:
+            fprintf(stderr, "Fork error.\n");
+            break;
+        case 0:
+            execlp("xterm", "xterm", "-e", cat_cmd, NULL);
+            printf("FAILURE\n");
+            exit(EXIT_FAILURE);
+            break; 
+        default:
+            if ((fd_xterm = open(path, O_WRONLY)) == -1) {
+                fprintf(stderr, "Can't open pipe\n");
+                exit(1);
+            }
+            break;
+    }
+}
+
+static void verbose_xterm(char *format, ...) {
+    dprintf(fd_xterm, BOLD UNDERLINED "verbose - " RESET);
+    va_list aptr;
+    va_start(aptr, format);
+    dprintf(fd_xterm, format, aptr);
+    va_end(aptr);
+}
+
+
+static void verbose_stdout(char *format, ...) {
+    printf(BOLD UNDERLINED "verbose - " RESET);
+    va_list aptr;
+    va_start(aptr, format);
+    vprintf(format, aptr);
+    va_end(aptr);
+}
+
+static void verbose_noverb(char *format, ...) {
+}
+
+void (*verbose)(char *format, ...);
+
+
+static void (*verbose_mode[])(char *, ...) = { 
+    verbose_noverb,
+    verbose_stdout,
+    verbose_xterm
+};
+
+void verbosity(int mode) {
+    if (mode == VERBM_XTERMO)
+        init_outputxterm();
+    verbose = verbose_mode[mode];
 }

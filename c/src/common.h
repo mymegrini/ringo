@@ -39,9 +39,17 @@
 
 
 
-#define verbose(format, ...) printf(BOLD "verbose" RESET " - " \
-       format, ##__VA_ARGS__)
+/*
+ *#define verbose(format, ...) printf(BOLD "verbose" RESET " - " \
+ *       format, ##__VA_ARGS__)
+ */
+extern void (*verbose)(char *format, ...);
 
+#define VERBM_NOVERB 0
+#define VERBM_STDOUT 1
+#define VERBM_XTERMO 2
+
+void verbosity(int mode);
 
 #define BUFSIZE 100
 

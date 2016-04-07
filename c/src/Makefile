@@ -3,7 +3,7 @@ CFLAGS 		= -Wall -O2 -std=gnu99 #--pedantic -std=c11
 CSRC		= $(wildcard *.c)
 OBJS		= $(CSRC:%.c=../bin/%.o)
 CEXE		= ../bin/Cring
-LIBLINKS	= -pthread
+LIBLINKS	= -pthread -lreadline
 
 
 

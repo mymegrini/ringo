@@ -10,6 +10,8 @@
 #include <unistd.h>
 
 #include <pthread.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include <stdio.h>
 
@@ -126,11 +128,13 @@ static void exec_cmd(char *str) {
 }
 
 
-static void prompt() {
-    char dirname[256];
-    if (!getcwd(dirname, 256)) return;
-    printf("%s > ", dirname);
-}
+/*
+ *static void prompt() {
+ *    char dirname[256];
+ *    if (!getcwd(dirname, 256)) return;
+ *    printf("%s > ", dirname);
+ *}
+ */
 
 
 static void cmd_whos(int argc, char **argv) {
@@ -161,12 +165,21 @@ static void cmd_gbye(int argc, char **argv) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void run_shell() {
+    char *line = NULL;
     while(1) {
-        prompt();
-        char *line = NULL;
-        size_t size = 0;
-        size = getline(&line, &size, stdin);
-        line[size-1] = 0;
+        /*
+         *prompt();
+         *char *line = NULL;
+         *size_t size = 0;
+         *size = getline(&line, &size, stdin);
+         *line[size-1] = 0;
+         */
+        if (line) {
+            free(line);
+            line = NULL;
+        }
+        line = readline("$> ");
+        
         exec_cmd(line);
     }
 }
