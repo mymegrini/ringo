@@ -18,9 +18,19 @@ extern _entity _ent;
 ////////////////////////////////////////////////////////////////////////////////
 
 struct threads threads;
+struct mutexes mutexes;
+
+
+void init_mutexes() {
+    verbose("Initializing mutexes...\n");
+    pthread_mutex_init(&mutexes.listmsg, NULL);
+    verbose("Mutexes initialized.\n");
+}
+
 
 
 void init_threads() {
+    init_mutexes();
     // lauch message managerthread
     verbose("Starting message manager...\n");
     pthread_create(&threads.message_manager, NULL, message_manager, NULL);
@@ -34,6 +44,8 @@ void init_threads() {
     pthread_create(&threads.tcp_server, NULL, ring_tester, NULL);
     verbose("Ring tester started.\n");
 }
+
+
 void close_tcpserver() {
     verbose("Closing TCP server...\n");
     verbose("Closing TCP socket...\n");

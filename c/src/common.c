@@ -147,7 +147,6 @@ static int fd_xterm = -1;
 void init_outputxterm() {
     char path[60];
     fifo_path(path);
-    printf("FIFO NAME: \"%s\"\n", path);
     mkfifo(path, 0600);
     char cat_cmd[80];
     strcpy(cat_cmd, "/usr/bin/cat ");

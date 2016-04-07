@@ -7,7 +7,11 @@ LIBLINKS	= -pthread -lreadline
 
 
 
+
 all		: $(CEXE)
+
+debug: CFLAGS += -D DEBUG -g
+debug: $(CEXE)
 
 $(CEXE)		: $(OBJS)
 	$(CC) -o $@ $^ $(LIBLINKS)

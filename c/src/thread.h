@@ -18,5 +18,9 @@ void close_tcpserver();
 void close_messagemanager();
 void init_threads();
 
+struct mutexes {
+    pthread_mutex_t listmsg;
+};
 
+extern struct mutexes mutexes;
 #endif /* THREAD_H */

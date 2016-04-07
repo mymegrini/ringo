@@ -1,4 +1,5 @@
 #include "common.h"
+#include "thread.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -61,6 +62,7 @@ void freelist() {
  * @return 1 if found, 0 else
  */
 int lookup(char *idm) {
+    pthread_mutex_lock(&mutexes.listmsg);
 #ifdef DEBUG
     debug("lookup", "idm = %s\n", idm);
 #endif
@@ -69,6 +71,7 @@ int lookup(char *idm) {
         l.first = newnode(idm, NULL);
         l.last  = l.first;
         ++l.size;
+        pthread_mutex_unlock(&mutexes.listmsg);
         return 0;
     }
     // found in first position
@@ -77,6 +80,7 @@ int lookup(char *idm) {
         //l.first = l.first->next;
         //freenode(n);
         //--l.size;
+        pthread_mutex_unlock(&mutexes.listmsg);
         return 1;
     }
     // find elsewhere
@@ -88,6 +92,7 @@ int lookup(char *idm) {
             //i->next = i->next->next;
             //freenode(n);
             //--l.size;
+            pthread_mutex_unlock(&mutexes.listmsg);
             return 1;
         }
     }
@@ -95,6 +100,7 @@ int lookup(char *idm) {
     l.last->next = newnode(idm, NULL);
     l.last = l.last->next;
     ++l.size;
+    pthread_mutex_unlock(&mutexes.listmsg);
     return 0;
 }
 

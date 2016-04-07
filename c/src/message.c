@@ -241,10 +241,11 @@ int parsemsg(char *message) {
     char *content = message+14;
 
     verbose("Parsing message %s of type %s...\n", idm, type);
+    debug("parse_msg", "content: %s\nid:%s\ntype:%s", message, idm, type);
     if (lookup(idm)) {
         verbose("Message already seen.\n");
         if (strcmp(type, "TEST") == 0)
-            return action_test(message, content);
+            return action_test(message, content, 1);
         else
             return 0;
     }
