@@ -19,6 +19,9 @@ public class Tcp_thread implements Runnable {
                 t.start();
             }
         }
+        /*catch(InterruptedException e){
+            //socket.close();
+        }*/
         catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
