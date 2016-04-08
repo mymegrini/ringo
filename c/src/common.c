@@ -9,6 +9,10 @@
 #include <stdarg.h>
 #include <sys/time.h>
 
+#ifndef NRING
+#define NRING 2
+#endif
+
 int isnumeric(const char *str) {
     while(*str)
     {

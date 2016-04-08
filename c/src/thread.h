@@ -3,6 +3,8 @@
 
 #include <pthread.h>
 
+#include "protocol.h"
+
 
 
 struct threads {
@@ -20,7 +22,14 @@ void init_threads();
 
 struct mutexes {
     pthread_mutex_t listmsg;
+    pthread_mutex_t receiver[NRING];
+    pthread_mutex_t nring;
 };
 
 extern struct mutexes mutexes;
+
+void actualize_nring(int n);
+void actualize_receiver(int ring, struct sockaddr_in *receiver);
+int getnring();
+
 #endif /* THREAD_H */

@@ -44,8 +44,9 @@ void* ring_tester(void *args);
 int join(const char *host, const char *tcpport);
 int dupplicate_rqst(const char *host, const char *tcpport);
 void sendpacket_all(char *content);
-void sendpacket(char *content, struct sockaddr_in *receiver);
+void sendpacket(char *content, int ring);
+void sendpacket_sockaddr(char *content, struct sockaddr_in *receiver);
 
-extern int nring;
+extern volatile int nring;
 
 #endif /* PROTOCOL_H */

@@ -46,7 +46,7 @@ typedef struct newc_msg {
 typedef welc_msg dupl_msg;
 
 
-int nring = -1;
+volatile int nring = -1;
 
 char ring_check[NRING];
 
@@ -62,12 +62,10 @@ unsigned timeout = TIMEOUT;
 
 
 static welc_msg *parse_welc(const char *w_msg) {
-    debug("welc_msg", "entering function...");
     if (w_msg[4] != ' ' || w_msg[20] != ' ' || w_msg[25] != ' ' ||
             w_msg[41] != ' ' || w_msg[46] != 0) {
         return NULL;
     }
-    debug("welc_msg", "first test");
     welc_msg *welc = malloc(sizeof(welc_msg));
     char type[5], port[5], port_mdiff[5];
     int r = sscanf(w_msg, "%s %s %s %s %s", type, welc->ip, port, 
@@ -160,7 +158,6 @@ static void insert(int ring, char *n_msg, int sock2)
     if (newc == NULL) {
         fprintf(stderr, "Protocol error: bad response from client.\nInsertion failed.\n");
         free(newc);
-        close(sock2);
         return;
     }
     verbose("Insertion server: NEWC parsing successful.\n");
@@ -209,7 +206,6 @@ static void dupplicate(char *d_msg, int sock2) {
     if (dupl == NULL) {
         verbose("Protocol error: bad response from client.\nInsertion failed.\n");
         free(dupl);
-        close(sock2);
         return;
     }
     verbose("Insertion server: DUPL parsing successful.\n");
@@ -249,7 +245,8 @@ static void dupplicate(char *d_msg, int sock2) {
     strcpy(ent.mdiff_ip[nring+1], dupl->ip_diff);
     verbose("Entity modified.\n");
     verbose("Actualizing ring number...\n");
-    ++nring;
+    actualize_nring(nring+1);
+    debug("dupplicate", "number of ring actualized.");
     verbose("Ring number actualized. Number of rings: %d.\n", nring+1);
     verbose("Dupplication finished.\n");
 }
@@ -313,6 +310,7 @@ static void insertionsrv() {
             dupplicate(msg, sock2);
         else
             verbose("Message not supported: \"%s\".\n", msg);
+        close(sock2);
         free(msg);
     }
 }
@@ -320,6 +318,7 @@ static void insertionsrv() {
 
 
 static void *packet_treatment(void *args) {
+    debug("message_manager", "entering thread packet_treatment...");
     char *packet = (char *)args;
     packet[512] = 0;
     parsemsg(packet);
@@ -329,19 +328,21 @@ static void *packet_treatment(void *args) {
 
 static void test_ring() {
     // initialize ring_check array
-    memset(ring_check, 0, NRING);
+    /*pthread_mutex_lock(&mutexes.nring);*/
+    memset(ring_check, -1, NRING);
     char port_diff[5];
     // send test messages in each rings
-    for (int i = 0; i < nring + 1; i++) {
+    int fixed_nring = getnring();
+    for (int i = 0; i < fixed_nring + 1; i++) {
+        ring_check[i] = 0;
         itoa4(port_diff, ent.mdiff_port[i]);
-        sendmessage(&_ent.receiver[i],
-                "TEST", "%s %s", ent.mdiff_ip[i], port_diff);
+        sendmessage(i, "TEST", "%s %s", ent.mdiff_ip[i], port_diff);
     }
     debug("test_ring", "timeout beginning...");
     sleep(timeout);
     debug("test_ring", "end of timeout.");
 
-    for (int i = 0; i < nring + 1; i++) {
+    for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; i++) {
         if (ring_check[i]) {
             debug("test_ring", "ring %d: checked.", i);
             continue;
@@ -351,6 +352,7 @@ static void test_ring() {
             continue;
         }
     }
+    /*pthread_mutex_lock(&mutexes.nring);*/
     
 }
 
@@ -441,7 +443,6 @@ int join(const char *host, const char *tcpport) {
     verbose("Current entity:\n%s\n", entitytostr(nring));
     ent.port_next[nring] = welc->port;
     ent.mdiff_port[nring] = welc->port_diff;
-    debug("join", "welc->port_diff %d", welc->port_diff);
     strcpy(ent.ip_next[nring], welc->ip);
     strcpy(ent.mdiff_ip[nring], welc->ip_diff);
     verbose("Modified entity:\n%s\n", entitytostr(nring));
@@ -639,26 +640,44 @@ void *message_manager(void *args) {
 
 
 
-void sendpacket(char *content, struct sockaddr_in *receiver) {
-    debug("sendpacket(char *content, struct sockaddr_in *receiver)", 
-            "Sending packet one ring:\n---\n%s\n---\n...\n", content);
+void sendpacket(char *content, int ring) {
+    debug("sendpacket(char *content, int ring)",
+            "Sending packet solo ring:\n---\n%s\n---\n...\n"
+            "To ip %s on port %d.", content, inet_ntoa(_ent.receiver[ring].sin_addr),
+            ntohs(_ent.receiver[ring].sin_port));
+    pthread_mutex_lock(&mutexes.receiver[ring]);
     sendto(_ent.socksend, content, 512, 0,
-            (struct sockaddr *) receiver,
+            (struct sockaddr *) &_ent.receiver[ring],
             (socklen_t)sizeof(struct sockaddr_in));
+    pthread_mutex_unlock(&mutexes.receiver[ring]);
+    debug("sendpacket(char *content, int ring)", "packet sent.");
     verbose("Packet sent.\n");
 }
 
 void sendpacket_all(char *content) {
     debug("sendpacket_all(char *content)", 
             "Sending packet multiple ring:\n---\n%s\n---\n...\n", content);
-    for (int i = 0; i < nring + 1; ++i)
+    for (int i = 0; i < nring + 1; ++i) {
+        pthread_mutex_lock(&mutexes.receiver[i]);
         sendto(_ent.socksend, content, 512, 0,
                 (struct sockaddr *)&_ent.receiver[i],
                 (socklen_t)sizeof(struct sockaddr_in));
+        pthread_mutex_unlock(&mutexes.receiver[i]);
+    }
     verbose("Packets sent.\n");
 }
 
 
+void sendpacket_sockaddr(char *content, struct sockaddr_in *receiver) {
+    debug("sendpacket_sockaddr(char *content, struct sockaddr_in *receiver)", 
+            "Sending packet solo:\n---\n%s\n---\n...\n"
+            "To ip %s on port %d.", content, inet_ntoa(receiver->sin_addr),
+            ntohs(receiver->sin_port));
+    sendto(_ent.socksend, content, 512, 0,
+            (struct sockaddr *) receiver,
+            (socklen_t)sizeof(struct sockaddr_in));
+    verbose("Packet sent.\n");
+}
 /**
  * Initialize entity with given attributes.
  * ip_next and port_next are set to ip_self and udp_listen.
@@ -682,7 +701,6 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen,
     // mdiff_ip
     if (mdiff_ip) {
         ip = ipresize(mdiff_ip);
-        debug("init_entity", "ipresize passed");
         strcpy(ent.mdiff_ip[0], ip);
         // mdiff port
         ent.mdiff_port[0] = mdiff_port;

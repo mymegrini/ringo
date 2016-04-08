@@ -55,7 +55,7 @@ command cmd[] = {
     { "", "", NULL }
 };
 
-extern int nring;
+extern volatile int nring;
 extern entity ent;
 extern int wait_goodbye;
 

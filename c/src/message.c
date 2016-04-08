@@ -45,7 +45,7 @@ protocol_msg pmsg[] = {
 
 
 extern entity ent;
-extern int nring;
+extern volatile int nring;
 extern _entity _ent;
 int wait_goodbye = 0;
 extern int ring_check[NRING];
@@ -128,7 +128,8 @@ static int action_gbye(char *message, char *content, ...) {
     int port = atoi(port_str);
     int i;
     verbose("looking for correspondance with current entity...\n");
-    for (i = 0; i < nring + 1; ++i)
+    int fixed_nring = getnring();
+    for (i = 0; i < fixed_nring + 1; ++i)
         if (strcmp(ip, ent.ip_next[i]) == 0 && port == ent.port_next[i]) {
             verbose("Preparing structure for receiver address...\n");
             struct in_addr iaddr;
@@ -157,7 +158,7 @@ static int action_gbye(char *message, char *content, ...) {
             ent.port_next[i] = port2;
             strcpy(ent.ip_next[i], ip_next);
             verbose("Insertion server: modified entity :\n%s\n", entitytostr(i));
-            sendmessage(&entity_leaving, "EYBG", "");
+            sendmessage_sockaddr(&entity_leaving, "EYBG", "");
         }
     return 0;
 }
@@ -196,17 +197,33 @@ static int action_test(char *message, char *content, ...) {
 
     if (lookup_flag) {
         char mdiff_port[5];
-        for (int i = 0; i < nring + 1; ++i) {
+        debug("action_test", "looking for correspondance on %d rings...", nring+1);
+        int fixed_nring = getnring();
+        for (int i = 0; i < fixed_nring + 1; ++i) {
             itoa4(mdiff_port, ent.mdiff_port[i]);
+            printf(RED "content[0]: %15.15s, ent.mdiffip[%d]:%s\n"
+                    "content[16]: \"%s\", ent.mdiffport[%d]: \"%s\"\n" RESET,
+                    content, i, ent.mdiff_ip[i], &content[16], i,
+                    mdiff_port);
+            fflush(stdout);
             // find ring associated with message and actualize the checking
             if (strncmp(content, ent.mdiff_ip[i], 15) == 0 &&
-                    strncmp(&content[16], mdiff_port, 4) == 0) {
+                    strncmp(&content[16], mdiff_port, 4) == 0 &&
+                    ring_check[i] != -1) {
                 ring_check[i] = 1;
                 return 0;
+            }
+            else {
+                debug("action_test", "Not found! ip=\"%15s\" port = %s\n"
+                "test1:%d\ntest2:%d\ntest3:%d", content, mdiff_port,
+                strncmp(content, ent.mdiff_ip[i], 15) == 0,
+                strncmp(&content[16], mdiff_port, 4) == 0,
+                    ring_check[i] != -1);
             }
         }
     }
     else {
+        debug("action_test", "test not for me: %s", content);
         sendpacket_all(message);
     }
 
@@ -245,14 +262,14 @@ int parsemsg(char *message) {
     if (lookup(idm)) {
         verbose("Message already seen.\n");
         if (strcmp(type, "TEST") == 0)
-            return action_test(message, content, 1);
+            return action_test(message, content, "lookup");
         else
             return 0;
     }
     // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
         if (strcmp(type, pmsg[i].type) == 0) {
-            return (pmsg[i].action(message, content));
+            return (pmsg[i].action(message, content, NULL));
         }
     // message not supported
     verbose("Message of type %s not supported.\n", type);
@@ -303,7 +320,7 @@ void sendmessage_all(char *type, char *format, ...) {
 }
 
 
-void sendmessage(struct sockaddr_in *receiver, char *type, char *format, ...) {
+void sendmessage(int ring, char *type, char *format, ...) {
     char buff[513];
     va_list aptr;
 
@@ -311,6 +328,16 @@ void sendmessage(struct sockaddr_in *receiver, char *type, char *format, ...) {
     makemessage(buff, type, format, aptr);
     va_end(aptr);
     
-    sendpacket(buff, receiver);
+    sendpacket(buff, ring);
 }
 
+void sendmessage_sockaddr(struct sockaddr_in *receiver, char *type, char *format, ...) {
+    char buff[513];
+    va_list aptr;
+
+    va_start(aptr, format);
+    makemessage(buff, type, format, aptr);
+    va_end(aptr);
+    
+    sendpacket_sockaddr(buff, receiver);
+}

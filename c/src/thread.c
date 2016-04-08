@@ -1,6 +1,5 @@
 #include "thread.h"
 
-#include "protocol.h"
 #include "common.h"
 
 #include <unistd.h>
@@ -10,7 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 extern entity ent;
-extern int nring;
+extern volatile int nring;
 extern _entity _ent;
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -24,6 +23,9 @@ struct mutexes mutexes;
 void init_mutexes() {
     verbose("Initializing mutexes...\n");
     pthread_mutex_init(&mutexes.listmsg, NULL);
+    pthread_mutex_init(&mutexes.nring, NULL);
+    for (int i = 0; i < NRING; ++i)
+        pthread_mutex_init(&mutexes.receiver[i], NULL);
     verbose("Mutexes initialized.\n");
 }
 
@@ -59,4 +61,27 @@ void close_tcpserver() {
 
 void close_messagemanager() {
     pthread_cancel(threads.message_manager);
+}
+
+
+void actualize_nring(int n) {
+    /*pthread_mutex_lock(&mutexes.nring);*/
+    nring = n;
+    /*pthread_mutex_unlock(&mutexes.nring);*/
+    debug("actualize_nring", "nring = %d", nring+1);
+}
+
+
+int getnring() {
+    /*pthread_mutex_lock(&mutexes.nring);*/
+    int n = nring;
+    /*pthread_mutex_unlock(&mutexes.nring);*/
+    return n;
+}
+
+void actualize_receiver(int ring, struct sockaddr_in *receiver) {
+    pthread_mutex_lock(&mutexes.receiver[ring]);
+    _ent.receiver[ring] = *receiver;
+    pthread_mutex_unlock(&mutexes.receiver[ring]);
+
 }

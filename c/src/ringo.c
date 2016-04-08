@@ -71,7 +71,6 @@ int main(int argc, char *argv[])
 
     get_info();
     init_entity(id, atoi(udp_listen), atoi(tcp_listen), mdiff_ip, mport);
-    debug("main", "init entity passed");
     verbosity(VERBM_XTERMO);
     
     switch(mode) {
@@ -142,7 +141,6 @@ void get_info() {
     if (mode != MODE_JOIN && mdiff_ip == NULL) {
         printf("Choose a multi diffusion ip (default 239.0.0.1): ");
         if (getline(&mdiff_ip, &size, stdin)==-1) perror("getline");
-        debug("getinfo", "passed");
         mdiff_ip[strlen(mdiff_ip)-1] = 0;
         if (mdiff_ip[0] == 0) {
             mdiff_ip = realloc(mdiff_ip, 16);
