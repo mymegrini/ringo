@@ -181,20 +181,21 @@ static void insert(int ring, char *n_msg, int sock2)
 #ifndef DEBUG
     ;
 #endif
-    _ent.receiver[ring] = receiver;
     verbose("Structure prepared.\n");
-    verbose("Current structure replaced.\n");
     // modifying entity
     verbose("Insertion server: modifying current entity...\n");
     verbose("Insertion server: current entity :\n%s\n", entitytostr(ring));
-    ent.port_next[ring] = newc->port;
     strcpy(ent.ip_next[ring], newc->ip);
     verbose("Insertion server: modified entity :\n%s\n", entitytostr(ring));
     free(newc);
     // ACKC confirmation sending
     verbose("Insertion server: sending ACKC confirmation message...\n");
     send(sock2, "ACKC\n", 5, 0);
+    ent.port_next[ring] = newc->port;
     verbose("Insertion server: message sent.\n");
+    _ent.receiver[ring] = receiver;
+    verbose("Actualizing receviver...\n");
+    verbose("Current structure replaced.\n");
     // closing connection
     /*close(sock2);*/
     verbose("Insertion server: connection closed.\n");
@@ -460,6 +461,9 @@ int join(const char *host, const char *tcpport) {
     verbose("Socket for udp sending created.\n");
     verbose("Preparing structure for receiver address...\n");
     // receiver (next entity) socket
+    debug("join", RED "nring:%d\nip_next=%s\nport_next=%d",
+            nring, ent.ip_next[nring], ent.port_next[nring]
+            );
     if (!getsockaddr_in(&_ent.receiver[nring], ent.ip_next[nring],
                 ent.port_next[nring], 1)) {
         verbose("Can't communicate with address %s on port %d.\n",
@@ -645,11 +649,11 @@ void sendpacket(char *content, int ring) {
             "Sending packet solo ring:\n---\n%s\n---\n...\n"
             "To ip %s on port %d.", content, inet_ntoa(_ent.receiver[ring].sin_addr),
             ntohs(_ent.receiver[ring].sin_port));
-    pthread_mutex_lock(&mutexes.receiver[ring]);
+    /*pthread_mutex_lock(&mutexes.receiver[ring]);*/
     sendto(_ent.socksend, content, 512, 0,
             (struct sockaddr *) &_ent.receiver[ring],
             (socklen_t)sizeof(struct sockaddr_in));
-    pthread_mutex_unlock(&mutexes.receiver[ring]);
+    /*pthread_mutex_unlock(&mutexes.receiver[ring]);*/
     debug("sendpacket(char *content, int ring)", "packet sent.");
     verbose("Packet sent.\n");
 }
@@ -658,11 +662,17 @@ void sendpacket_all(char *content) {
     debug("sendpacket_all(char *content)", 
             "Sending packet multiple ring:\n---\n%s\n---\n...\n", content);
     for (int i = 0; i < nring + 1; ++i) {
-        pthread_mutex_lock(&mutexes.receiver[i]);
+        /*pthread_mutex_lock(&mutexes.receiver[i]);*/
+#ifdef DEBUG
+        int r = 
+#endif
         sendto(_ent.socksend, content, 512, 0,
                 (struct sockaddr *)&_ent.receiver[i],
                 (socklen_t)sizeof(struct sockaddr_in));
-        pthread_mutex_unlock(&mutexes.receiver[i]);
+#ifdef DEBUG
+        debug("sendpacket_all", RED "sendto returned %d", r);
+#endif
+        /*pthread_mutex_unlock(&mutexes.receiver[i]);*/
     }
     verbose("Packets sent.\n");
 }
