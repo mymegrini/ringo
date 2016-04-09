@@ -43,7 +43,7 @@ void init_threads() {
     verbose("Insertion manager started.\n");
     // launch ring tester thread
     verbose("Starting ring tester...\n");
-    pthread_create(&threads.tcp_server, NULL, ring_tester, NULL);
+    pthread_create(&threads.ring_tester, NULL, ring_tester, NULL);
     verbose("Ring tester started.\n");
 }
 
