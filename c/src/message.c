@@ -12,12 +12,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // EXTERNAL
 ////////////////////////////////////////////////////////////////////////////////
-extern int parseappmsg(char *message, char *content, ...);
-static int action_whos(char *message, char *content, ...);
-static int action_gbye(char *message, char *content, ...);
-static int action_eybg(char *message, char *content, ...);
-static int action_memb(char *message, char *content, ...);
-static int action_test(char *message, char *content, ...);
+extern int parseappmsg(char *message, char *content, int lookup_flag);
+static int action_whos(char *message, char *content, int lookup_flag);
+static int action_gbye(char *message, char *content, int lookup_flag);
+static int action_eybg(char *message, char *content, int lookup_flag);
+static int action_memb(char *message, char *content, int lookup_flag);
+static int action_test(char *message, char *content, int lookup_flag);
 
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
@@ -25,7 +25,7 @@ static int action_test(char *message, char *content, ...);
 
 typedef struct protocol_msg {
     char type[5];
-    int (*action)(char *, char *, ...);
+    int (*action)(char *, char *, int lookup_flag);
     // action should return -1 when message doesn't follow the protocol
     // so it's not retransmitted
 } protocol_msg;
@@ -93,12 +93,14 @@ static void messageid(char* hash) {
     }
     hash[8] = 0;
 
-    debug("messageid", "Created message id : %s.\n", hash);
+    /*debug("messageid", "Created message id : %s.\n", hash);*/
 }
 
 
-static int action_whos(char *message, char *content, ...) {
-
+static int action_whos(char *message, char *content, int lookup_flag) {
+    // message already seen
+    if (lookup_flag)
+        return 0;
     if (strlen(message) > 13) {
         debug("action_whos", "content should be empty: \"%s\" = %d",
               content, *content);
@@ -111,8 +113,10 @@ static int action_whos(char *message, char *content, ...) {
 }
 
 
-static int action_gbye(char *message, char *content, ...) {
-
+static int action_gbye(char *message, char *content, int lookup_flag) {
+    // message already seen
+    if (lookup_flag)
+        return 0;
     // don't retransmit message
     if (content[15] != ' ' || content[20] != ' ' || content[36] != ' ') {
         return 1;
@@ -121,7 +125,7 @@ static int action_gbye(char *message, char *content, ...) {
     int r = sscanf(content, "%s %s %s %s", ip, port_str, ip_next, port_next);
     if (r != 4 ||
         !isip(ip) || !isport(port_str) || !isip(ip_next) || !isport(port_next)) {
-        debug("action_gbye", "GBYE not following the protocol, content: \"%s\"", content);
+        debug("action_gbye", RED "GBYE not following the protocol, content: \"%s\"", content);
         return 1;
     }
     // retransmit message
@@ -158,8 +162,11 @@ static int action_gbye(char *message, char *content, ...) {
     return 0;
 }
 
-static int action_eybg(char *message, char *content, ...) {
-
+static int action_eybg(char *message, char *content, int lookup_flag) {
+    // message already seen
+    if (lookup_flag)
+        return 0;
+    // BUT why ?
     if (wait_goodbye) {
         close_tcpserver();
         close_messagemanager();
@@ -173,55 +180,40 @@ static int action_eybg(char *message, char *content, ...) {
     return 0;
 }
 
-static int action_memb(char* message, char* content, ...) {
-
+static int action_memb(char* message, char* content, int lookup_flag) {
+    // message already seen
+    if (lookup_flag)
+        return 0;
     sendpacket_all(message);
     return 0;
 }
 
-static int action_test(char *message, char *content, ...) {
+static int action_test(char *message, char *content, int lookup_flag) {
+    debug("action_test", RED "entering function...");
     if (content[15] != ' ' || content[20] != 0) {
-        debug("action_test", "content not following the protocol."\
+        debug("action_test", RED "content not following the protocol."\
                 "content: \"%s\"", content);
         return 1;
     }
-    va_list args;
-    va_start(args, content);
-    int lookup_flag = va_arg(args, int);
-    va_end(args);
-
     if (lookup_flag) {
         char mdiff_port[5];
-        debug("action_test", "looking for correspondance on %d rings...", nring+1);
         int fixed_nring = getnring();
-        for (int i = 0; i < fixed_nring + 1; ++i) {
+        for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; ++i) {
             itoa4(mdiff_port, ent.mdiff_port[i]);
-            printf(RED "content[0]: %15.15s, ent.mdiffip[%d]:%s\n"
-                    "content[16]: \"%s\", ent.mdiffport[%d]: \"%s\"\n" RESET,
-                    content, i, ent.mdiff_ip[i], &content[16], i,
-                    mdiff_port);
-            fflush(stdout);
+            debug("action_test", RED "looking for correspondance in ring %d", i);
             // find ring associated with message and actualize the checking
             if (strncmp(content, ent.mdiff_ip[i], 15) == 0 &&
                     strncmp(&content[16], mdiff_port, 4) == 0 &&
                     ring_check[i] != -1) {
+                debug("action_test", RED "correspondance found, ring %d", i);
                 ring_check[i] = 1;
                 return 0;
-            }
-            else {
-                debug("action_test", "Not found! ip=\"%15s\" port = %s\n"
-                "test1:%d\ntest2:%d\ntest3:%d", content, mdiff_port,
-                strncmp(content, ent.mdiff_ip[i], 15) == 0,
-                strncmp(&content[16], mdiff_port, 4) == 0,
-                    ring_check[i] != -1);
             }
         }
     }
     else {
-        debug("action_test", "test not for me: %s", content);
         sendpacket_all(message);
     }
-
     return 0;
 }
 
@@ -239,7 +231,7 @@ static int action_test(char *message, char *content, ...) {
  */
 int parsemsg(char *message) {
     if (message[4] != ' ') {
-        fprintf(stderr, "Message not following the protocol.\n");
+        fprintf(stderr, RED "Message not following the protocol.\n");
         return -1;
     }
     //message[4]  = 0;
@@ -253,17 +245,12 @@ int parsemsg(char *message) {
     char *content = message+14;
 
     verbose("Parsing message %s of type %s...\n", idm, type);
-    if (lookup(idm)) {
-        verbose("Message already seen.\n");
-        if (strcmp(type, "TEST") == 0)
-            return action_test(message, content, 1);
-        else
-            return 0;
-    }
+    int lookup_flag = lookup(idm);
+    debug("parsemsg", "message %s, lookup: %d", type, lookup_flag);
     // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
         if (strcmp(type, pmsg[i].type) == 0) {
-            return (pmsg[i].action(message, content, 0));
+            return (pmsg[i].action(message, content, lookup_flag));
         }
     // message not supported
     verbose("Message of type %s not supported.\n", type);
@@ -322,7 +309,9 @@ void sendmessage(int ring, char *type, char *format, ...) {
     makemessage(buff, type, format, aptr);
     va_end(aptr);
     
-    sendpacket(buff, ring);
+    /*sendpacket(buff, ring);*/
+    sendpacket_sockaddr(buff, &_ent.receiver[ring]);
+    debug("sendmessag(int ring, type, format, ...)", BLUE "message sent.");
 }
 
 void sendmessage_sockaddr(struct sockaddr_in *receiver, char *type, char *format, ...) {

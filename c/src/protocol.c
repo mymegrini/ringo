@@ -48,7 +48,7 @@ typedef welc_msg dupl_msg;
 
 volatile int nring = -1;
 
-char ring_check[NRING];
+char ring_check[NRING+1];
 
 #define TIMEOUT 10
 unsigned timeout = TIMEOUT;
@@ -248,6 +248,7 @@ static void dupplicate(char *d_msg, int sock2) {
     verbose("Actualizing ring number...\n");
     actualize_nring(nring+1);
     verbose("Ring number actualized. Number of rings: %d.\n", nring+1);
+    debug("dupplicate", BLUE "entity:\n%s", entitytostr(nring));
     verbose("Dupplication finished.\n");
 }
 /**
@@ -328,13 +329,16 @@ static void *packet_treatment(void *args) {
 static void test_ring() {
     // initialize ring_check array
     /*pthread_mutex_lock(&mutexes.nring);*/
-    memset(ring_check, -1, NRING);
+    debug("ring_tester", GREEN "setting ring_check to -1...");
+    memset(ring_check, -1, NRING + 1);
     char port_diff[5];
     // send test messages in each rings
     int fixed_nring = getnring();
     for (int i = 0; i < fixed_nring + 1; i++) {
+        debug("ring_tester", GREEN "setting ring_check %d to 0...", i);
         ring_check[i] = 0;
         itoa4(port_diff, ent.mdiff_port[i]);
+        debug("ring_tester", GREEN "sending test to ring %d...", i);
         sendmessage(i, "TEST", "%s %s", ent.mdiff_ip[i], port_diff);
     }
     debug("test_ring", GREEN "timeout beginning...");
@@ -625,7 +629,8 @@ void *message_manager(void *args) {
 #ifdef DEBUG
         if (rec > 0) {
             buff[rec] = 0;
-            debug("message_manager", YELLOW "Packet received:\n---\n%s\n---\n", buff);
+            debug("message_manager", 
+                    YELLOW "Packet received of length %d:\n---\n%s\n---\n", rec, buff);
         }
 #endif
         if (rec == 512) {
@@ -670,12 +675,13 @@ void sendpacket_all(char *content) {
 
 void sendpacket_sockaddr(char *content, struct sockaddr_in *receiver) {
     debug("sendpacket_sockaddr(char *content, struct sockaddr_in *receiver)", 
-            "Sending packet solo:\n---\n%s\n---\n...\n"
+            BLUE "Sending packet solo:\n---\n%s\n---\n...\n"
             "To ip %s on port %d.", content, inet_ntoa(receiver->sin_addr),
             ntohs(receiver->sin_port));
     sendto(_ent.socksend, content, 512, 0,
             (struct sockaddr *) receiver,
             (socklen_t)sizeof(struct sockaddr_in));
+    debug("sendpacket_sockaddr", BLUE "Packet sent.\n");
     verbose("Packet sent.\n");
 }
 /**

@@ -65,17 +65,17 @@ void close_messagemanager() {
 
 
 void actualize_nring(int n) {
-    /*pthread_mutex_lock(&mutexes.nring);*/
+    pthread_mutex_lock(&mutexes.nring);
     nring = n;
-    /*pthread_mutex_unlock(&mutexes.nring);*/
+    pthread_mutex_unlock(&mutexes.nring);
     debug("actualize_nring", "nring = %d", nring+1);
 }
 
 
 int getnring() {
-    /*pthread_mutex_lock(&mutexes.nring);*/
+    pthread_mutex_lock(&mutexes.nring);
     int n = nring;
-    /*pthread_mutex_unlock(&mutexes.nring);*/
+    pthread_mutex_unlock(&mutexes.nring);
     return n;
 }
 
@@ -84,4 +84,12 @@ void actualize_receiver(int ring, struct sockaddr_in *receiver) {
     _ent.receiver[ring] = *receiver;
     pthread_mutex_unlock(&mutexes.receiver[ring]);
 
+}
+
+struct sockaddr_in *getreceiver(int ring) {
+    struct sockaddr_in *receiver;
+    pthread_mutex_lock(&mutexes.receiver[ring]);
+    receiver = &_ent.receiver[ring];
+    pthread_mutex_unlock(&mutexes.receiver[ring]);
+    return receiver;
 }
