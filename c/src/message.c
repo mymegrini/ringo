@@ -81,7 +81,7 @@ static void messageid(char* hash) {
     // hashing content
     // while((c = *content++)) h = ((h << 5) + h) + c;
 
-    // creating hash using human readable characters
+    // creating hash using alphanumerical characters
     for(i=0; i<8; i++){
         c = h % 62;
         if (c<10) hash[i] = c+48;      //digits

@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 
     get_info();
     init_entity(id, atoi(udp_listen), atoi(tcp_listen), mdiff_ip, mport);
-    verbosity(VERBM_XTERMO);
+    verbosity(VERBM_STDOUT);
     
     switch(mode) {
         case MODE_CREATE:
