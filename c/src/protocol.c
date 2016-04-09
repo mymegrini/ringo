@@ -247,7 +247,6 @@ static void dupplicate(char *d_msg, int sock2) {
     verbose("Entity modified.\n");
     verbose("Actualizing ring number...\n");
     actualize_nring(nring+1);
-    debug("dupplicate", "number of ring actualized.");
     verbose("Ring number actualized. Number of rings: %d.\n", nring+1);
     verbose("Dupplication finished.\n");
 }
@@ -319,7 +318,6 @@ static void insertionsrv() {
 
 
 static void *packet_treatment(void *args) {
-    debug("message_manager", "entering thread packet_treatment...");
     char *packet = (char *)args;
     packet[512] = 0;
     parsemsg(packet);
@@ -339,17 +337,17 @@ static void test_ring() {
         itoa4(port_diff, ent.mdiff_port[i]);
         sendmessage(i, "TEST", "%s %s", ent.mdiff_ip[i], port_diff);
     }
-    debug("test_ring", "timeout beginning...");
+    debug("test_ring", GREEN "timeout beginning...");
     sleep(timeout);
-    debug("test_ring", "end of timeout.");
+    debug("test_ring", GREEN "end of timeout.");
 
     for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; i++) {
         if (ring_check[i]) {
-            debug("test_ring", "ring %d: checked.", i);
+            debug("test_ring", GREEN "ring %d: checked.", i);
             continue;
         }
         else {
-            debug("test_ring", "ring %d: checking failed. Ring broken.", i);
+            debug("test_ring", GREEN "ring %d: checking failed. Ring broken.", i);
             continue;
         }
     }
@@ -461,10 +459,9 @@ int join(const char *host, const char *tcpport) {
     verbose("Socket for udp sending created.\n");
     verbose("Preparing structure for receiver address...\n");
     // receiver (next entity) socket
-    debug("join", RED "nring:%d\nip_next=%s\nport_next=%d",
-            nring, ent.ip_next[nring], ent.port_next[nring]
-            );
-    if (!getsockaddr_in(&_ent.receiver[nring], ent.ip_next[nring],
+    char ipnz[16];
+    ipnozeros(ipnz, ent.ip_next[nring]);
+    if (!getsockaddr_in(&_ent.receiver[nring], ipnz,
                 ent.port_next[nring], 1)) {
         verbose("Can't communicate with address %s on port %d.\n",
                 ent.ip_next[nring], ent.port_next[nring]);
@@ -628,7 +625,7 @@ void *message_manager(void *args) {
 #ifdef DEBUG
         if (rec > 0) {
             buff[rec] = 0;
-            debug("message_manager", "Packet received:\n---\n%s\n---\n", buff);
+            debug("message_manager", YELLOW "Packet received:\n---\n%s\n---\n", buff);
         }
 #endif
         if (rec == 512) {
@@ -654,7 +651,6 @@ void sendpacket(char *content, int ring) {
             (struct sockaddr *) &_ent.receiver[ring],
             (socklen_t)sizeof(struct sockaddr_in));
     /*pthread_mutex_unlock(&mutexes.receiver[ring]);*/
-    debug("sendpacket(char *content, int ring)", "packet sent.");
     verbose("Packet sent.\n");
 }
 
@@ -669,9 +665,6 @@ void sendpacket_all(char *content) {
         sendto(_ent.socksend, content, 512, 0,
                 (struct sockaddr *)&_ent.receiver[i],
                 (socklen_t)sizeof(struct sockaddr_in));
-#ifdef DEBUG
-        debug("sendpacket_all", RED "sendto returned %d", r);
-#endif
         /*pthread_mutex_unlock(&mutexes.receiver[i]);*/
     }
     verbose("Packets sent.\n");
@@ -729,7 +722,6 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen,
  */
 void create_ring() {
     ++nring;
-    debug("create_ring()", "Ring index: %d.\nEntity:\n%s\n", nring, entitytostr(nring));
     // Socket creation
     verbose("Creating sockets for UDP communication...\n");
     // listening socket
