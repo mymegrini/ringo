@@ -763,7 +763,7 @@ void create_ring() {
 
 
 void *ring_tester(void *args) {
-    unsigned interval = 10;
+    unsigned interval = 120;
     while (1) {
         sleep(interval);
         test_ring();
