@@ -659,9 +659,6 @@ void sendpacket_all(char *content) {
             "Sending packet multiple ring:\n---\n%s\n---\n...\n", content);
     for (int i = 0; i < nring + 1; ++i) {
         /*pthread_mutex_lock(&mutexes.receiver[i]);*/
-#ifdef DEBUG
-        int r = 
-#endif
         sendto(_ent.socksend, content, 512, 0,
                 (struct sockaddr *)&_ent.receiver[i],
                 (socklen_t)sizeof(struct sockaddr_in));

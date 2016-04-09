@@ -4,6 +4,7 @@
 #include "stdint.h"
 #include "listmsg.h"
 #include "thread.h"
+#include "network.h"
 
 #include <stdarg.h>
 #include <sys/time.h>
@@ -132,24 +133,18 @@ static int action_gbye(char *message, char *content, ...) {
     for (i = 0; i < fixed_nring + 1; ++i)
         if (strcmp(ip, ent.ip_next[i]) == 0 && port == ent.port_next[i]) {
             verbose("Preparing structure for receiver address...\n");
-            struct in_addr iaddr;
             char ipnz[16];
             ipnozeros(ipnz, ip);
-#ifdef DEBUG
-            if (inet_aton(ipnz, &iaddr) == 0) {
-                debug("insertionsrv()", "inet_aton failed with ip \"%s\".", ipnz);
-                continue;
-            }
-#else
-            inet_aton(ipnz, &iaddr);
-#endif
-
             int port2 = atoi(port_next);
             struct sockaddr_in entity_leaving = _ent.receiver[i];
-
-            _ent.receiver[i].sin_family = AF_INET;
-            _ent.receiver[i].sin_port = htons(port2);
-            _ent.receiver[i].sin_addr = iaddr;
+            struct sockaddr_in receiver;
+            if (!getsockaddr_in(&receiver, ipnz, port2, 0)) {
+                verbose("Can't get address of %s at port %s.\n", ipnz, port2);
+                debug("aciont_gbye", RED "can't send goodbye beacause"
+                        "can't access to new next entity !");
+                return 0;
+            }
+            _ent.receiver[i] = receiver;
             verbose("Structure prepared.\n");
             verbose("Replacing current structure...\n");
             // modifying entity
@@ -192,7 +187,7 @@ static int action_test(char *message, char *content, ...) {
     }
     va_list args;
     va_start(args, content);
-    char *lookup_flag = va_arg(args, char*);
+    int lookup_flag = va_arg(args, int);
     va_end(args);
 
     if (lookup_flag) {
@@ -258,18 +253,17 @@ int parsemsg(char *message) {
     char *content = message+14;
 
     verbose("Parsing message %s of type %s...\n", idm, type);
-    debug("parse_msg", "content: %s\nid:%s\ntype:%s", message, idm, type);
     if (lookup(idm)) {
         verbose("Message already seen.\n");
         if (strcmp(type, "TEST") == 0)
-            return action_test(message, content, "lookup");
+            return action_test(message, content, 1);
         else
             return 0;
     }
     // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
         if (strcmp(type, pmsg[i].type) == 0) {
-            return (pmsg[i].action(message, content, NULL));
+            return (pmsg[i].action(message, content, 0));
         }
     // message not supported
     verbose("Message of type %s not supported.\n", type);
