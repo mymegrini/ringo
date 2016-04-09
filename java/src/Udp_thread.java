@@ -48,12 +48,12 @@ public class Udp_thread implements Runnable{
                 }
                 if(tab.length==6 && tab[0].equals("GBYE")){
                     if(ent.ip_next.equals(tab[2]) && ent.port_next==Integer.parseInt(tab[3])){
-                        ent.ip_next=tab[4];
-                        ent.port_next=Integer.parseInt(tab[5]);
                         mess_send="EYBG "+tab[1];
                         data=mess_send.getBytes();
                         packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                         dso.send(packet_send);
+                        ent.ip_next=tab[4];
+                        ent.port_next=Integer.parseInt(tab[5]);
                         break;
                     }
                     else{
@@ -61,13 +61,13 @@ public class Udp_thread implements Runnable{
                     }
                 }
                 if(tab.length==2 && tab[0].equals("EYBG")){
-                    s = search(tab[1]);
-                    if(s==-1) dso.send(packet_send);
-                    else{ 
-                        mess_list.remove(tab[1]);
-                        quit=true;
-                        break;
-                    }
+                    //s = search(tab[1]);
+                    //if(s==-1) dso.send(packet_send);
+                    //else{ 
+                    //mess_list.remove(tab[1]);
+                    quit=true;
+                    break;
+                    //}
                 }
                 /*if(tab.length==4 && tab[0].equals("TEST")){
                   if(tab[2].equals(ent.mdiff_ip) && Integer.parseInt(tab[3])==ent.mdiff_port){

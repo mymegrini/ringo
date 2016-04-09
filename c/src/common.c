@@ -153,7 +153,7 @@ void init_outputxterm() {
     fifo_path(path);
     mkfifo(path, 0600);
     char cat_cmd[80];
-    strcpy(cat_cmd, "/usr/bin/cat ");
+    strcpy(cat_cmd, "/bin/cat ");
     strcat(cat_cmd, path);
     switch (fork()) {
         case -1:
