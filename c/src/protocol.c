@@ -48,10 +48,18 @@ typedef welc_msg dupl_msg;
 
 volatile int nring = -1;
 
-char ring_check[NRING+1];
+volatile short ring_check[NRING+1];
+/*short ring_check[NRING+1];*/
 
 #define TIMEOUT 10
 unsigned timeout = TIMEOUT;
+
+struct global {
+    entity ent;
+    _entity _ent;
+    int nring;
+    char ring_check[NRING+1];
+} global;
 
 
 
@@ -78,6 +86,8 @@ static welc_msg *parse_welc(const char *w_msg) {
     }
     welc->port = atoi(port);
     welc->port_diff = atoi(port_mdiff);
+    debug("WELC_MSG", MAGENTA "port: %d, port_diff:%d, ip:%s, ip_diff:%s",
+            welc->port, welc->port_diff, welc->ip, welc->ip_diff);
     return welc;
 }
 
@@ -93,6 +103,8 @@ static newc_msg *parse_newc(const char *n_msg) {
         free(newc);
         return NULL;
     }
+    debug("NEWC", MAGENTA "type %s, port %s(atoi: %d), ip %s", 
+            type, port, atoi(port), newc->ip);
     newc->port = atoi(port);
     return newc;
 }
@@ -186,12 +198,12 @@ static void insert(int ring, char *n_msg, int sock2)
     verbose("Insertion server: modifying current entity...\n");
     verbose("Insertion server: current entity :\n%s\n", entitytostr(ring));
     strcpy(ent.ip_next[ring], newc->ip);
+    ent.port_next[ring] = newc->port;
     verbose("Insertion server: modified entity :\n%s\n", entitytostr(ring));
     free(newc);
     // ACKC confirmation sending
     verbose("Insertion server: sending ACKC confirmation message...\n");
     send(sock2, "ACKC\n", 5, 0);
-    ent.port_next[ring] = newc->port;
     verbose("Insertion server: message sent.\n");
     _ent.receiver[ring] = receiver;
     verbose("Actualizing receviver...\n");
@@ -199,6 +211,7 @@ static void insert(int ring, char *n_msg, int sock2)
     // closing connection
     /*close(sock2);*/
     verbose("Insertion server: connection closed.\n");
+    debug("insert", MAGENTA "modified entity:\n%s", entitytostr(ring));
 }
 
 static void dupplicate(char *d_msg, int sock2) {
@@ -330,10 +343,13 @@ static void test_ring() {
     // initialize ring_check array
     /*pthread_mutex_lock(&mutexes.nring);*/
     debug("ring_tester", GREEN "setting ring_check to -1...");
-    memset(ring_check, -1, NRING + 1);
+    /*memset(ring_check, -1, NRING + 1);*/
     char port_diff[5];
     // send test messages in each rings
     int fixed_nring = getnring();
+    for (int i = fixed_nring+1; i < NRING; ++i) {
+        ring_check[i] = -1;
+    }
     for (int i = 0; i < fixed_nring + 1; i++) {
         debug("ring_tester", GREEN "setting ring_check %d to 0...", i);
         ring_check[i] = 0;
@@ -346,12 +362,27 @@ static void test_ring() {
     debug("test_ring", GREEN "end of timeout.");
 
     for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; i++) {
+        debug("test_ring", GREEN "ring_check[%d]:%d", i, ring_check[i]);
         if (ring_check[i]) {
             debug("test_ring", GREEN "ring %d: checked.", i);
             continue;
         }
         else {
-            debug("test_ring", GREEN "ring %d: checking failed. Ring broken.", i);
+            debug("test_ring", GREEN "Ring may %d be broken...", i);
+            itoa4(port_diff, ent.mdiff_port[i]);
+            debug("ring_tester", GREEN "sending another test to ring %d...", i);
+            sendmessage(i, "TEST", "%s %s", ent.mdiff_ip[i], port_diff);
+            continue;
+        }
+    }
+    for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; i++) {
+        debug("test_ring", GREEN "ring_check[%d]:%d", i, ring_check[i]);
+        if (ring_check[i]) {
+            debug("test_ring", GREEN "ring %d: checked.", i);
+            continue;
+        }
+        else {
+            debug("test_ring", GREEN "ring %d: checking failed. Ring broken...", i);
             continue;
         }
     }
@@ -487,6 +518,7 @@ int join(const char *host, const char *tcpport) {
     verbose("Structure prepared.\n");
     verbose("Socket for UDP communication prepared.\n");
     verbose("Insertion done.\n");
+    debug("insert", MAGENTA "modified entity:\n%s", entitytostr( nring ));
 
     init_threads();
     return 1;
@@ -769,7 +801,7 @@ void create_ring() {
 
 
 void *ring_tester(void *args) {
-    unsigned interval = 120;
+    unsigned interval = 20;
     while (1) {
         sleep(interval);
         test_ring();

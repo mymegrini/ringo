@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <wordexp.h>
 
 #include <stdio.h>
 
@@ -63,70 +64,35 @@ extern int wait_goodbye;
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
 
-static char **split(char *str) {
-    char **res = NULL;
-    char *cpy = strdup(str);
-    char *token = strtok(cpy, " ");
-    int n = 0;
-   while (token != NULL) {
-       res = realloc(res, sizeof(char *) * ++n);
-       if (res == NULL)
-           return NULL;
-       res[n-1] = (char *)malloc(strlen(token) + 1);
-       strcpy(res[n-1], token);
-       token = strtok(NULL, " ");
-   } 
-   res = realloc(res, sizeof(char *) * (n+1));
-   res[n] = NULL;
-   free(cpy);
-   return res;
-}
 
-
-static void free_split(char **sp) {
-    char **i;
-    for (i = sp; *i != NULL; i++ )
-        free(*i);
-    free(sp);
-}
-
-
-
-static void exec_cmd(char *str) {
-    char **sp = split(str);
-    if (sp == NULL) {
-#ifdef DEBUG
-        debug("exec_cmd(\"%s\")", "split returned NULL. realloc error.\n", str);
-#endif
-        free_split(sp);
-        return;
+static void exec_cmd(const char *str) {
+    wordexp_t wordx;
+    switch (wordexp(str, &wordx, 0)) {
+        case WRDE_BADCHAR:
+            fprintf(stderr, 
+                    "Illegal  occurrence of newline or one of "
+                    "|, &, ;, <, >, (, ), {, }.");
+            break;
+        case WRDE_BADVAL:
+            break;
+        case WRDE_CMDSUB:
+            break;
+        case WRDE_NOSPACE:
+            break;
+        case WRDE_SYNTAX:
+            fprintf(stderr, "Syntax error.\n");
+            break;
+        default:
+            for (int i = 0; cmd[i].name[0] != 0; i++) {
+                if (strcmp(cmd[i].name, wordx.we_wordv[0]) == 0) {
+                    (*cmd[i].exec)(wordx.we_wordc, wordx.we_wordv);
+                    wordfree(&wordx);
+                    return;
+                }
+            }
+            break;
     }
-    if (*sp == NULL) {
-        free_split(sp);
-        return;
-    }
-    int argc;
-    for (argc = 1; sp[argc] != NULL; ++argc)
-        ;
-#ifdef DEBUG
-    debug("exec_cmd(str)", "Looking for \"%s\" command", sp[0]);
-#endif
-    for (int i = 0; cmd[i].name[0] != 0; i++) {
-        if (strcmp(cmd[i].name, sp[0]) == 0) {
-#ifdef DEBUG
-            debug("exec_cmd(str)", "Command found.");
-#endif
-            (*cmd[i].exec)(argc, sp);
-            free_split(sp);
-            return;
-        }
-    }
-#ifdef DEBUG
-    debug("exec_cmd(str)", "Command not found.");
-#endif
-    if(system(str)) return;
 }
-
 
 /*
  *static void prompt() {

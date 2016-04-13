@@ -49,7 +49,7 @@ extern entity ent;
 extern volatile int nring;
 extern _entity _ent;
 int wait_goodbye = 0;
-extern int ring_check[NRING];
+extern volatile int ring_check[NRING];
 
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
@@ -200,13 +200,13 @@ static int action_test(char *message, char *content, int lookup_flag) {
         int fixed_nring = getnring();
         for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; ++i) {
             itoa4(mdiff_port, ent.mdiff_port[i]);
-            debug("action_test", RED "looking for correspondance in ring %d", i);
             // find ring associated with message and actualize the checking
             if (strncmp(content, ent.mdiff_ip[i], 15) == 0 &&
                     strncmp(&content[16], mdiff_port, 4) == 0 &&
                     ring_check[i] != -1) {
-                debug("action_test", RED "correspondance found, ring %d", i);
                 ring_check[i] = 1;
+                debug("action_test", 
+                        RED "correspondance found, ring_check[%d]:%d", i, ring_check[i]);
                 return 0;
             }
         }
