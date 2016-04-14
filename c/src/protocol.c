@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include <pthread.h>
+#include <time.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -48,21 +49,15 @@ typedef welc_msg dupl_msg;
 
 volatile int nring = -1;
 
-volatile short ring_check[NRING+1];
+short volatile ring_check[NRING+1];
 /*short ring_check[NRING+1];*/
-
-#define TIMEOUT 10
-unsigned timeout = TIMEOUT;
-
-struct global {
-    entity ent;
-    _entity _ent;
-    int nring;
-    char ring_check[NRING+1];
-} global;
+short volatile *rc = ring_check;
 
 
+#define TIMEOUT 30
 
+volatile struct test_data _test_data;
+volatile struct test_data *test_data = &_test_data;
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
@@ -339,53 +334,82 @@ static void *packet_treatment(void *args) {
     return NULL;
 }
 
+/*static void test_ring2() {*/
+    /*// initialize ring_check array*/
+    /*[>pthread_mutex_lock(&mutexes.nring);<]*/
+    /*debug("ring_tester", GREEN "setting ring_check to -1...");*/
+    /*[>memset(ring_check, -1, NRING + 1);<]*/
+    /*char port_diff[5];*/
+    /*// send test messages in each rings*/
+    /*int fixed_nring = getnring();*/
+    /*for (int i = fixed_nring+1; i < NRING; ++i) {*/
+        /*[>ring_check[i] = -1;<]*/
+        /*rc[i] = -1;*/
+    /*}*/
+    /*for (int i = 0; i < fixed_nring + 1; i++) {*/
+        /*debug("ring_tester", GREEN "setting ring_check %d to 0...", i);*/
+        /*[>ring_check[i] = 0;<]*/
+        /*rc[i] = 0;*/
+        /*itoa4(port_diff, ent.mdiff_port[i]);*/
+        /*debug("ring_tester", GREEN "sending test to ring %d...", i);*/
+        /*sendmessage(i, "TEST", "%s %s", ent.mdiff_ip[i], port_diff);*/
+    /*}*/
+    /*debug("test_ring", GREEN "timeout beginning...");*/
+    /*sleep(timeout);*/
+    /*debug("test_ring", GREEN "end of timeout.");*/
+
+    /*for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; i++) {*/
+        /*debug("test_ring", GREEN "ring_check[%d]:%d", i, ring_check[i]);*/
+        /*[>if (ring_check[i]) {<]*/
+        /*if (rc[i]) {*/
+            /*debug("test_ring", GREEN "ring %d: checked.", i);*/
+            /*continue;*/
+        /*}*/
+        /*else {*/
+            /*debug("test_ring", GREEN "ring %d: checking failed. Ring broken...", i);*/
+            /*continue;*/
+        /*}*/
+    /*}*/
+    /*[>pthread_mutex_lock(&mutexes.nring);<]*/
+    
+/*}*/
 static void test_ring() {
-    // initialize ring_check array
-    /*pthread_mutex_lock(&mutexes.nring);*/
-    debug("ring_tester", GREEN "setting ring_check to -1...");
     /*memset(ring_check, -1, NRING + 1);*/
-    char port_diff[5];
     // send test messages in each rings
-    int fixed_nring = getnring();
-    for (int i = fixed_nring+1; i < NRING; ++i) {
-        ring_check[i] = -1;
-    }
-    for (int i = 0; i < fixed_nring + 1; i++) {
-        debug("ring_tester", GREEN "setting ring_check %d to 0...", i);
-        ring_check[i] = 0;
+    test_data->nring = nring+1;
+    test_data->count = test_data->nring;
+    char port_diff[5];
+    debug("ring_test", GREEN "test beginning...");
+    for (int i = 0; i < test_data->nring; i++) {
+        test_data->ring_check[i] = 0;
         itoa4(port_diff, ent.mdiff_port[i]);
-        debug("ring_tester", GREEN "sending test to ring %d...", i);
         sendmessage(i, "TEST", "%s %s", ent.mdiff_ip[i], port_diff);
     }
     debug("test_ring", GREEN "timeout beginning...");
-    sleep(timeout);
+    int err = 0;
+    struct timespec to = {0,0};
+    to.tv_sec = time(NULL) + TIMEOUT;
+    pthread_mutex_lock(&mutex->test.m);
+    while (test_data->count && err == 0) {
+        err = pthread_cond_timedwait(&mutex->test.c, &mutex->test.m, &to);
+    }
+    pthread_mutex_unlock(&mutex->test.m);
+    if (err != 0) {
+        for (int i = 0; i < test_data->nring; i++) {
+            if (test_data->ring_check[i]) {
+                debug("test_ring", GREEN "ring %d: checked.", i);
+                continue;
+            }
+            else {
+                debug("test_ring", GREEN "ring %d: checking failed. Ring broken...", i);
+                continue;
+            }
+        }
+    }
+    else
+        debug("test_ring", GREEN "all ring checked.");
     debug("test_ring", GREEN "end of timeout.");
 
-    for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; i++) {
-        debug("test_ring", GREEN "ring_check[%d]:%d", i, ring_check[i]);
-        if (ring_check[i]) {
-            debug("test_ring", GREEN "ring %d: checked.", i);
-            continue;
-        }
-        else {
-            debug("test_ring", GREEN "Ring may %d be broken...", i);
-            itoa4(port_diff, ent.mdiff_port[i]);
-            debug("ring_tester", GREEN "sending another test to ring %d...", i);
-            sendmessage(i, "TEST", "%s %s", ent.mdiff_ip[i], port_diff);
-            continue;
-        }
-    }
-    for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; i++) {
-        debug("test_ring", GREEN "ring_check[%d]:%d", i, ring_check[i]);
-        if (ring_check[i]) {
-            debug("test_ring", GREEN "ring %d: checked.", i);
-            continue;
-        }
-        else {
-            debug("test_ring", GREEN "ring %d: checking failed. Ring broken...", i);
-            continue;
-        }
-    }
     /*pthread_mutex_lock(&mutexes.nring);*/
     
 }

@@ -31,6 +31,15 @@ typedef struct _entity {
     int socktcp;
 } _entity;
 
+struct test_data {
+    int count;
+    int nring;
+    char ring_check[NRING];
+};
+
+
+extern volatile struct test_data* test_data;
+
 char *entitytostr(int ring);
 void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen, 
         char *mdiff_ip, uint16_t mdiff_port);

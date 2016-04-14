@@ -1,7 +1,7 @@
 CC		= gcc
-CFLAGS 		= -Wall -O1 -std=gnu99 #--pedantic -std=c11
+CFLAGS 		= -Wall -O2 -std=gnu99 # #--pedantic -std=c11
 CSRC		= $(wildcard *.c)
-OBJS		= $(CSRC:%.c=../bin/%.o)
+OBJS		=  $(CSRC:%.c=../bin/%.o)
 CEXE		= ../bin/Cring
 LIBLINKS	= -pthread -lreadline
 

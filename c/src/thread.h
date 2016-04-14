@@ -20,13 +20,22 @@ void close_tcpserver();
 void close_messagemanager();
 void init_threads();
 
+struct test_mutex {
+    pthread_mutex_t m;
+    pthread_cond_t c;
+};
+
 struct mutexes {
     pthread_mutex_t listmsg;
     pthread_mutex_t receiver[NRING];
     pthread_mutex_t nring;
+    struct test_mutex test;
 };
 
-extern struct mutexes mutexes;
+
+
+extern struct mutexes *mutex;
+
 
 void actualize_nring(int n);
 void actualize_receiver(int ring, struct sockaddr_in *receiver);

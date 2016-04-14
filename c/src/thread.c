@@ -17,15 +17,18 @@ extern _entity _ent;
 ////////////////////////////////////////////////////////////////////////////////
 
 struct threads threads;
-struct mutexes mutexes;
+struct mutexes _mutexes;
+struct mutexes *mutex = &_mutexes;
 
 
 void init_mutexes() {
     verbose("Initializing mutexes...\n");
-    pthread_mutex_init(&mutexes.listmsg, NULL);
-    pthread_mutex_init(&mutexes.nring, NULL);
+    pthread_mutex_init(&mutex->listmsg, NULL);
+    pthread_mutex_init(&mutex->nring, NULL);
     for (int i = 0; i < NRING; ++i)
-        pthread_mutex_init(&mutexes.receiver[i], NULL);
+        pthread_mutex_init(&mutex->receiver[i], NULL);
+    pthread_mutex_init(&mutex->test.m, NULL);
+    pthread_cond_init(&mutex->test.c, NULL);
     verbose("Mutexes initialized.\n");
 }
 
@@ -65,31 +68,31 @@ void close_messagemanager() {
 
 
 void actualize_nring(int n) {
-    pthread_mutex_lock(&mutexes.nring);
+    pthread_mutex_lock(&mutex->nring);
     nring = n;
-    pthread_mutex_unlock(&mutexes.nring);
+    pthread_mutex_unlock(&mutex->nring);
     debug("actualize_nring", "nring = %d", nring+1);
 }
 
 
 int getnring() {
-    pthread_mutex_lock(&mutexes.nring);
+    pthread_mutex_lock(&mutex->nring);
     int n = nring;
-    pthread_mutex_unlock(&mutexes.nring);
+    pthread_mutex_unlock(&mutex->nring);
     return n;
 }
 
 void actualize_receiver(int ring, struct sockaddr_in *receiver) {
-    pthread_mutex_lock(&mutexes.receiver[ring]);
+    pthread_mutex_lock(&mutex->receiver[ring]);
     _ent.receiver[ring] = *receiver;
-    pthread_mutex_unlock(&mutexes.receiver[ring]);
+    pthread_mutex_unlock(&mutex->receiver[ring]);
 
 }
 
 struct sockaddr_in *getreceiver(int ring) {
     struct sockaddr_in *receiver;
-    pthread_mutex_lock(&mutexes.receiver[ring]);
+    pthread_mutex_lock(&mutex->receiver[ring]);
     receiver = &_ent.receiver[ring];
-    pthread_mutex_unlock(&mutexes.receiver[ring]);
+    pthread_mutex_unlock(&mutex->receiver[ring]);
     return receiver;
 }
