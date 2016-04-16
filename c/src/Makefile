@@ -1,23 +1,39 @@
-CC		= gcc
-CFLAGS 		= -Wall -O2 -std=gnu99 # #--pedantic -std=c11
+ifndef COBJFLAGS
+		export COBJFLAGS=../bin
+		include ../Makefile.inc
+endif
 CSRC		= $(wildcard *.c)
-OBJS		=  $(CSRC:%.c=../bin/%.o)
-CEXE		= ../bin/Cring
-LIBLINKS	= -pthread -lreadline
+OBJS		=  $(CSRC:%.c=$(COBJPATH)%.o)
+EARLY_DIRS = protocol
+LATE_DIRS = shell
+LIST = $(LATE_DIRS) $(EARLY_DIRS)
 
 
 
+.PHONY: clean main $(LIST)
 
 all		: $(CEXE)
 
-debug: CFLAGS += -D DEBUG -g
-debug: $(CEXE)
 
-$(CEXE)		: $(OBJS)
-	$(CC) -o $@ $^ $(LIBLINKS)
+$(CEXE)		: main $(LIST)
+	$(CC) -o $@ $(COBJPATH)*.o $(LIBLINKS)
 
-../bin/%.o 	: %.c
+
+main: $(OBJS)
+
+
+$(LIST): force_look
+	for d in $@; do ($(MAKE) $(MFLAGS) -C $$d); done
+
+
+$(COBJPATH)%.o 	: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+
 clean		:
-	rm -f $(CEXE) $(OBJS)
+	rm -f $(CEXE) $(OBJS) 
+	for d in $(LIST); do (cd $$d && $(MAKE) clean); done
+
+force_look:
+	true
+

@@ -6,18 +6,20 @@
 all	: C Java
 
 C	:
-	make -C c/src
+	$(MAKE) $(MFLAGS) -C c
 
 Java	:
-	make -C java/src
+	$(MAKE) $(MFLAGS) -C java/src
 
 debug	:
-	make -C c/src -f Makedebug
+	$(MAKE) $(MFLAGS) -C c debug
 
 help	:
-	@echo "Available make options :\n\tmake C\n\tmake Java"
-	@echo "\tmake debug\n\tmake help\n\tmake clean"
+	@echo -e "Available $(MAKE) options :\n\tmake C\n\tmake Java"
+	@echo -e "\t$(MAKE) debug\n\tmake help\n\tmake clean"
 
 clean	:
-	make -C c/src clean
-	make -C java/src clean
+	$(MAKE) $(MFLAGS) -C c clean
+	$(MAKE) $(MFLAGS) -C java/src clean
+
+.PHONY: clean help
