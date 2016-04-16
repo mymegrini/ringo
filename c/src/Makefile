@@ -1,6 +1,6 @@
 ifndef COBJFLAGS
 		export COBJFLAGS=../bin
-		include ../Makefile.inc
+		export CC=gcc
 endif
 CSRC		= $(wildcard *.c)
 OBJS		=  $(CSRC:%.c=$(COBJPATH)%.o)
@@ -13,6 +13,11 @@ LIST = $(LATE_DIRS) $(EARLY_DIRS)
 .PHONY: clean main $(LIST)
 
 all		: $(CEXE)
+	@echo "CFLAGS:" $(CFLAGS)
+
+
+debug: CFLAGS += -D DEBUG -g
+debug: all
 
 
 $(CEXE)		: main $(LIST)
