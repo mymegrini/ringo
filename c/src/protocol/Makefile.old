@@ -1,0 +1,19 @@
+CC		= gcc
+CFLAGS 		= -Wall -O2 -std=gnu99 # #--pedantic -std=c11
+CSRC		= $(wildcard *.c)
+OBJS		=  $(CSRC:%.c=../../bin/%.o)
+LIBLINKS	= -pthread -lreadline
+
+
+
+
+all		: $(OBJS)
+
+debug: CFLAGS += -D DEBUG -g
+debug: $(OBJS)
+
+../../bin/%.o 	: %.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+clean		:
+	rm -f $(CEXE) $(OBJS)
