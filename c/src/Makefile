@@ -1,7 +1,3 @@
-ifndef COBJFLAGS
-		export COBJFLAGS=../bin
-		export CC=gcc
-endif
 CSRC		= $(wildcard *.c)
 OBJS		=  $(CSRC:%.c=$(COBJPATH)%.o)
 EARLY_DIRS = protocol
@@ -10,14 +6,15 @@ LIST = $(LATE_DIRS) $(EARLY_DIRS)
 
 
 
-.PHONY: clean main $(LIST)
+.SILENT: 
+.PHONY: clean main $(LIST) makepath
 
-all		: $(CEXE)
-	@echo "CFLAGS:" $(CFLAGS)
-
+all		: makepath $(CEXE)
 
 debug: CFLAGS += -D DEBUG -g
 debug: all
+
+path: $(MAKE) $(MKFLAGS) -C .. path
 
 
 $(CEXE)		: main $(LIST)
@@ -36,8 +33,10 @@ $(COBJPATH)%.o 	: %.c
 
 
 clean		:
+	@echo "rm -f $(CEXE) $(OBJS)"
+	for d in $(LIST); do echo "$(MAKE) $(MFLAGS) -C $$d clean"; done
 	rm -f $(CEXE) $(OBJS) 
-	for d in $(LIST); do (cd $$d && $(MAKE) clean); done
+	for d in $(LIST); do $(MAKE) $(MFLAGS) -C $$d clean; done
 
 force_look:
 	true

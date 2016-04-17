@@ -11,8 +11,8 @@ all:
 	$(MAKE) $(MFLAGS) -C src
 
 debug: CFLAGS += -D DEBUG -g
-debug: 
-	$(MAKE) $(MFLAGS) -C src debug
+debug: all 
+	#$(MAKE) $(MFLAGS) -C src debug
 
 clean:
 	$(MAKE) $(MFLAGS) clean -C src

@@ -1,0 +1,9 @@
+export CC	= gcc
+export CFLAGS 		= -Wall -O2 -std=gnu99 # #--pedantic -std=c11
+export LIBLINKS	= -pthread -lreadline
+export CEXE = $(COBJPATH)Cring
+
+.SILENT: 
+
+
+

@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "protocol/common.h"
 #include "protocol/protocol.h"
+#include "protocol/network.h"
 #include "shell/shell.h"
 
 #include <pthread.h>
@@ -111,6 +113,10 @@ void get_info() {
             printf("Choose the adress/hostname of entity on the ring you'd like to join: ");
             if (getline(&host_addr, &size, stdin)==-1) perror("getline");
             host_addr[strlen(host_addr)-1] = 0;
+            if (strcmp(host_addr, "localhost") == 0) {
+                host_addr = realloc(host_addr, 200);
+                gethostname(host_addr, 200);
+            }
             size = 0;
         }
         if (host_port == NULL) {
