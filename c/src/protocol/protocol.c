@@ -526,7 +526,7 @@ int join(const char *host, const char *tcpport)
     verbose("Creating sockets for UDP communication...\n");
     _ent->socklisten = socket(PF_INET, SOCK_DGRAM, 0);
     verbose("Socket for udp listening created.\n");
-    verbose("Binding socket for listening...\n");
+   verbose("Binding socket for listening...\n");
     if (!bind_udplisten(_ent->socklisten, ent->udp)) {
         fprintf(stderr, "Binding error, insertion failed.\n");
         return 0;

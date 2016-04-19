@@ -24,6 +24,7 @@
 
 static void cmd_whos(int argc, char **argv);
 extern void cmd_gbye(int argc, char **argv);
+extern void cmd_info(int argc, char **argv);
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +54,7 @@ command cmd[] = {
     { "echo", "Print a message", echo },
     { "whos", "Getting to know each other...", cmd_whos },
     { "gbye", "Quit a ring.", cmd_gbye },
+    { "info", "Display informations on current entity.", cmd_info},
     { "", "", NULL }
 };
 
