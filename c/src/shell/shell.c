@@ -18,29 +18,23 @@
 
 
 
+
 ////////////////////////////////////////////////////////////////////////////////
 // PROTOTYPES
 ////////////////////////////////////////////////////////////////////////////////
 
 static void cmd_whos(int argc, char **argv);
 extern void cmd_gbye(int argc, char **argv);
+extern void cmd_info(int argc, char **argv);
+extern void cmd_help(int argc, char **argv);
 
 
-////////////////////////////////////////////////////////////////////////////////
-// TYPES
-////////////////////////////////////////////////////////////////////////////////
-
-typedef struct cmd {
-    char name[32];
-    char desc[512];
-    void (*exec)(int argc, char **args);
-} command;
 
 
 // TEST
 void echo(int argc, char **argv) {
     
-    for ( ++argv; *argv != NULL; ++argv)
+    for (++argv; *argv != NULL; ++argv)
         printf("%s ", *argv);
     printf("\n");
 }
@@ -53,6 +47,8 @@ command cmd[] = {
     { "echo", "Print a message", echo },
     { "whos", "Getting to know each other...", cmd_whos },
     { "gbye", "Quit a ring.", cmd_gbye },
+    { "info", "Display informations on current entity.", cmd_info},
+    { "help", "Show this message.", cmd_help },
     { "", "", NULL }
 };
 
