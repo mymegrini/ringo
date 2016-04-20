@@ -3,6 +3,8 @@
 #include "../protocol/message.h"
 #include "../protocol/common.h"
 
+#define   ORING    'r'
+#define   OLRING   "ring"
 
 void print_ringinfo(int ring) {
     printf(UNDERLINED BOLD "Ring %d:\n" RESET
