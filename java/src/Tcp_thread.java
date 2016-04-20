@@ -2,29 +2,47 @@ import java.util.*;
 import java.net.*;
 import java.io.*;
 
-public class Tcp_thread implements Runnable {
+public class Tcp_thread implements Runnable{
     Entity ent;
+    ServerSocket server;
+    Socket socket;
 
     public Tcp_thread(Entity e){
         ent=e;
     }
     
-    public void run() {
+    public void run(){
         try{
-            ServerSocket server = new ServerSocket(ent.tcp);
+            server = new ServerSocket(ent.tcp);
             while(true){
-                Socket socket = server.accept();
-                Service_tcp serv_tcp = new Service_tcp(socket,ent);
-                Thread t = new Thread(serv_tcp);
-                t.start();
+                socket = server.accept();
+                if(Thread.currentThread().isInterrupted()){
+                    socket.close();
+                    server.close();
+                    break;
+                }
+                BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+                String mess = "WELC "+ent.ip_next+" "+ent.port_next+" "+ent.mdiff_ip+" "+ent.mdiff_port;
+                pw.println(mess);
+                pw.flush();
+                mess=br.readLine();
+                //System.out.println(mess);
+                Newc_mess data = Newc_mess.parse_newc(mess);
+                if(data!=null){
+                    ent.ip_next=data.ip;
+                    ent.port_next=data.port;
+                    pw.print("ACKC\n");
+                    pw.flush();
+                }
+                br.close();
+                pw.close();
+                socket.close();
             }
-        }
-        /*catch(InterruptedException e){
-            //socket.close();
-        }*/
-        catch(Exception e){
+        }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
         }
     }
+
 }

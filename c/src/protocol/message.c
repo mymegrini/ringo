@@ -74,13 +74,13 @@ static void messageid(char* hash) {
     /* hash * 33 + c */
     // hashing time
     gettimeofday(&time, NULL);
-    h = ((h << 5) + h) + (uint16_t)time.tv_sec;
-    h = ((h << 5) + h) + (uint16_t)time.tv_usec;
+    h = h * 33 + (uint16_t)time.tv_sec;
+    h = h * 33 + (uint16_t)time.tv_usec;
     // hashing ip and port
-    for(i=0; i<16; i++) h = ((h << 5) + h) + ent->ip_self[i];  
-    h = ((h << 5) + h) + ent->udp;
+    for(i=0; i<16; i++) h = h * 33 + ent->ip_self[i];  
+    h = h * 33 + ent->udp;
     // hashing content
-    // while((c = *content++)) h = ((h << 5) + h) + c;
+    // while((c = *content++)) h = h * 33 + c;
 
     // creating hash using alphanumerical characters
     for(i=0; i<8; i++){
