@@ -6,7 +6,7 @@ public class Jring{
     static Entity ent;
     static ArrayList<String> mess_list;
     
-    public static void main(String[] args) throws InterruptedException{
+    public static void main(String[] args) throws TcpException{
         mess_list = new ArrayList<String>();
         InetAddress host_ip =host_ip();
         System.out.println(host_ip.toString());
@@ -17,7 +17,6 @@ public class Jring{
             System.out.println("The maximum length of your id is 8 characters \n Give a new id");
             id = sc.nextLine();
         }
-        
         System.out.println("Give your udp port");
         int u = sc.nextInt();
         System.out.println("Give your tcp port");
@@ -49,8 +48,8 @@ public class Jring{
             while(true){                
                 mess_send= sc.nextLine();
                 if(udp_mode.quit) break;
-                int type=type_mess(mess_send);
-                if(type==2){
+                if(mess_send.equals("GBYE")){
+                    tcp_t.interrupt();
                     mess_send="GBYE idm "+host_ip.toString().substring(1)+" "+ent.udp+" "+ent.ip_next+" "+ent.port_next;
                 }
                 String []tab = mess_send.split(" ");
@@ -58,10 +57,7 @@ public class Jring{
                 packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                 dso.send(packet_send);
                 mess_list.add(tab[1]);
-            }
-            System.out.println("yes");
-            //tcp_t.interrupt();
-            //tcp_t.join();                
+            }            
         }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
@@ -75,7 +71,6 @@ public class Jring{
             BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
             String mess_recv=br.readLine();
-            //System.out.println(mess_recv);
             Welc_mess data_welc = Welc_mess.parse_welc(mess_recv);
             if(data_welc!=null){ 
                 ent.ip_next=data_welc.ip_next;
@@ -86,11 +81,11 @@ public class Jring{
                 pw.println(mess_send);
                 pw.flush();
                 mess_recv=br.readLine();
-                //System.out.println(mess_recv);
                 if(mess_recv.equals("ACKC")){
-                    System.out.println("insert : Connexion Succeed !");
+                    System.out.println("insert : Successful Connexion !");
                 }
             }
+            System.out.println("insert : Connexion Failed !");
             br.close();
             pw.close();
             socket.close();
@@ -119,12 +114,5 @@ public class Jring{
             e.printStackTrace();
         }
         return null;
-    }
-    
-    public static int type_mess(String type){
-        if(type.equals("WHOS")) return 1;
-        if(type.equals("GBYE")) return 2;
-        if(type.equals("Test")) return 3;
-        return 0;
     }
 }

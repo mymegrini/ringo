@@ -39,7 +39,7 @@ public class Udp_thread implements Runnable{
                     data=mess_send.getBytes();
                     packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                     dso.send(packet_send);
-                    mess_list.add(tab[1]);
+                    mess_list.add("i");
                 }
                 if(tab.length==5 && tab[0].equals("MEMB")){
                     s = search(tab[1]);
