@@ -1,4 +1,4 @@
-#ifndef COMMON_h
+#ifndef COMMON_H
 #define COMMON_H
 
 
@@ -58,6 +58,7 @@ void verbosity(int mode);
 
 int isnumeric(const char *str);
 //char *itoa4(int i);
+void itoa(char *s, int size, int i);
 void itoa4(char *s, int i);
 int yesno(const char *question);
 int yesnod(const char *question, const int yes);

@@ -39,15 +39,29 @@ int isnumeric(const char *str) {
  *    return s;
  *}
  */
+
+void itoa(char *s, int size, int i) {
+  s[--size] = 0;
+  while (--size >= 0) {
+    s[size] = 48 + i % 10;
+    i /= 10;
+  }
+}
+
+
+
 void itoa4(char *s, int i) {
-    s[4] = 0;
-    s[3] = 48 + i % 10;
-    i /= 10;
-    s[2] = 48 + i % 10;
-    i /= 10;
-    s[1] = 48 + i % 10;
-    i /= 10;
-    s[0] = 48 + i;
+    /*
+     *s[4] = 0;
+     *s[3] = 48 + i % 10;
+     *i /= 10;
+     *s[2] = 48 + i % 10;
+     *i /= 10;
+     *s[1] = 48 + i % 10;
+     *i /= 10;
+     *s[0] = 48 + i;
+     */
+  itoa(s, 5, i);
 }
 
 
@@ -127,7 +141,7 @@ void ipnozeros(char *nozeros, const char *ip) {
 }
 
 
-static void itoa(char *str, int n) {
+static void itoa_var(char *str, int n) {
     int i;
     for (i = 0; n > 0; ++i, n /= 10)
         str[i] = '0' + n % 10;
@@ -140,9 +154,9 @@ static void fifo_path(char *name) {
     struct timeval t;
     gettimeofday(&t, NULL);
     char istr[20];
-    itoa(istr, t.tv_sec);
+    itoa_var(istr, t.tv_sec);
     strcat(name, istr);
-    itoa(istr, t.tv_usec);
+    itoa_var(istr, t.tv_usec);
     strcat(name, istr);
 }
 
