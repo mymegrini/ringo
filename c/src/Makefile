@@ -1,7 +1,7 @@
 CSRC		= $(wildcard *.c)
 OBJS		=  $(CSRC:%.c=$(COBJPATH)%.o)
 EARLY_DIRS = protocol
-LATE_DIRS = shell
+LATE_DIRS = shell plugin_system
 LIST = $(LATE_DIRS) $(EARLY_DIRS)
 
 

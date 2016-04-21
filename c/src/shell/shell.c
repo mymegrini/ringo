@@ -23,23 +23,15 @@
 // PROTOTYPES
 ////////////////////////////////////////////////////////////////////////////////
 
-static void cmd_whos(int argc, char **argv);
-extern void cmd_gbye(int argc, char **argv);
-extern void cmd_info(int argc, char **argv);
-extern void cmd_help(int argc, char **argv);
-extern void cmd_diff(int argc, char **argv);
-extern void cmd_chat(int argc, char **argv);
+static int cmd_whos(int argc, char **argv);
+extern int cmd_gbye(int argc, char **argv);
+extern int cmd_info(int argc, char **argv);
+extern int cmd_help(int argc, char **argv);
+extern int cmd_diff(int argc, char **argv);
+extern int cmd_chat(int argc, char **argv);
 
 
 
-
-// TEST
-void echo(int argc, char **argv) {
-    
-    for (++argv; *argv != NULL; ++argv)
-        printf("%s ", *argv);
-    printf("\n");
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // VARS
@@ -48,7 +40,6 @@ void echo(int argc, char **argv) {
 command cmd[] = { 
   { "chat", "Chat on the ring.", cmd_chat },
   { "rdif", "Send messages on the ring.", cmd_diff },
-  { "echo", "Print a message.", echo },
   { "gbye", "Quit a ring.", cmd_gbye },
   { "help", "Show this message.", cmd_help },
   { "info", "Display informations on current entity.", cmd_info},
@@ -103,12 +94,13 @@ static void exec_cmd(const char *str) {
  */
 
 
-static void cmd_whos(int argc, char **argv) {
+static int cmd_whos(int argc, char **argv) {
     if (argc != 1) {
         fprintf(stderr, "Usage:\t%s", argv[1]);
-        return ;
+        return 1;
     }
     sendmessage_all("WHOS", "");
+    return 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////

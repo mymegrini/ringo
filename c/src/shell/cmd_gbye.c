@@ -149,7 +149,7 @@ static void *gbye(void *arg)
 
 static int compare( const void* a, const void* b);
 
-void cmd_gbye(int argc, char **argv)
+int cmd_gbye(int argc, char **argv)
 {
     debug("action_gbye", "entering function... argc:%d", argc);
     pthread_t wait_gbye_t;
@@ -161,7 +161,6 @@ void cmd_gbye(int argc, char **argv)
         }
         printf("All ring quit.\n");
         close_tcpserver();
-        return;
     }
     else {
         int len = argc-1;
@@ -176,7 +175,7 @@ void cmd_gbye(int argc, char **argv)
             pthread_create(&wait_gbye_t, NULL, gbye, arg);
         }
     }
-
+    return 0;
 }
 
 static int compare( const void* a, const void* b)

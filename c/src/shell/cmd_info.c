@@ -26,9 +26,10 @@ void print_ringnumber() {
     printf(UNDERLINED BOLD "Ring number:" RESET " %d\n", *ring_number+1);
 }
 
-void cmd_info(int argc, char *argv[]) {
+int cmd_info(int argc, char *argv[]) {
     print_selfinfo();
     print_ringnumber();
     for (int i = 0; i < *ring_number+1; ++i)
         print_ringinfo(i);
+    return 0;
 }

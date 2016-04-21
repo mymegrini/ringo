@@ -15,9 +15,10 @@ static void print_cmd(command *c) {
       c->name, c->desc);
 }
 
-void cmd_help(int argc, char *argv[])
+int cmd_help(int argc, char *argv[])
 {
   for (int i = 0; *cmd[i].name; ++i)
     print_cmd(&cmd[i]);
+  return 0;
 }
 

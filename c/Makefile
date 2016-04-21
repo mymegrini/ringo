@@ -1,7 +1,7 @@
 export CC	= gcc
 export CFLAGS 		= -Wall -O2 -std=gnu99 # #--pedantic -std=c11
 export COBJPATH = $(shell echo `pwd`)/bin/
-export LIBLINKS	= -pthread -lreadline
+export LIBLINKS	= -pthread -lreadline -ldl
 export CEXE = $(COBJPATH)Cring
 
 .SILENT: 

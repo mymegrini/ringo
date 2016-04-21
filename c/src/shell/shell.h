@@ -13,7 +13,7 @@ void run_shell();
 typedef struct cmd {
     char name[30];
     char desc[512];
-    void (*exec)(int argc, char **args);
+    int (*exec)(int argc, char **args);
 } command;
 
 
