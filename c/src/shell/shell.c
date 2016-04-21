@@ -88,8 +88,10 @@ static void exec_cmd(const char *str) {
                     return;
                 }
             }
+            system(str);
             break;
     }
+    wordfree(&wordx);
 }
 
 /*
