@@ -12,7 +12,7 @@
 typedef struct application {
     char id[9];
     char desc[512];
-    void (*app)(char *); // action to do, take the message as argument
+    void (*app)(char *, char *, int); // action to do, take the message, content and lookup_flag
 } application;
 
 

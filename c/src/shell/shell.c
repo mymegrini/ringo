@@ -27,6 +27,7 @@ static void cmd_whos(int argc, char **argv);
 extern void cmd_gbye(int argc, char **argv);
 extern void cmd_info(int argc, char **argv);
 extern void cmd_help(int argc, char **argv);
+extern void cmd_diff(int argc, char **argv);
 extern void cmd_chat(int argc, char **argv);
 
 
@@ -45,8 +46,9 @@ void echo(int argc, char **argv) {
 ////////////////////////////////////////////////////////////////////////////////
 
 command cmd[] = { 
-  { "chat", "Send messages on the ring.", cmd_chat },
-  { "echo", "Print a message", echo },
+  { "chat", "Chat on the ring.", cmd_diff },
+  { "rdif", "Send messages on the ring.", cmd_diff },
+  { "echo", "Print a message.", echo },
   { "gbye", "Quit a ring.", cmd_gbye },
   { "help", "Show this message.", cmd_help },
   { "info", "Display informations on current entity.", cmd_info},

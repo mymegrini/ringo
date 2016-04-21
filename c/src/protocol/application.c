@@ -6,10 +6,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-extern void action_chat(char *mess);
+extern void action_diff(char *mess, char *content, int lookup_flag);
 
 application app[] = {
-  { "DIFF####", "Chat message.", action_chat },
+  { "DIFF####", "Diff message used to send message over the ring.", action_diff },
   { "", "", NULL}
 };
 
@@ -26,7 +26,7 @@ application app[] = {
  * @return 0 when the app is not supported
  * @return -1 when the message doesn't follow the protocol
  */
-int parseappmsg(char *message, char *content) {
+int parseappmsg(char *message, char *content, int lookup_flag) {
     /*if (message[CTNT_OFFST+4] != ' ') {*/
   debug(MAGENTA "parseappmessage", MAGENTA "content: %s", content);
     if (content[8] != ' ') {
@@ -43,7 +43,7 @@ int parseappmsg(char *message, char *content) {
     for (int i = 0; app[i].id[0] != 0; ++i)  {
         if (strcmp(app[i].id, idapp) == 0) {
             verbose("APPL %s found.\n", idapp);
-            app[i].app(app_content);
+            app[i].app(message, app_content, lookup_flag);
             r = 1;
             break;
         }

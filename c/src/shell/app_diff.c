@@ -18,7 +18,7 @@
 
 
 #define   MSIZE        480
-#define   IDAPP_CHAT   "DIFF####"
+#define   IDAPP_DIFF   "DIFF####"
 
 
 
@@ -27,22 +27,17 @@
 
 
 
-static void print_chat(char *mess) {
-  printf("%s\n", mess);
-}
-
-
-
-void action_chat(char *mess) {
+void action_diff(char *mess, char *content, int lookup_flag) {
   char size[4];
-  strncpy(size, mess, 3);
+  strncpy(size, content, 3);
   size[3] = 0;
-  if (mess[3] != ' ' || !isnumeric(size)) {
-    debug(RED "action_chat", RED "message \"%s\" not valid for application.",
-        mess);
+  if (content[3] != ' ' || !isnumeric(size)) {
+    debug(RED "action_chat", RED "message content \"%s\" not valid for application.",
+        content);
     return;
   }
-  print_chat(&mess[4]);
+  if (!lookup_flag)
+    sendpacket_all(mess);
 }
 
 
@@ -52,7 +47,7 @@ static void send_chat(char *mess) {
   unsigned size = MSIZE < len ? MSIZE : len;
   char ssize[4];
   itoa(ssize, 4, size);
-  sendappmessage_all(IDAPP_CHAT, "%s %s", ssize, mess);
+  sendappmessage_all(IDAPP_DIFF, "%s %s", ssize, mess);
 }
 
 
@@ -88,7 +83,7 @@ static void help(char *argv0)
 
 static void getmessage(char *message)
 {
-  char *line = readline(UNDERLINED "Enter your message:\n");
+  char *line = readline(UNDERLINED "Enter your message:\n" RESET);
   strncpy(message, line, 481);
   free(line);
 }
@@ -96,7 +91,7 @@ static void getmessage(char *message)
 
 #define FLAG_MESS 1
 
-void cmd_chat(int argc, char **argv)
+void cmd_diff(int argc, char **argv)
 {
   int c, indexptr;
   short flag = 0;
