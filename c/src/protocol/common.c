@@ -13,6 +13,37 @@
 #define NRING 2
 #endif
 
+
+void padstr(char *padded, const char *str, int size) {
+  int len = strlen(str);
+  int pad = size - len;
+  int i;
+  for (i = 0; i < pad; ++i)
+    padded[i] = ' ';
+  strncpy(&padded[i], str, size < len ? size : len);
+  padded[size] = 0;
+}
+
+
+
+void unpadstr(char *unpadded, const char *str) {
+  while (*str == ' ')
+    ++str;
+  strcpy(unpadded, str);
+}
+
+
+
+void unpadstrn(char *unpadded, const char *str, int len) {
+  debug("unpadstr", GREEN "str: \"%s\"", str);
+  while (*str == ' ' && --len >= 0)
+    ++str;
+  strncpy(unpadded, str, len);
+  unpadded[len] = 0;
+}
+
+
+
 int isnumeric(const char *str) {
     while(*str)
     {
@@ -20,6 +51,17 @@ int isnumeric(const char *str) {
             return 0;
         str++;
     }
+
+    return 1;
+}
+
+
+
+
+int isnumericn(const char *str, int n) {
+    for (int i = 0; i < n; ++i)
+        if(!isdigit(str[i]))
+            return 0;
 
     return 1;
 }

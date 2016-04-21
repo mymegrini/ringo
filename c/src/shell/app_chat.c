@@ -15,10 +15,13 @@
 #include <readline/readline.h>
 
 
+// chat message: "APPL idm CHAT#### SIZE NAME CONTENT"
+
+#define   MSIZE        485
+#define   IDAPP_CHAT   "CHAT####"
 
 
-#define   MSIZE        480
-#define   IDAPP_CHAT   "DIFF####"
+static int chat_fd = STDOUT_FILENO;
 
 
 
@@ -27,22 +30,36 @@
 
 
 
-static void print_chat(char *mess) {
-  printf("%s\n", mess);
+static void print_chat(char *name, char *content) {
+  dprintf(chat_fd, UNDERLINED "%s:" RESET " %s\n", name, content);
 }
 
 
 
-void action_chat(char *mess) {
-  char size[4];
-  strncpy(size, mess, 3);
-  size[3] = 0;
-  if (mess[3] != ' ' || !isnumeric(size)) {
+void action_chat(char *mess, char *content, int lookup_flag) {
+
+  if (lookup_flag)
+    return;
+
+  if (content[3] != ' ' || !isnumericn(content, 3) ||
+      content[12] != ' '){
     debug(RED "action_chat", RED "message \"%s\" not valid for application.",
         mess);
     return;
   }
-  print_chat(&mess[4]);
+  char name[9];
+  unpadstrn(name, &content[4], 8);
+  int size = atoi(content);
+  if (size > MSIZE || size < 0) {
+    debug("print_chat", "Size error in message content (%d > MAXSIZE = %d || size < 0):"
+        "\n%s\n", size, MSIZE, content);
+    return;
+  }
+  char chat_mess[MSIZE+1];
+  strncpy(chat_mess, &content[13], size);
+  chat_mess[size] = 0;
+  print_chat(name, chat_mess);
+  sendpacket_all(mess);
 }
 
 
@@ -52,7 +69,10 @@ static void send_chat(char *mess) {
   unsigned size = MSIZE < len ? MSIZE : len;
   char ssize[4];
   itoa(ssize, 4, size);
-  sendappmessage_all(IDAPP_CHAT, "%s %s", ssize, mess);
+  char name[9];
+  padstr(name, ent->id, 8);
+  sendappmessage_all(IDAPP_CHAT, "%s %s %s", ssize, name, mess);
+  print_chat(name, mess);
 }
 
 

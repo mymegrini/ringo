@@ -46,7 +46,7 @@ void echo(int argc, char **argv) {
 ////////////////////////////////////////////////////////////////////////////////
 
 command cmd[] = { 
-  { "chat", "Chat on the ring.", cmd_diff },
+  { "chat", "Chat on the ring.", cmd_chat },
   { "rdif", "Send messages on the ring.", cmd_diff },
   { "echo", "Print a message.", echo },
   { "gbye", "Quit a ring.", cmd_gbye },

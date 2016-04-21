@@ -32,7 +32,7 @@ void action_diff(char *mess, char *content, int lookup_flag) {
   strncpy(size, content, 3);
   size[3] = 0;
   if (content[3] != ' ' || !isnumeric(size)) {
-    debug(RED "action_chat", RED "message content \"%s\" not valid for application.",
+    debug(RED "action_diff", RED "message content \"%s\" not valid for application.",
         content);
     return;
   }
@@ -42,7 +42,7 @@ void action_diff(char *mess, char *content, int lookup_flag) {
 
 
 
-static void send_chat(char *mess) {
+static void send_diff(char *mess) {
   unsigned len = strlen(mess);
   unsigned size = MSIZE < len ? MSIZE : len;
   char ssize[4];
@@ -115,10 +115,10 @@ void cmd_diff(int argc, char **argv)
   }
 
   if (flag & FLAG_MESS) {
-    send_chat(message);
+    send_diff(message);
   }
   else {
     getmessage(message);
-    send_chat(message);
+    send_diff(message);
   }
 }
