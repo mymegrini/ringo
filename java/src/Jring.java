@@ -6,7 +6,8 @@ public class Jring{
     static Entity ent;
     static ArrayList<String> mess_list;
     
-    public static void main(String[] args) throws TcpException{
+    public static void main(String[] args){
+        System.out.println(message_id());
         mess_list = new ArrayList<String>();
         InetAddress host_ip =host_ip();
         System.out.println(host_ip.toString());
@@ -24,9 +25,10 @@ public class Jring{
         String mess_send = sc.nextLine();
         ent = new Entity(id,u,t);
         if(args.length==0){
+            ent.ip=host_ip.toString().substring(1);
             ent.mdiff_ip="255.255.255.255";
             ent.mdiff_port=4444;
-            ent.ip_next=host_ip.toString().substring(1);
+            ent.ip_next=ent.ip;
             ent.port_next=u;
         }
         else{            
@@ -48,9 +50,16 @@ public class Jring{
             while(true){                
                 mess_send= sc.nextLine();
                 if(udp_mode.quit) break;
+                if(mess_send.equals("WHOS")){
+                    mess_send="WHOS idm ";
+                }
                 if(mess_send.equals("GBYE")){
                     tcp_t.interrupt();
                     mess_send="GBYE idm "+host_ip.toString().substring(1)+" "+ent.udp+" "+ent.ip_next+" "+ent.port_next;
+                }
+                if(mess_send.equals("TEST")){
+                    mess_send="TEST idm "+ent.mdiff_ip+" "+ent.mdiff_port;
+                    
                 }
                 String []tab = mess_send.split(" ");
                 data=mess_send.getBytes();
@@ -114,5 +123,25 @@ public class Jring{
             e.printStackTrace();
         }
         return null;
+    }
+    
+    public static String message_id(){
+        String id="";
+        Random rand = new Random();
+        int h = rand.nextInt((int)(Math.pow(2,31))-1);
+        int cofh;
+        //String s =Long.toString(new java.util.Date().getTime())+ent.ip+Integer.toString(ent.udp);
+        String s =Long.toString(new java.util.Date().getTime())+"192.168.1.45"+"8888";
+        for(int i=0;i<s.length();i++){
+            h=h*33+s.charAt(i);
+        }
+        for(int i=0;i<8;i++){
+            cofh=(h%62)+48;
+            if(cofh>57) cofh+=7;
+            if(cofh>90) cofh+=6;
+            id=id+(char)(cofh);
+            h=(int)(h/62);
+        }
+        return id;
     }
 }

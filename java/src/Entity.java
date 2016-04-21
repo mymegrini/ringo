@@ -1,5 +1,6 @@
 public class Entity{
     String id;
+    String ip;
     int udp;
     int tcp;
     String ip_next;
