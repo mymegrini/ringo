@@ -27,6 +27,7 @@ static void cmd_whos(int argc, char **argv);
 extern void cmd_gbye(int argc, char **argv);
 extern void cmd_info(int argc, char **argv);
 extern void cmd_help(int argc, char **argv);
+extern void cmd_chat(int argc, char **argv);
 
 
 
@@ -44,12 +45,13 @@ void echo(int argc, char **argv) {
 ////////////////////////////////////////////////////////////////////////////////
 
 command cmd[] = { 
-    { "echo", "Print a message", echo },
-    { "whos", "Getting to know each other...", cmd_whos },
-    { "gbye", "Quit a ring.", cmd_gbye },
-    { "info", "Display informations on current entity.", cmd_info},
-    { "help", "Show this message.", cmd_help },
-    { "", "", NULL }
+  { "chat", "Send messages on the ring.", cmd_chat },
+  { "echo", "Print a message", echo },
+  { "gbye", "Quit a ring.", cmd_gbye },
+  { "help", "Show this message.", cmd_help },
+  { "info", "Display informations on current entity.", cmd_info},
+  { "whos", "Getting to know each other...", cmd_whos },
+  { "", "", NULL }
 };
 
 extern volatile int nring;
