@@ -100,14 +100,14 @@ static void help(char *argv0)
 
 static void print_action(PluginAction_t *action)
 {
-  printf(BOLD "%s:\t%s\n", action->name, action->desc);
+  printf(BOLD "%s:\t" RESET "%s\n", action->name, action->desc);
 }
 
 
 
 static void print_command(PluginCommand_t *command)
 {
-  printf(BOLD "%s:\t%s\n", command->name, command->desc);
+  printf(BOLD "%s:\t" RESET "%s\n", command->name, command->desc);
 }
 
 
@@ -119,11 +119,17 @@ static void print_registeredplugin(char *name, void *data)
 
   printf(BOLD UNDERLINED "%s" RESET "\n", name);
   printf(UNDERLINED "commands:" RESET "\n");
-  for (int i = 0; i < p->size_command; ++i)
-    print_command(p->command+i);
+  if (p->size_command)
+    for (int i = 0; i < p->size_command; ++i)
+      print_command(p->command+i);
+  else
+    printf("No command\n");
   printf(UNDERLINED "actions:" RESET "\n");
-  for (int i = 0; i < p->size_action; ++i)
-    print_action(p->action+i);
+  if (p->size_action)
+    for (int i = 0; i < p->size_action; ++i)
+      print_action(p->action+i);
+  else
+    printf("No action.\n");
 }
 
 

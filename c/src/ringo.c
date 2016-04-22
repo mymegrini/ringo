@@ -30,7 +30,7 @@ void get_info();
 
 
 
-struct option options[] = {
+static struct option options[] = {
     { "udp", required_argument, 0, OPT_UDP },
     { "tcp", required_argument, 0, OPT_TCP },
     { "id", required_argument, 0, OPT_ID },
@@ -168,6 +168,6 @@ void get_info() {
         mdiff_ip = NULL;
         mport = 0;
     }
-
 }
+
 

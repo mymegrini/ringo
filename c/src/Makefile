@@ -1,15 +1,15 @@
 CSRC		= $(wildcard *.c)
 OBJS		=  $(CSRC:%.c=$(COBJPATH)%.o)
 EARLY_DIRS = protocol
-LATE_DIRS = shell plugin_system
-LIST = $(LATE_DIRS) $(EARLY_DIRS)
+LATE_DIRS = plugin_system shell plugins
+LIST = $(EARLY_DIRS) $(LATE_DIRS)
 
 
 
-.SILENT: 
-.PHONY: clean main $(LIST) makepath
+#.SILENT: 
+.PHONY: clean main $(LIST) 
 
-all		: makepath $(CEXE)
+all		: $(CEXE)
 
 debug: CFLAGS += -D DEBUG -g
 debug: all
@@ -25,7 +25,7 @@ main: $(OBJS)
 
 
 $(LIST): force_look
-	for d in $@; do ($(MAKE) $(MFLAGS) -C $$d); done
+	for d in $@; do (echo "entering $$d..."; $(MAKE) $(MFLAGS) -C $$d); done
 
 
 $(COBJPATH)%.o 	: %.c
