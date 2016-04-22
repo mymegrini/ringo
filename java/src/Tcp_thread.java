@@ -27,7 +27,6 @@ public class Tcp_thread implements Runnable{
                 pw.println(mess);
                 pw.flush();
                 mess=br.readLine();
-                //System.out.println(mess);
                 Newc_mess data = Newc_mess.parse_newc(mess);
                 if(data!=null){
                     ent.ip_next=data.ip;

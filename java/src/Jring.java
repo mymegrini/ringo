@@ -7,7 +7,6 @@ public class Jring{
     static ArrayList<String> mess_list;
     
     public static void main(String[] args){
-        System.out.println(message_id());
         mess_list = new ArrayList<String>();
         InetAddress host_ip =host_ip();
         System.out.println(host_ip.toString());
@@ -40,32 +39,33 @@ public class Jring{
             Thread tcp_t = new Thread(tcp_mode);
             tcp_t.start();
             //Udp
-            Udp_thread udp_mode = new Udp_thread(ent,host_ip,mess_list);
+            Udp_thread udp_mode = new Udp_thread(ent,mess_list);
             Thread udp_t = new Thread(udp_mode);
             udp_t.start();
             //Send a message
             byte[] data = new byte[512];
             DatagramSocket dso = new DatagramSocket();
             DatagramPacket packet_send;
+            Down_thread dwn;
             while(true){                
                 mess_send= sc.nextLine();
                 if(udp_mode.quit) break;
                 if(mess_send.equals("WHOS")){
-                    mess_send="WHOS idm ";
+                    mess_send="WHOS "+message_id();
                 }
                 if(mess_send.equals("GBYE")){
                     tcp_t.interrupt();
-                    mess_send="GBYE idm "+host_ip.toString().substring(1)+" "+ent.udp+" "+ent.ip_next+" "+ent.port_next;
+                    mess_send="GBYE "+message_id()+" "+ent.ip+" "+ent.udp+" "+ent.ip_next+" "+ent.port_next;
                 }
                 if(mess_send.equals("TEST")){
-                    mess_send="TEST idm "+ent.mdiff_ip+" "+ent.mdiff_port;
-                    
+                    String m_id=message_id();
+                    mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
+                    dwn = new Down_thread(ent,mess_list,m_id,2);
                 }
-                String []tab = mess_send.split(" ");
+                mess_list.add(mess_send.split(" ")[1]);
                 data=mess_send.getBytes();
                 packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                 dso.send(packet_send);
-                mess_list.add(tab[1]);
             }            
         }catch(Exception e){
             System.out.println(e);
@@ -94,7 +94,7 @@ public class Jring{
                     System.out.println("insert : Successful Connexion !");
                 }
             }
-            System.out.println("insert : Connexion Failed !");
+            else System.out.println("insert : Connexion Failed !");
             br.close();
             pw.close();
             socket.close();
@@ -128,15 +128,18 @@ public class Jring{
     public static String message_id(){
         String id="";
         Random rand = new Random();
-        int h = rand.nextInt((int)(Math.pow(2,31))-1);
-        int cofh;
-        //String s =Long.toString(new java.util.Date().getTime())+ent.ip+Integer.toString(ent.udp);
-        String s =Long.toString(new java.util.Date().getTime())+"192.168.1.45"+"8888";
+        //long h = rand.nextInt((int)(Math.pow(2,16))-1);
+        long h=rand.nextInt(1000);
+        long cofh;
+        //System.out.println(h);
+        String s =Long.toString(new java.util.Date().getTime())+ent.ip+Integer.toString(ent.udp);
+        //String s =Long.toString(new java.util.Date().getTime())+"192.168.1.145"+"8888";
         for(int i=0;i<s.length();i++){
             h=h*33+s.charAt(i);
         }
         for(int i=0;i<8;i++){
             cofh=(h%62)+48;
+            //System.out.println("cof "+cofh);
             if(cofh>57) cofh+=7;
             if(cofh>90) cofh+=6;
             id=id+(char)(cofh);
