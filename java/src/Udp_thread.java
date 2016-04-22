@@ -4,13 +4,11 @@ import java.io.*;
 
 public class Udp_thread implements Runnable{
     Entity ent;
-    InetAddress host_ip;
     static ArrayList<String> mess_list;
     boolean quit;
     
-    public Udp_thread(Entity e,InetAddress h,ArrayList<String> list){
+    public Udp_thread(Entity e,ArrayList<String> list){
         ent=e;
-        host_ip=h;
         mess_list=list;
         quit=false;
     }
@@ -23,7 +21,6 @@ public class Udp_thread implements Runnable{
             DatagramPacket packet_send ;
             String mess_recv;
             String mess_send;
-            int s;
             String []tab;
             while(true){
                 dso.receive(packet_recv);
@@ -32,23 +29,21 @@ public class Udp_thread implements Runnable{
                 packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                 tab = mess_recv.split(" ");
                 if(tab.length==2 && tab[0].equals("WHOS")){
-                    s = search(tab[1]);
-                    if(s==-1) dso.send(packet_send);
-                    else mess_list.remove(tab[1]);
-                    mess_send="MEMB "+"i"+" "+ent.id+" "+host_ip.toString().substring(1)+" "+ent.udp;
+                    if(!mess_list.remove(tab[1])) dso.send(packet_send);
+                    String mess_id =Jring.message_id();
+                    mess_send="MEMB "+mess_id+" "+ent.id+" "+ent.ip+" "+ent.udp;
                     data=mess_send.getBytes();
                     packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                     dso.send(packet_send);
-                    mess_list.add("i");
+                    mess_list.add(mess_id);
                 }
                 if(tab.length==5 && tab[0].equals("MEMB")){
-                    s = search(tab[1]);
-                    if(s==-1) dso.send(packet_send);
-                    else mess_list.remove(tab[1]);
+                    if(!mess_list.remove(tab[1])) dso.send(packet_send);
                 }
                 if(tab.length==6 && tab[0].equals("GBYE")){
                     if(ent.ip_next.equals(tab[2]) && ent.port_next==Integer.parseInt(tab[3])){
-                        mess_send="EYBG "+tab[1];
+                        String mess_id =Jring.message_id();
+                        mess_send="EYBG "+mess_id;
                         data=mess_send.getBytes();
                         packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                         dso.send(packet_send);
@@ -61,22 +56,23 @@ public class Udp_thread implements Runnable{
                     }
                 }
                 if(tab.length==2 && tab[0].equals("EYBG")){
-                    //s = search(tab[1]);
-                    //if(s==-1) dso.send(packet_send);
-                    //else{ 
-                    //mess_list.remove(tab[1]);
                     quit=true;
                     break;
-                    //}
                 }
-                /*if(tab.length==4 && tab[0].equals("TEST")){
-                  if(tab[2].equals(ent.mdiff_ip) && Integer.parseInt(tab[3])==ent.mdiff_port){
-                  packet_send = new DatagramPacket(data,data.length,next_ia);
-                  dso.send(packet_send);
-                  }
-                  }
-                  if(tab.length==1 && tab[0].equals("DOWN")){
-                  }*/
+                if(tab.length==4 && tab[0].equals("TEST")){
+                    if(tab[2].equals(ent.mdiff_ip) && Integer.parseInt(tab[3])==ent.mdiff_port){
+                        if(!mess_list.remove(tab[1]) ){
+                            data=mess_recv.getBytes();
+                            packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
+                            dso.send(packet_send);
+                        }
+                        else System.out.println("Test complete");
+                    }
+                }
+                if(tab.length==1 && tab[0].equals("DOWN")){
+                    quit=true;
+                    break;
+                }
             }
         }
         catch(Exception e){
