@@ -116,7 +116,7 @@ static void getmessage(char *message)
 
 #define FLAG_MESS 1
 
-void cmd_chat(int argc, char **argv)
+int cmd_chat(int argc, char **argv)
 {
   int c, indexptr;
   short flag = 0;
@@ -127,7 +127,7 @@ void cmd_chat(int argc, char **argv)
     switch (c) {
       case OPT_HELP:
         help(argv[0]);
-        return;
+        return 0;
         break;
       case OPT_MESS:
         flag |= FLAG_MESS;
@@ -135,6 +135,7 @@ void cmd_chat(int argc, char **argv)
         break;
       default:
         usage(argv[0]);
+        return 1;
         break;
     }
   }
@@ -146,4 +147,5 @@ void cmd_chat(int argc, char **argv)
     getmessage(message);
     send_chat(message);
   }
+  return 0;
 }

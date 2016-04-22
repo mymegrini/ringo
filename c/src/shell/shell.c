@@ -29,6 +29,7 @@ extern int cmd_info(int argc, char **argv);
 extern int cmd_help(int argc, char **argv);
 extern int cmd_diff(int argc, char **argv);
 extern int cmd_chat(int argc, char **argv);
+extern int cmd_plugin(int argc, char **argv);
 
 
 
@@ -37,12 +38,13 @@ extern int cmd_chat(int argc, char **argv);
 // VARS
 ////////////////////////////////////////////////////////////////////////////////
 
-command cmd[] = { 
+command cmd[] = {
   { "chat", "Chat on the ring.", cmd_chat },
   { "rdif", "Send messages on the ring.", cmd_diff },
   { "gbye", "Quit a ring.", cmd_gbye },
   { "help", "Show this message.", cmd_help },
   { "info", "Display informations on current entity.", cmd_info},
+  { "plug", "Add or remove plugins.", cmd_plugin},
   { "whos", "Getting to know each other...", cmd_whos },
   { "", "", NULL }
 };
@@ -54,8 +56,9 @@ extern volatile int nring;
 ////////////////////////////////////////////////////////////////////////////////
 
 
-static void exec_cmd(const char *str) {
+static int exec_cmd(const char *str) {
     wordexp_t wordx;
+    int r = -1;
     switch (wordexp(str, &wordx, 0)) {
         case WRDE_BADCHAR:
             fprintf(stderr, 
@@ -74,15 +77,16 @@ static void exec_cmd(const char *str) {
         default:
             for (int i = 0; cmd[i].name[0] != 0; i++) {
                 if (strcmp(cmd[i].name, wordx.we_wordv[0]) == 0) {
-                    (*cmd[i].exec)(wordx.we_wordc, wordx.we_wordv);
+                    r = (*cmd[i].exec)(wordx.we_wordc, wordx.we_wordv);
                     wordfree(&wordx);
-                    return;
+                    return r;
                 }
             }
             system(str);
             break;
     }
     wordfree(&wordx);
+    return r;
 }
 
 /*
@@ -129,3 +133,6 @@ void run_shell() {
 
 
 
+static void show_plugins() {
+
+}

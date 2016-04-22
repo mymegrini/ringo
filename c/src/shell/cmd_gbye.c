@@ -13,7 +13,11 @@ static struct goodbye_data
     pthread_mutex_t mutex;
 } _data = { .wait = 0 };
 
+
+
 static struct goodbye_data *gbye_data = &_data;
+
+
 
 int action_gbye(char *message, char *content, int lookup_flag)
 {
@@ -78,7 +82,6 @@ int action_gbye(char *message, char *content, int lookup_flag)
 
 
 
-
 int action_eybg(char *message, char *content, int lookup_flag)
 {
     // message already seen
@@ -102,6 +105,7 @@ static void usage(char *argv0)
 {
         printf("Usage:\t%s", argv0);
 }
+
 
 
 static void *gbye(void *arg)
@@ -147,7 +151,10 @@ static void *gbye(void *arg)
 }
 
 
+
 static int compare( const void* a, const void* b);
+
+
 
 int cmd_gbye(int argc, char **argv)
 {
@@ -177,6 +184,8 @@ int cmd_gbye(int argc, char **argv)
     }
     return 0;
 }
+
+
 
 static int compare( const void* a, const void* b)
 {
