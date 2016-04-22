@@ -6,7 +6,3 @@
 #*
 test*
 !.gitignore
-!protocol
-!shell
-!plugin_system
-!plugins
