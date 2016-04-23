@@ -93,7 +93,6 @@ int plugin_register(PluginManager *plug_manager, const char *name, Plugin *plug)
     pa->desc = plug->action[i].desc;
     pa->action = plug->action[i].action;
     insert(plug_manager->action, plug->action[i].name, pa);
-    insert(plug_manager->action, plug->action[i].name, &plug->action[i]);
   }
   return 1;
 }

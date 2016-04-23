@@ -129,6 +129,8 @@ int rm_free_data(list l, const char *name)
     return 0;
   node *n = l->first;
   if (strcmp(n->name, name) == 0) {
+    /* if (l->first == l->last) */
+    /*   l->first = NULL; */
     l->first = n->next;
     free_node_data(n);
     return 1;
@@ -138,6 +140,8 @@ int rm_free_data(list l, const char *name)
       if (strcmp(n->next->name, name) == 0) {
         node *rem = n->next;
         n->next = n->next->next;
+        if (rem == l->last)
+          l->last = n;
         free_node_data(rem);
         return 1;
       }
@@ -152,6 +156,8 @@ int rm(list l, const char *name)
     return 0;
   node *n = l->first;
   if (strcmp(n->name, name) == 0) {
+    /* if (l->first == l->last) */
+    /*   l->last = NULL; */
     l->first = n->next;
     free_node(n);
     return 1;
@@ -160,6 +166,8 @@ int rm(list l, const char *name)
     for ( ; n->next != NULL; n = n->next) {
       if (strcmp(n->next->name, name) == 0) {
         node *rem = n->next;
+        if (rem == l->last)
+          l->last = n;
         n->next = n->next->next;
         free_node(rem);
         return 1;
