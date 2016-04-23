@@ -47,6 +47,7 @@ public class Jring{
             DatagramSocket dso = new DatagramSocket();
             DatagramPacket packet_send;
             Down_thread dwn;
+            Thread dwn_t;
             while(true){                
                 mess_send= sc.nextLine();
                 if(udp_mode.quit) break;
@@ -61,6 +62,8 @@ public class Jring{
                     String m_id=message_id();
                     mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
                     dwn = new Down_thread(ent,mess_list,m_id,2);
+                    dwn_t = new Thread(dwn);
+                    dwn_t.start();
                 }
                 mess_list.add(mess_send.split(" ")[1]);
                 data=mess_send.getBytes();

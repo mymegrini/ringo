@@ -17,6 +17,7 @@ public class Down_thread implements Runnable{
     
     public void run(){
         try{
+            System.out.println("ENTERRR");
             String mess_send;
             byte[] data = new byte[512];
             DatagramSocket dso = new DatagramSocket();
@@ -33,7 +34,10 @@ public class Down_thread implements Runnable{
                     packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                     dso.send(packet_send);
                 }
-                else found=true;
+                else {
+                    found=true;
+                    break;
+                }
             }
             if(!found){
                 Thread.sleep(15);
@@ -44,6 +48,7 @@ public class Down_thread implements Runnable{
                     dso.send(packet_send);
                 }
             }
+            System.out.println("Trouve "+found);
         }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
