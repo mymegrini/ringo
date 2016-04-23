@@ -1,11 +1,11 @@
 CSRC		= $(wildcard *.c)
-OBJS		=  $(CSRC:%.c=$(COBJPATH)%.o)
+OBJS		=  $(CSRC:%.c=$(COBJPATH)/%.o)
 
 .PHONY: all
 all		: $(OBJS)
 
-$(COBJPATH)%.o 	: %.c
-	$(CC) $(CFLAGS) -c -o $@ $<
+$(COBJPATH)/%.o 	: %.c
+	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
 
 .PHONY: clean
 clean		:

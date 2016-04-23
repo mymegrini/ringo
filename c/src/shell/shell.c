@@ -85,7 +85,7 @@ static int exec_cmd(const char *str) {
           return r;
         }
       }
-      // look for plugin
+      // look for plugin command
       plug_command *pc;
       if (find((void **)&pc, plugin_manager.command, wordx.we_wordv[0])) {
         r = (pc->command)(wordx.we_wordc, wordx.we_wordv);

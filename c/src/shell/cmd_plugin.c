@@ -86,7 +86,7 @@ int cmd_plugin(int argc, char **argv)
 
 static void usage(char *argv0)
 {
-  printf("Usage:\t%s [-m message] [-h]\n", argv0);
+  printf("Usage:\t%s [-u plugins] [-lplugins] [-h]\n", argv0);
 }
 
 

@@ -1,11 +1,12 @@
 export CC	= gcc
 export CFLAGS 		= -Wall -O2 -std=gnu99 # #--pedantic -std=c11
-export CPATH = $(shell echo `pwd`)/
-export COBJPATH = $(CPATH)bin/
+export CPATH = $(shell echo `pwd`)
+export COBJPATH = $(CPATH)/bin
+export CPLUGPATH = $(COBJPATH)/plugins
 export LIBLINKS	= -pthread -lreadline -ldl
-export CEXE = $(COBJPATH)Cring
+export CEXE = $(COBJPATH)/Cring
 
-#.SILENT: 
+.SILENT: 
 
 
 all:

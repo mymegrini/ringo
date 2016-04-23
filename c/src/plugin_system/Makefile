@@ -1,11 +1,11 @@
 CSRC		= $(wildcard *.c)
-OBJS		=  $(CSRC:%.c=$(COBJPATH)%.o)
+OBJS		=  $(CSRC:%.c=$(COBJPATH)/%.o)
 
 
 all		: $(OBJS)
 
-$(COBJPATH)%.o 	: %.c
-	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
+$(COBJPATH)/%.o 	: %.c
+	$(CC) $(CFLAGS) -D PLUG_DIR="\"$(CPLUGPATH)\"" -fPIC -c -o $@ $<
 
 .PHONY: clean
 clean		:

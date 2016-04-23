@@ -2,6 +2,8 @@
 #include "common.h"
 #include "network.h"
 #include "message.h"
+#include "protocol.h"
+#include "../plugin_system/plugin_system.h"
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -30,7 +32,6 @@ application app[] = {
  */
 int parseappmsg(char *message, char *content, int lookup_flag) {
     /*if (message[CTNT_OFFST+4] != ' ') {*/
-  debug(MAGENTA "parseappmessage", MAGENTA "content: %s", content);
     if (content[8] != ' ') {
         fprintf(stderr, "APPL message not following the protocol.\n");
         return -1;
@@ -50,6 +51,14 @@ int parseappmsg(char *message, char *content, int lookup_flag) {
             break;
         }
     }
+    // look for plugin action
+    plug_action *pa;
+    if (find((void **)&pa, plugin_manager.action, idapp)) {
+      return pa->action(message, app_content, lookup_flag);
+    }
+    // application not found, retransmit the message if not seen.
+    if (!lookup_flag)
+      sendpacket_all(message);
     return r;
 }
 

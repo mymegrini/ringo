@@ -5,15 +5,19 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <search.h>
 #include <dlfcn.h>
 #include <unistd.h> // temporary
 
 
 
+
+#ifndef PLUG_DIR
+#define PLUG_DIR "./plugins"
+#endif
+static const char plugin_directory[] = PLUG_DIR;
+
 struct _PluginManager plugin_manager;
 
-static const char plugin_directory[] = "./plugins";
 
 #define   PLUG_PREFIX       "init_"
 #define   PLUG_PREFIX_LEN   5
@@ -53,22 +57,22 @@ static char* plugin_name_init(const char *plugname)
 int plugin_register(PluginManager *plug_manager, const char *name, Plugin *plug) 
 {
   if (mem(plug_manager->plugin, name)) {
-    fprintf(stderr, RED "A plugin called %s already exists.\n", name);
-    fprintf(stderr, RED "Plugin registration failed\n");
+    fprintf(stderr, "A plugin called "BOLD "%s" RESET " already exists.\n", name);
+    fprintf(stderr, "Plugin registration failed\n");
     return 0;
   }
   // look for collisions with other commands
   for (int i = 0; i < plug->size_command; ++i) 
     if (mem(plug_manager->command, plug->command[i].name)) {
-      fprintf(stderr, RED "A command called %s already exists.\n", plug->command[i].name);
-      fprintf(stderr, RED "Plugin registration failed\n");
+      fprintf(stderr, "A command called "BOLD "%s" RESET " already exists.\n", plug->command[i].name);
+      fprintf(stderr, "Plugin registration failed\n");
       return 0;
     }
   // look for collisions with other message actions
   for (int i = 0; i < plug->size_action; ++i) 
     if (mem(plug_manager->action, plug->action[i].name)) {
-      fprintf(stderr, RED "An action called %s already exists.\n", plug->action[i].name);
-      fprintf(stderr, RED "Plugin registration failed\n");
+      fprintf(stderr, "An action called "BOLD "%s" RESET " already exists.\n", plug->action[i].name);
+      fprintf(stderr, "Plugin registration failed\n");
       return 0;
     }
 
@@ -100,7 +104,7 @@ int plugin_unregister(PluginManager *plug_manager, const char *name)
 {
   RegisteredPlugin *plug_reg;
   if (!find((void **)&plug_reg, plug_manager->plugin, name)) {
-    fprintf(stderr, RED "Plugin %s doesn't exist.\n", name);
+    fprintf(stderr, "Plugin "BOLD "%s" RESET " doesn't exist.\n", name);
     return 0;
   }
   Plugin *p = plug_reg->plug;
@@ -123,25 +127,25 @@ int loadplugin(PluginManager *plug_manager, const char *plugname)
   void *lib = dlopen(plugpath, RTLD_LAZY);
   free(plugpath);
   if (lib == NULL) {
-    fprintf(stderr, RED"Could not load plugin %s from %s.\n" RESET, plugname, plugin_directory);
-    fprintf(stderr, RED"Plugin loading failed.\n" RESET);
+    fprintf(stderr, "Could not load plugin "BOLD "%s" RESET " from %s.\n", plugname, plugin_directory);
+    fprintf(stderr,"Plugin loading failed.\n");
     return 0;
   }
   char *init_name = plugin_name_init(plugname);
-  printf("Retrieving plugin init function...\n");
+  printf("Retrieving init function...\n");
   PluginInitFunc init_func = dlsym(lib, init_name);
   free(init_name);
   if (!init_func) {
     dlclose(lib);
-    fprintf(stderr, RED"Could not load ini function for plugin %s.\n" RESET, plugname);
-    fprintf(stderr, RED"Plugin loading failed.\n" RESET);
+    fprintf(stderr,"Could not load ini function for plugin "BOLD "%s" RESET ".\n", plugname);
+    fprintf(stderr,"Plugin loading failed.\n");
     return 0;
   }
   int r = init_func(plug_manager);
   if (r < 0) {
     dlclose(lib);
-    fprintf(stderr, RED "Init function returns %d.\n" RESET, r);
-    fprintf(stderr, RED"Plugin loading failed.\n" RESET);
+    fprintf(stderr, "Init function returns %d.\n", r);
+    fprintf(stderr, "Plugin loading failed.\n");
     return 0;
   }
   printf("Plugin initialized.\n");
@@ -154,7 +158,7 @@ int loadplugin(PluginManager *plug_manager, const char *plugname)
     return 0;
   }
   plug_reg->lib = lib;
-  printf("Plugin registered.\n");
+  printf("Plugin "BOLD "%s" RESET " now available.\n", plugname);
   return 1;
 }
 

@@ -1,18 +1,18 @@
 CSRC		= $(wildcard *.c)
-CPLUGPATH = $(COBJPATH)plugins/
 #DOBJS		= $($(CPLUGPATH):%.o=$(CPLUGPATH)%so)
 #OBJS		=  $(CSRC:%.c=$(CPLUGPATH)%.o)
-DOBJS		=  $(CSRC:%.c=$(CPLUGPATH)%.so)
-OBJS		=  $(CSRC:%.c=$(CPLUGPATH)%.o)
-STATIC  =  $(COBJPATH)plugin_system.o $(COBJPATH)list.o
+DOBJS		=  $(CSRC:%.c=$(CPLUGPATH)/%.so)
+OBJS		=  $(CSRC:%.c=$(CPLUGPATH)/%.o)
+EXTOBJ	= plugin_system.o list.o application.o protocol.o #message.o protocol.o common.o application.o listmsg.o network.o thread.o #protocol_interface.o 
+STATIC  =  $(foreach obj, $(EXTOBJ), $(COBJPATH)/$(obj))
 
 
 all		: $(DOBJS)
 
-$(CPLUGPATH)%.so	: $(OBJS)
+$(CPLUGPATH)/%.so	: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $< $(STATIC) -shared
 
-$(CPLUGPATH)%.o 	: %.c
+$(CPLUGPATH)/%.o 	: %.c
 	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
 
 .PHONY: clean

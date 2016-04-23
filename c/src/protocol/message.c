@@ -215,8 +215,8 @@ int parsemsg(char *message) {
         }
     // message not supported
     verbose("Message of type %s not supported.\n", type);
-    // remove message from the list because not supported
-    //lookup(idm);
+    if (!lookup_flag)
+      sendpacket_all(message);
     return -1;
 }
 
