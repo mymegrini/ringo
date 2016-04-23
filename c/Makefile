@@ -8,7 +8,7 @@ export LDFLAGS        = -pthread -lreadline -ldl -Wl,-dynamic-list,plugin_system
 export PLUGIN_CFLAGS  = $(CFLAGS)
 export PLUGIN_LDFLAGS = -fPIC
 
-# .SILENT: 
+#.SILENT: 
 
 
 all:

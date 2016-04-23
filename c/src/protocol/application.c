@@ -9,10 +9,8 @@
 #include <stdio.h>
 
 extern void action_diff(char *mess, char *content, int lookup_flag);
-extern void action_chat(char *mess, char *content, int lookup_flag);
 
 application app[] = {
-  { "CHAT####", "Chat message.", action_chat },
   { "DIFF####", "Diff message used to send message over the ring.", action_diff },
   { "", "", NULL}
 };

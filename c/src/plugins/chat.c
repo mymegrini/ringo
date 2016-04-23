@@ -1,10 +1,7 @@
-#include "../protocol/protocol.h"
-#include "../protocol/message.h"
 #include "../protocol/common.h"
-#include "../protocol/network.h"
-#include "../protocol/thread.h"
-#include "../protocol/application.h"
-#include "shell.h"
+#include "../protocol/protocol.h"
+#include "../plugin_system/plugin_interface.h"
+#include "../plugin_system/protocol_interface.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -26,26 +23,60 @@ static int chat_fd = STDOUT_FILENO;
 
 
 
+static int cmd_chat(int argc, char **argv);
+static int action_chat(char *message, char *content, int lookup_flag);
+
+#define CHAT_TYPE "CHAT####"
+
+PluginCommand_t pcmd_chat = {
+  "chat",
+  "pluging's chat command",
+  cmd_chat
+};
+
+
+PluginAction_t paction_chat = {
+  CHAT_TYPE,
+  "Plugins chat message.",
+  &action_chat
+};
+
+
+Plugin plug_chat = {
+  1,
+  &pcmd_chat,
+  1,
+  &paction_chat
+};
+
+
+int init_chat(PluginManager *p)
+{
+  return plugin_register(p, "chat", &plug_chat);
+}
+
 
 
 
 
 static void print_chat(char *name, char *content) {
-  dprintf(chat_fd, UNDERLINED "%s:" RESET " %s\n", name, content);
+  char uname[9];
+  unpadstr(uname, name);
+  dprintf(chat_fd, UNDERLINED "%-8s:" RESET " %s\n", name, content);
 }
 
 
 
-void action_chat(char *mess, char *content, int lookup_flag) {
+int action_chat(char *mess, char *content, int lookup_flag) {
 
   if (lookup_flag)
-    return;
+    return 1;
 
   if (content[3] != ' ' || !isnumericn(content, 3) ||
       content[12] != ' '){
     debug(RED "action_chat", RED "message \"%s\" not valid for application.",
         mess);
-    return;
+    return 1;
   }
   char name[9];
   unpadstrn(name, &content[4], 8);
@@ -53,13 +84,14 @@ void action_chat(char *mess, char *content, int lookup_flag) {
   if (size > MSIZE || size < 0) {
     debug("print_chat", "Size error in message content (%d > MAXSIZE = %d || size < 0):"
         "\n%s\n", size, MSIZE, content);
-    return;
+    return 1;
   }
   char chat_mess[MSIZE+1];
   strncpy(chat_mess, &content[13], size);
   chat_mess[size] = 0;
   print_chat(name, chat_mess);
-  sendpacket_all(mess);
+  retransmit(mess);
+  return 0;
 }
 
 
@@ -71,8 +103,8 @@ static void send_chat(char *mess) {
   itoa(ssize, 4, size);
   char name[9];
   padstr(name, ent->id, 8);
-  sendappmessage_all(IDAPP_CHAT, "%s %s %s", ssize, name, mess);
-  print_chat(name, mess);
+  send_message(IDAPP_CHAT, "%s %s %s", ssize, name, mess);
+  print_chat(ent->id, mess);
 }
 
 
@@ -108,7 +140,7 @@ static void help(char *argv0)
 
 static void getmessage(char *message)
 {
-  char *line = readline(UNDERLINED "Enter your message:\n");
+  char *line = readline(BOLD "Enter your message:\n" RESET);
   strncpy(message, line, 481);
   free(line);
 }

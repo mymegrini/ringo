@@ -1,7 +1,13 @@
 {
+  /* plugin standard interface */
   plugin_register;
-  /* sendappmessage_all; */
-  /* sendpacket_all; */
   send_message;
   retransmit;
+  /* some common functions (used by the chat)*/
+  isnumericn;
+  unpadstrn;
+  unpadstr;
+  padstr;
+  ent;
+  itoa;
 };

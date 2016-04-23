@@ -132,11 +132,12 @@ int loadplugin(PluginManager *plug_manager, const char *plugname)
   }
   char *init_name = plugin_name_init(plugname);
   printf("Retrieving init function...\n");
+  debug("loadplugin", "init: \"%s\"", init_name);
   PluginInitFunc init_func = dlsym(lib, init_name);
   free(init_name);
   if (!init_func) {
     dlclose(lib);
-    fprintf(stderr,"Could not load ini function for plugin "BOLD "%s" RESET ".\n", plugname);
+    fprintf(stderr,"Could not load init function for plugin "BOLD "%s" RESET ".\n", plugname);
     fprintf(stderr,"Plugin loading failed.\n");
     return 0;
   }

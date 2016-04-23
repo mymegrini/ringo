@@ -204,29 +204,32 @@ static void fifo_path(char *name) {
 
 static int fd_xterm = -1;
 
+/* static void init_verbosexterm() { */
+/*     char path[60]; */
+/*     fifo_path(path); */
+/*     mkfifo(path, 0600); */
+/*     char cat_cmd[80]; */
+/*     strcpy(cat_cmd, "/bin/cat "); */
+/*     strcat(cat_cmd, path); */
+/*     switch (fork()) { */
+/*         case -1: */
+/*             fprintf(stderr, "Fork error.\n"); */
+/*             break; */
+/*         case 0: */
+/*             execlp("xterm", "xterm", "-e", cat_cmd, NULL); */
+/*             printf("FAILURE\n"); */
+/*             exit(EXIT_FAILURE); */
+/*             break; */ 
+/*         default: */
+/*             if ((fd_xterm = open(path, O_WRONLY)) == -1) { */
+/*                 fprintf(stderr, "Can't open pipe\n"); */
+/*                 exit(1); */
+/*             } */
+/*             break; */
+/*     } */
+/* } */
 static void init_verbosexterm() {
-    char path[60];
-    fifo_path(path);
-    mkfifo(path, 0600);
-    char cat_cmd[80];
-    strcpy(cat_cmd, "/bin/cat ");
-    strcat(cat_cmd, path);
-    switch (fork()) {
-        case -1:
-            fprintf(stderr, "Fork error.\n");
-            break;
-        case 0:
-            execlp("xterm", "xterm", "-e", cat_cmd, NULL);
-            printf("FAILURE\n");
-            exit(EXIT_FAILURE);
-            break; 
-        default:
-            if ((fd_xterm = open(path, O_WRONLY)) == -1) {
-                fprintf(stderr, "Can't open pipe\n");
-                exit(1);
-            }
-            break;
-    }
+  fd_xterm = init_outputxterm();
 }
 
 int init_outputxterm() {
@@ -236,6 +239,7 @@ int init_outputxterm() {
     char cat_cmd[80];
     strcpy(cat_cmd, "/bin/cat ");
     strcat(cat_cmd, path);
+    int fd;
     switch (fork()) {
         case -1:
             fprintf(stderr, "Fork error.\n");
@@ -246,10 +250,11 @@ int init_outputxterm() {
             exit(EXIT_FAILURE);
             break; 
         default:
-            if ((fd_xterm = open(path, O_WRONLY)) == -1) {
+            if ((fd = open(path, O_WRONLY)) == -1) {
                 fprintf(stderr, "Can't open pipe\n");
-                exit(1);
+                return -1;
             }
+            return fd;
             break;
     }
     return -1;

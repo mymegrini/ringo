@@ -30,7 +30,6 @@ extern int cmd_gbye(int argc, char **argv);
 extern int cmd_info(int argc, char **argv);
 extern int cmd_help(int argc, char **argv);
 extern int cmd_diff(int argc, char **argv);
-extern int cmd_chat(int argc, char **argv);
 extern int cmd_plugin(int argc, char **argv);
 
 
@@ -41,7 +40,6 @@ extern int cmd_plugin(int argc, char **argv);
 ////////////////////////////////////////////////////////////////////////////////
 
 command cmd[] = {
-  { "chat", "Chat on the ring.", cmd_chat },
   { "rdif", "Send messages on the ring.", cmd_diff },
   { "gbye", "Quit a ring.", cmd_gbye },
   { "help", "Show this message.", cmd_help },

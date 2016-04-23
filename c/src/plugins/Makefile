@@ -4,7 +4,7 @@ OBJS		=  $(CSRC:%.c=$(CPLUGPATH)/%.o)
 
 all		: $(DOBJS)
 
-$(CPLUGPATH)/%.so	: $(OBJS)
+$(CPLUGPATH)/%.so	: $(CPLUGPATH)/%.o
 	$(CC) $(PLUGIN_CFLAGS) -o $@ $< -shared
 
 $(CPLUGPATH)/%.o 	: %.c
