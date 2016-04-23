@@ -5,7 +5,7 @@ OBJS		=  $(CSRC:%.c=$(COBJPATH)/%.o)
 all		: $(OBJS)
 
 $(COBJPATH)/%.o 	: %.c
-	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 .PHONY: clean
 clean		:

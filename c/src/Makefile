@@ -14,11 +14,9 @@ all		: $(CEXE)
 debug: CFLAGS += -D DEBUG -g
 debug: all
 
-path: $(MAKE) $(MKFLAGS) -C .. path
-
 
 $(CEXE)		: main $(LIST)
-	$(CC) -o $@ $(COBJPATH)/*.o $(LIBLINKS) -rdynamic #-Wl,-dynamic-list,plugin_system.list
+	$(CC) -o $@ $(COBJPATH)/*.o $(LDFLAGS) #-rdynamic #-Wl,-dynamic-list,plugin_system.list
 
 
 main: $(OBJS)

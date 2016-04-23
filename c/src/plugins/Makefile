@@ -5,10 +5,10 @@ OBJS		=  $(CSRC:%.c=$(CPLUGPATH)/%.o)
 all		: $(DOBJS)
 
 $(CPLUGPATH)/%.so	: $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $< -shared
+	$(CC) $(PLUGIN_CFLAGS) -o $@ $< -shared
 
 $(CPLUGPATH)/%.o 	: %.c
-	$(CC) $(CFLAGS) -fPIC -c -o $@ $<
+	$(CC) $(PLUGIN_CFLAGS) $(PLUGIN_LDFLAGS) -c -o $@ $<
 
 .PHONY: clean
 clean		:

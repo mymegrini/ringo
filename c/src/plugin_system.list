@@ -1,0 +1,7 @@
+{
+  plugin_register;
+  /* sendappmessage_all; */
+  /* sendpacket_all; */
+  send_message;
+  retransmit;
+};

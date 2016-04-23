@@ -10,3 +10,4 @@ test*
 !shell
 !plugin_system
 !plugins
+!plugin_system.list
