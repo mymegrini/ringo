@@ -62,13 +62,11 @@ int find(void **data, list l, const char *name)
 {
   if (empty(l))
     return 0;
-  node *n = l->first;
-  do {
+  for (node *n = l->first; n != NULL; n = n->next)
     if (strcmp(n->name, name) == 0) {
       *data = n->data;
       return 1;
     }
-  } while (n++ != l->last);
   return 0;
 }
 
