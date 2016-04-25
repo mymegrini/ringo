@@ -7,11 +7,18 @@ public class Entity{
     int port_next;
     String mdiff_ip;
     int mdiff_port;
+    String ip_next2;
+    int port_next2;
+    String mdiff_ip2;
+    int mdiff_port2;
 
-    public Entity(String identifiant,int u,int t){
-        id=identifiant;
+    public Entity(String ide,String i,int u,int t,String mdip,int mdpo){
+        id=ide;
+        ip=i;
         udp=u;
         tcp=t;
+        mdiff_ip=mdip;
+        mdiff_port=mdpo;
     }
     
 }

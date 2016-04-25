@@ -22,18 +22,16 @@ public class Jring{
         System.out.println("Give your tcp port");
         int t = sc.nextInt();
         String mess_send = sc.nextLine();
-        ent = new Entity(id,u,t);
+        ent = new Entity(id,host_ip.toString().substring(1),u,t,"255.255.255.255",4444);
         if(args.length==0){
-            ent.ip=host_ip.toString().substring(1);
-            ent.mdiff_ip="255.255.255.255";
-            ent.mdiff_port=4444;
             ent.ip_next=ent.ip;
             ent.port_next=u;
         }
         else{            
-            insert(args[0],Integer.parseInt(args[1]));
+            if(args[0].equals("insert")) insert(args[1],Integer.parseInt(args[2]));
+            if(args[0].equals("duplicate")) duplicate(args[1],Integer.parseInt(args[2]));
         }
-        try{            
+        try{
             //Tcp
             Tcp_thread tcp_mode = new Tcp_thread(ent);
             Thread tcp_t = new Thread(tcp_mode);
@@ -48,28 +46,33 @@ public class Jring{
             DatagramPacket packet_send;
             Down_thread dwn;
             Thread dwn_t;
-            while(true){                
+            String m_id;
+            while(true){         
                 mess_send= sc.nextLine();
-                if(udp_mode.quit) break;
+                if(udp_mode.quit){
+                    System.out.println("quit");
+                    break;
+                }
+                m_id=message_id();
                 if(mess_send.equals("WHOS")){
-                    mess_send="WHOS "+message_id();
+                    mess_send="WHOS "+m_id;
                 }
                 if(mess_send.equals("GBYE")){
                     tcp_t.interrupt();
-                    mess_send="GBYE "+message_id()+" "+ent.ip+" "+ent.udp+" "+ent.ip_next+" "+ent.port_next;
+                    mess_send="GBYE "+m_id+" "+ent.ip+" "+ent.udp+" "+ent.ip_next+" "+ent.port_next;
                 }
                 if(mess_send.equals("TEST")){
-                    String m_id=message_id();
                     mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
                     dwn = new Down_thread(ent,mess_list,m_id,2);
                     dwn_t = new Thread(dwn);
                     dwn_t.start();
                 }
-                mess_list.add(mess_send.split(" ")[1]);
+                mess_list.add(m_id);
                 data=mess_send.getBytes();
                 packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                 dso.send(packet_send);
-            }            
+            }          
+            System.out.println("sorte");
         }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
@@ -89,7 +92,7 @@ public class Jring{
                 ent.port_next=data_welc.port_next;
                 ent.mdiff_ip=data_welc.mdiff_ip;
                 ent.mdiff_port=data_welc.mdiff_port;
-                String mess_send = "NEWC "+host_ip().toString().substring(1)+" "+ent.udp;
+                String mess_send = "NEWC "+ent.ip+" "+ent.udp;
                 pw.println(mess_send);
                 pw.flush();
                 mess_recv=br.readLine();
@@ -98,6 +101,42 @@ public class Jring{
                 }
             }
             else System.out.println("insert : Connexion Failed !");
+            br.close();
+            pw.close();
+            socket.close();
+        }catch(Exception e){
+            System.out.println(e);
+            e.printStackTrace();
+        }
+    }
+
+    public static void duplicate(String adress,int tcp){
+        try{
+            Scanner sc = new Scanner(System.in);
+            /*System.out.println("Give the ip adress of the new ring");
+              String ip_mdiff2 = sc.nextLine();*/
+            String ip_mdiff2 = "255.255.255.255";
+            System.out.println("Give the port of the new ring");
+            int port_mdiff2=sc.nextInt();
+            Socket socket = new Socket(adress,tcp);
+            BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+            String mess_recv=br.readLine();
+            Welc_mess data_welc = Welc_mess.parse_welc(mess_recv);
+            if(data_welc!=null){
+                ent.ip_next=data_welc.ip_next;
+                ent.port_next=data_welc.port_next;
+                ent.mdiff_ip=data_welc.mdiff_ip;
+                ent.mdiff_port=data_welc.mdiff_port;
+                String mess_send = "DUPL "+ent.ip+" "+ent.udp+" "+ip_mdiff2+" "+port_mdiff2;
+                pw.println(mess_send);
+                pw.flush();
+                mess_recv=br.readLine();
+                if(mess_recv.equals("ACKD")){
+                    System.out.println("duplicate : Successful Connexion !");
+                }
+            }
+            else System.out.println("duplicate : Connexion Failed !");
             br.close();
             pw.close();
             socket.close();
@@ -137,15 +176,21 @@ public class Jring{
         //System.out.println(h);
         String s =Long.toString(new java.util.Date().getTime())+ent.ip+Integer.toString(ent.udp);
         //String s =Long.toString(new java.util.Date().getTime())+"192.168.1.145"+"8888";
+        //System.out.println(s.length());
         for(int i=0;i<s.length();i++){
             h=h*33+s.charAt(i);
+            //h=h*33;
+            // System.out.println(h);
         }
+        long k;
         for(int i=0;i<8;i++){
-            cofh=(h%62)+48;
-            //System.out.println("cof "+cofh);
+            k=h;
+            if(k%62<0) k=(-2)*(k%62);
+            cofh=(k%62)+48;
             if(cofh>57) cofh+=7;
             if(cofh>90) cofh+=6;
-            id=id+(char)(cofh);
+            //System.out.println("cof "+cofh);
+            id=id+ (char)(cofh);
             h=(int)(h/62);
         }
         return id;

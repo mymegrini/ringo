@@ -17,7 +17,6 @@ public class Down_thread implements Runnable{
     
     public void run(){
         try{
-            System.out.println("ENTERRR");
             String mess_send;
             byte[] data = new byte[512];
             DatagramSocket dso = new DatagramSocket();
@@ -25,11 +24,11 @@ public class Down_thread implements Runnable{
             boolean found = false;
             for(int i=0;i<nb_test;i++){
                 Thread.sleep(15);
-                if(Udp_thread.search(mess_id)!=-1){
-                    mess_list.remove(mess_id);
+                System.out.println("apres sleep");
+                if(!mess_list.remove(mess_id)){
                     mess_id=Jring.message_id();
-                    mess_send="TEST "+mess_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
-                    mess_list.add(mess_send.split(" ")[1]);
+                    mess_send="TESTT "+mess_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
+                    mess_list.add(mess_id);
                     data=mess_send.getBytes();
                     packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
                     dso.send(packet_send);
@@ -41,14 +40,13 @@ public class Down_thread implements Runnable{
             }
             if(!found){
                 Thread.sleep(15);
-                if(Udp_thread.search(mess_id)!=-1){
+                if(!mess_list.remove(mess_id)){
                     mess_send="DOWN";
                     data=mess_send.getBytes();
                     packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.mdiff_ip,ent.mdiff_port));
                     dso.send(packet_send);
                 }
             }
-            System.out.println("Trouve "+found);
         }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
