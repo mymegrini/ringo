@@ -33,6 +33,7 @@
             "In " funcname "\n" \
             RESET REVERSE format "\n" RESET, __LINE__, ##__VA_ARGS__);\
             fflush(stdout)
+
 #else
 #define debug(funcname, format, ...)
 #endif

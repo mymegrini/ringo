@@ -120,7 +120,6 @@ static int cmd_whos(int argc, char **argv) {
 ////////////////////////////////////////////////////////////////////////////////
 
 void run_shell() {
-  plugin_manager_init(&plugin_manager);
   char *line = NULL;
   while(1) {
     /*

@@ -11,10 +11,15 @@
 
 
 
+
+
 #ifndef PLUG_DIR
 #define PLUG_DIR "./plugins"
 #endif
-static const char plugin_directory[] = PLUG_DIR;
+
+char default_plugin_directory[] = PLUG_DIR;
+char *plugin_directory          = default_plugin_directory;
+
 
 struct _PluginManager plugin_manager;
 
@@ -31,10 +36,10 @@ void plugin_manager_init(PluginManager *p)
 }
 
 
-static char* plugin_path(const char *plugname)
+static char* plugin_path(const char *plug_dir, const char *plugname)
 {
-  char *path = malloc(4 + strlen(plugin_directory) + strlen(plugname));
-  sprintf(path, "%s/%s.so", plugin_directory, plugname);
+  char *path = malloc(4 + strlen(plug_dir) + strlen(plugname));
+  sprintf(path, "%s/%s.so", plug_dir, plugname);
   return path;
 }
 
@@ -123,19 +128,19 @@ int plugin_unregister(PluginManager *plug_manager, const char *name)
 
 
 
-int loadplugin(PluginManager *plug_manager, const char *plugname)
+int loadplugin(PluginManager *plug_manager, const char *plug_dir, const char *plugname)
 {
-  char *plugpath = plugin_path(plugname);
+  printf(UNDERLINED "Loading plugin " BOLD "%s" RESET UNDERLINED ":" RESET "\n", plugname);
+  char *plugpath = plugin_path(plug_dir, plugname);
   void *lib = dlopen(plugpath, RTLD_LAZY);
   free(plugpath);
   if (lib == NULL) {
-    fprintf(stderr, "Could not load plugin "BOLD "%s" RESET " from %s.\n", plugname, plugin_directory);
+    fprintf(stderr, "\tCould not open plugin "BOLD "%s" RESET " from %s.\n", plugname, plug_dir);
     fprintf(stderr,"Plugin loading failed.\n");
     return 0;
   }
   char *init_name = plugin_name_init(plugname);
-  printf("Retrieving init function...\n");
-  debug("loadplugin", "init: \"%s\"", init_name);
+  printf("\tRetrieving init function...\n");
   PluginInitFunc init_func = dlsym(lib, init_name);
   free(init_name);
   if (!init_func) {
@@ -153,8 +158,7 @@ int loadplugin(PluginManager *plug_manager, const char *plugname)
     fprintf(stderr, "Plugin loading failed.\n");
     return 0;
   }
-  printf("Plugin initialized.\n");
-  printf("Finishing plugin registration...\n");
+  printf("\tFinishing plugin registration...\n");
   RegisteredPlugin *plug_reg;
   if (!find((void **)&plug_reg, plug_manager->plugin, plugname)) {
     dlclose(lib);
@@ -176,3 +180,53 @@ int unloadplugin(PluginManager *plug_manager, const char *plugname)
       printf("Plugin unloaded.\n");
   return r;
 }
+
+
+
+int plugin_extract_name(char **name, const char *plug)
+{
+  int len = strlen(plug);
+  if (len > 3 && strcmp(".so", plug+len-3) == 0)
+  {
+    *name = strndup(plug, len-3);
+    return 1;
+  }
+  return 0;
+}
+
+
+
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
+int load_all_plugins(PluginManager *plug_manager, const char *plug_dir)
+{
+  DIR *dir;
+  if ((dir = opendir (plug_dir)) != NULL) {
+    /* print all the files and directories within directory */
+    struct dirent *ent;
+    char wd[256];
+    getcwd(wd, 256);
+    chdir(plug_dir);
+    while ((ent = readdir (dir)) != NULL) {
+      struct stat info;
+      /* debug("load_all_plugins", "file: %s, S_ISREG: %d, S_ISDIR: %d", ent->d_name, S_ISREG(info.st_mode), S_ISDIR(info.st_mode)); */
+      if (! S_ISDIR(info.st_mode)) {
+        char *plugname;
+        if (plugin_extract_name(&plugname, ent->d_name)) {
+          loadplugin(plug_manager, plug_dir, plugname);
+          free(plugname);
+        }
+      }
+    }
+    chdir(wd);
+    closedir(dir);
+    return 1;
+  }
+  else {
+    fprintf(stderr, "Can't open directory %s.\n", plug_dir);
+    return 0;
+  }
+}
+
