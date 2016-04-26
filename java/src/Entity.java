@@ -19,6 +19,7 @@ public class Entity{
         tcp=t;
         mdiff_ip=mdip;
         mdiff_port=mdpo;
+        port_next2=-1;
     }
     
 }

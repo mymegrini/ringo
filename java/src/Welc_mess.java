@@ -14,6 +14,7 @@ public class Welc_mess{
     public static Welc_mess parse_welc(String mess){
         if(mess==null) return null;
         String []tab = mess.split(" ");
+        if(mess.equals("NOTC")) System.out.println(mess);
         if(tab.length!=5 || !tab[0].equals("WELC")){
             System.out.println("parse_welc : The message doesn't have the right structure (1)");
             return null;

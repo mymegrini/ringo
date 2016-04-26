@@ -57,10 +57,14 @@ public class Jring{
                         mess_send="WHOS "+m_id;
                     }
                     if(mess_send.equals("GBYE")){
-                        System.out.println("sort3");
-                        tcp_t.interrupt();
                         tcp_mode.server.close();
                         mess_send="GBYE "+m_id+" "+ent.ip+" "+ent.udp+" "+ent.ip_next+" "+ent.port_next;
+                        if(ent.port_next2!=-1){
+                            mess_list.add(m_id);
+                            Udp_thread.send_mess(ent,dso,mess_send);
+                            m_id=message_id();
+                            mess_send="GBYE "+m_id+" "+ent.ip+" "+ent.udp+" "+ent.ip_next2+" "+ent.port_next2;
+                        }
                     }
                     if(mess_send.equals("TEST")){
                         mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
@@ -69,11 +73,8 @@ public class Jring{
                         dwn_t.start();
                     }
                     mess_list.add(m_id);
-                    data=mess_send.getBytes();
-                    packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
-                    dso.send(packet_send);
+                    Udp_thread.send_mess(ent,dso,mess_send);
                 }
-                //System.out.println("Oui "+udp_t.getState()+" "+tcp_t.getState());
             }catch(Exception e){
                 System.out.println(e);
                 e.printStackTrace();
@@ -131,17 +132,24 @@ public class Jring{
             Welc_mess data_welc = Welc_mess.parse_welc(mess_recv);
             boolean dupl=false;
             if(data_welc!=null){
-                ent.ip_next=data_welc.ip_next;
-                ent.port_next=data_welc.port_next;
-                ent.mdiff_ip=data_welc.mdiff_ip;
-                ent.mdiff_port=data_welc.mdiff_port;
+                /*ent.ip_next=data_welc.ip_next;
+                  ent.port_next=data_welc.port_next;
+                  ent.mdiff_ip=data_welc.mdiff_ip;
+                  ent.mdiff_port=data_welc.mdiff_port;*/
                 String mess_send = "DUPL "+ent.ip+" "+ent.udp+" "+ip_mdiff2+" "+port_mdiff2;
                 pw.println(mess_send);
                 pw.flush();
                 mess_recv=br.readLine();
-                if(mess_recv.equals("ACKD")){
-                    dupl=true;
-                    System.out.println("duplicate : Successful Connexion !");
+                String[] tab = mess_recv.split(" ");
+                try{
+                    if(tab.length==2){
+                        ent.ip_next=adress;
+                        ent.port_next=Integer.parseInt(tab[1]);
+                        dupl=true;
+                        System.out.println("duplicate : Successful Connexion !");
+                    }
+                }catch(Exception e){
+                    System.out.println("Wrong structure "+mess_recv);
                 }
             }
             else System.out.println("duplicate : Connexion Failed !");

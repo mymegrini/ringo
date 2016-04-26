@@ -9,7 +9,7 @@ public class Newc_mess{
 
     public static Newc_mess parse_newc(String mess){
         String []tab = mess.split(" ");
-        if( !tab[0].equals("NEWC")) return null;
+        if(!tab[0].equals("NEWC")) return null;
         if(tab.length!=3){
             System.out.println("pase_newc : The message doesn't have the right structure (1)");
             return null;

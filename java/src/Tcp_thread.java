@@ -17,16 +17,10 @@ public class Tcp_thread implements Runnable{
             Socket socket;
             while(true){
                 socket = server.accept();
-                if(Thread.currentThread().isInterrupted()){
-                    socket.close();
-                    server.close();
-                    System.out.println("sort");
-                    break;
-                }
                 BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
                 if(!dupl){
-                    String mess = "WELC "+ent.ip_next+" "+ent.port_next+" "+ent.mdiff_ip+" "+ent.mdiff_port;
+                    String mess = "WELC "+ent.ip+" "+ent.udp+" "+ent.mdiff_ip+" "+ent.mdiff_port;
                     pw.println(mess);
                     pw.flush();
                     mess=br.readLine();
@@ -43,7 +37,7 @@ public class Tcp_thread implements Runnable{
                         ent.port_next2=data_d.port2;
                         ent.mdiff_ip2=data_d.mdiff_ip2;
                         ent.mdiff_port2=data_d.mdiff_port2;
-                        pw.println("ACKD");
+                        pw.println("ACKD "+ent.udp);
                         pw.flush();
                         dupl=true;
                     }
@@ -56,11 +50,10 @@ public class Tcp_thread implements Runnable{
                 pw.close();
                 socket.close();
             }
-            System.out.println("sort");
         }catch(Exception e){
             System.out.println("Fin du tcp");
             //System.out.println(e);
-            e.printStackTrace();
+            //e.printStackTrace();
         }
     }
 
