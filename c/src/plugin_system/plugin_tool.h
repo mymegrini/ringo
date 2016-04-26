@@ -8,4 +8,6 @@ extern int (*open_terminal)(pid_t *pid);
 extern int isnumericn(const char *str, int n);
 
 extern void itoa(char *s, int size, int i);
+
+extern char *readline (const char *prompt);
 #endif /* PLUGIN_TOOL_H */

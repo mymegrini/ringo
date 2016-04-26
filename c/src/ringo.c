@@ -6,6 +6,7 @@
 #include "protocol/protocol.h"
 #include "protocol/network.h"
 #include "shell/shell.h"
+#include "plugin_system/plugin_system.h"
 
 #include <pthread.h>
 
@@ -20,34 +21,42 @@ void get_info();
 #define MODE_JOIN   1
 #define MODE_DUPL   2
 
+#define FLAG_PLUG   1
+
+
 
 #define OPT_UDP    'u'
 #define OPT_TCP    't'
 #define OPT_ID     'i'
 #define OPT_JOIN   'j'
 #define OPT_DUPL   'd'
-#define OPT_STRING "u:t:i:jd"
+#define OPT_PLUG   'p'
+#define OPT_STRING "u:t:i:jdp::"
 
 
 
 static struct option options[] = {
-    { "udp", required_argument, 0, OPT_UDP },
-    { "tcp", required_argument, 0, OPT_TCP },
-    { "id", required_argument, 0, OPT_ID },
-    { "join", no_argument, 0, OPT_JOIN },
-    { 0, 0, 0, 0 }
+    { "udp",    required_argument, 0, OPT_UDP },
+    { "tcp",    required_argument, 0, OPT_TCP },
+    { "id",     required_argument, 0, OPT_ID },
+    { "join",   no_argument, 0, OPT_JOIN },
+    { "plugins", optional_argument, 0, OPT_PLUG },
+    { 0,        0, 0, 0 }
 };
+
 
 
 char *udp_listen = NULL, *tcp_listen = NULL, *id = NULL,
      *host_addr = NULL, *host_port = NULL, *mdiff_ip = NULL, *mdiff_port = NULL;
 int mport;
 int mode = MODE_CREATE;
-
+int flag = 0;
 
 int main(int argc, char *argv[])
 {
     char opt;
+    char *plug_dir = plugin_directory;
+    int do_free = 0;
     while ((opt = getopt_long( argc, argv, OPT_STRING, options, 0 )) != -1   ) {
         switch(opt) {
             case OPT_UDP:
@@ -65,6 +74,14 @@ int main(int argc, char *argv[])
             case OPT_DUPL:
                 mode = MODE_DUPL;
                 break;
+            case OPT_PLUG:
+                if (optarg) {
+                  plug_dir = malloc(strlen(optarg)+1);
+                  strcpy(plug_dir, optarg);
+                  do_free = 1;
+                }
+                flag |= FLAG_PLUG;
+                break;
             default:
                 usage(argv[0]);
                 return EXIT_FAILURE;
@@ -74,6 +91,7 @@ int main(int argc, char *argv[])
     get_info();
     init_entity(id, atoi(udp_listen), atoi(tcp_listen), mdiff_ip, mport);
     verbosity(VERBM_XTERMO);
+    plugin_manager_init(&plugin_manager);
     
     switch(mode) {
         case MODE_CREATE:
@@ -92,6 +110,13 @@ int main(int argc, char *argv[])
             }
             break;
     }
+
+    if ( flag & FLAG_PLUG && ! load_all_plugins(&plugin_manager, plug_dir))
+      return EXIT_FAILURE;
+
+    if (do_free)
+      free(plug_dir);
+
     run_shell();
 
     return EXIT_FAILURE;
@@ -100,7 +125,7 @@ int main(int argc, char *argv[])
 
 
 void usage(char *argv0) {
-    printf("Usage:\t%s -u <UDP_PORT> -t <TCP_PORT> -i <ID> [-c HOST PORT]\n",
+    printf("Usage:\t%s -u <UDP_PORT> -t <TCP_PORT> -i <ID> [-c HOST PORT] -p\n",
             argv0);
 }
 

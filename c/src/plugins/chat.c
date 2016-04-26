@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <readline/readline.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,6 +53,7 @@ static pid_t pid_term;
 
 static int cmd_chat(int argc, char **argv);
 static int action_chat(const char *message, const char *content, int lookup_flag);
+static void close_plugin();
 
 
 
@@ -77,7 +77,8 @@ Plugin plug_chat = {
   1,
   &pcmd_chat,
   1,
-  &paction_chat
+  &paction_chat,
+  close_plugin
 };
 
 
@@ -87,6 +88,11 @@ int init_chat(PluginManager *p)
   return plugin_register(p, "chat", &plug_chat);
 }
 
+static void close_plugin()
+{
+  if (chat_fd != STDOUT_FILENO)
+    close_outputterm();
+}
 
 
 int action_chat(const char *mess, const char *content, int lookup_flag) {
@@ -127,7 +133,7 @@ int action_chat(const char *mess, const char *content, int lookup_flag) {
 #define   OPT_STDOUT     's'
 #define   OPTL_STDOUT    "stdin"
 
-#define   OPT_STRING     "hm:"
+#define   OPT_STRING     "hm:ts"
 
 
 static struct option longopts[] = {
@@ -273,15 +279,6 @@ static void unpadstrn(char *unpadded, const char *str, int len)
 }
 
 
-static void close_outputterm()
-{
-  if (chat_fd != STDOUT_FILENO) {
-    kill(pid_term, SIGKILL);
-    close(chat_fd);
-  }
-}
-
-
 static void outputto(int fd)
 {
   if (chat_fd != STDOUT_FILENO)
@@ -301,6 +298,15 @@ static int output_term()
   return 1;
 }
 
+
+
+static void close_outputterm()
+{
+  if (chat_fd != STDOUT_FILENO) {
+    kill(pid_term, SIGKILL);
+    close(chat_fd);
+  }
+}
 //// END OF TOOLS
 
 
