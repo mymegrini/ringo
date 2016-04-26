@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
 
 #include <pthread.h>
 #include <readline/readline.h>
@@ -25,7 +27,11 @@
 // PROTOTYPES
 ////////////////////////////////////////////////////////////////////////////////
 
+static int cmd_cd(int argc, char **argv);
+static int cmd_pwd(int argc, char **argv);
+
 static int cmd_whos(int argc, char **argv);
+
 extern int cmd_gbye(int argc, char **argv);
 extern int cmd_info(int argc, char **argv);
 extern int cmd_help(int argc, char **argv);
@@ -34,26 +40,50 @@ extern int cmd_plugin(int argc, char **argv);
 
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 // VARS
 ////////////////////////////////////////////////////////////////////////////////
 
 command cmd[] = {
+  { "cd", "Change working directory", cmd_cd },
+  { "pwd", "Print working directory.", cmd_pwd},
   { "rdif", "Send messages on the ring.", cmd_diff },
   { "gbye", "Quit a ring.", cmd_gbye },
   { "help", "Show this message.", cmd_help },
   { "info", "Display informations on current entity.", cmd_info},
   { "plug", "Add or remove plugins.", cmd_plugin},
   { "whos", "Getting to know each other...", cmd_whos },
-  { NULL,   NULL, NULL }
+  { NULL, NULL, NULL }
 };
 
-extern volatile int nring;
 
+static const char *homedir;
+static char prompt[260];
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
+static void extract_dir_from_path(char *dir, const char *path)
+{
+  int len;
+  for (len = strlen(path) - 1; path[len] != '/'; --len)
+    ;
+  if (len == 0)
+    *dir = '/';
+  else
+    strcpy(dir, path+len+1);
+}
+
+
+
+static void actualize_prompt()
+{
+  char buff[1024];
+  getcwd(buff, 1024);
+  char dir[255];
+  extract_dir_from_path(dir, buff);
+  sprintf(prompt, BOLD GREEN "[" CYAN "%s" GREEN "]" YELLOW " $> " RESET, dir);
+}
+
 
 
 static int exec_cmd(const char *str) {
@@ -90,20 +120,56 @@ static int exec_cmd(const char *str) {
         wordfree(&wordx);
         return r;
       }
-      system(str);
+      // a little alias for ls...
+      if (strcmp(wordx.we_wordv[0], "ls") == 0) {
+        char *ls = malloc(strlen(str) + 15);
+        sprintf(ls, "%s --color=auto", str);
+        system(ls);
+        free(ls);
+      }
+      else {
+        system(str);
+      }
       break;
   }
   wordfree(&wordx);
   return r;
 }
 
-/*
- *static void prompt() {
- *    char dirname[256];
- *    if (!getcwd(dirname, 256)) return;
- *    printf("%s > ", dirname);
- *}
- */
+
+
+static int cmd_cd(int argc, char **argv)
+{
+  if (argc > 2) {
+    fprintf(stderr, "Too many arguments.\n");
+    return 1;
+  }
+  const char *dir = argc == 1 ? homedir : argv[1];
+  if (chdir(dir) == -1) {
+    perror(dir);
+    return 1;
+  }
+  actualize_prompt();
+  return 0;
+}
+
+
+
+static int cmd_pwd(int argc, char **argv) 
+{
+  if (argc != 1) {
+    fprintf(stderr, "Too many arguments.\n");
+    return 1;
+  }
+
+  char buff[1024];
+  if (getcwd(buff, 1024) == NULL) {
+    perror(NULL);
+    return 1;
+  }
+  printf("%s\n", buff);
+  return 0;
+}
 
 
 static int cmd_whos(int argc, char **argv) {
@@ -205,6 +271,12 @@ char *command_generator (char *text, int state)
 ////////////////////////////////////////////////////////////////////////////////
 
 void run_shell() {
+
+  if ((homedir = getenv("HOME")) == NULL)
+    homedir = getpwuid(getuid())->pw_dir;
+
+  actualize_prompt();
+
   initialize_readline ();
   char *line = NULL;
   while(1) {
@@ -219,7 +291,7 @@ void run_shell() {
       free(line);
       line = NULL;
     }
-    line = readline("$> ");
+    line = readline(prompt);
     if (line && *line && exec_cmd(line) == 0)
       add_history(line);
   }
