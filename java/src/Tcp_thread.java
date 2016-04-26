@@ -5,7 +5,6 @@ import java.io.*;
 public class Tcp_thread implements Runnable{
     Entity ent;
     ServerSocket server;
-    Socket socket;
 
     public Tcp_thread(Entity e){
         ent=e;
@@ -15,11 +14,13 @@ public class Tcp_thread implements Runnable{
         try{
             server = new ServerSocket(ent.tcp);
             boolean dupl = false;
+            Socket socket;
             while(true){
                 socket = server.accept();
                 if(Thread.currentThread().isInterrupted()){
                     socket.close();
                     server.close();
+                    System.out.println("sort");
                     break;
                 }
                 BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -55,8 +56,10 @@ public class Tcp_thread implements Runnable{
                 pw.close();
                 socket.close();
             }
+            System.out.println("sort");
         }catch(Exception e){
-            System.out.println(e);
+            System.out.println("Fin du tcp");
+            //System.out.println(e);
             e.printStackTrace();
         }
     }

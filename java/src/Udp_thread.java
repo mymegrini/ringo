@@ -85,6 +85,7 @@ public class Udp_thread implements Runnable{
             e.printStackTrace();
         }
     }
+
     
     public static void send_mess(Entity ent,DatagramSocket dso,String mess,int d){
         try{
