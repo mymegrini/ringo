@@ -183,3 +183,26 @@ void iter(list l, void (*func)(char *, void *)) {
   for (node *n = l->first; n != NULL; n = n->next)
     func(n->name, n->data);
 }
+
+iterator get_iterator(list l)
+{
+  if (empty(l))
+    return NULL;
+  else
+    return l->first;
+}
+
+char *iterator_getname(iterator i)
+{
+  return i->name;
+}
+
+void *iterator_getdata(iterator i)
+{
+  return i->data;
+}
+
+void iterate(iterator *i) {
+  *i = (*i)->next;
+}
+
