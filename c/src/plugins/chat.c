@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <signal.h>
 
-#include <readline/readline.h>
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -134,7 +133,7 @@ int action_chat(const char *mess, const char *content, int lookup_flag) {
 #define   OPT_STDOUT     's'
 #define   OPTL_STDOUT    "stdin"
 
-#define   OPT_STRING     "hm:"
+#define   OPT_STRING     "hm:ts"
 
 
 static struct option longopts[] = {
