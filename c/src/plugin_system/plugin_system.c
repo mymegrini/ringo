@@ -111,6 +111,9 @@ int plugin_unregister(PluginManager *plug_manager, const char *name)
     rm(plug_manager->command, p->command->name);
   for (int i = 0; i < p->size_action; ++i)
     rm(plug_manager->action, p->action->name);
+  // call closing function
+  if (p->close_plugin)
+    p->close_plugin();
   
   dlclose(plug_reg->lib);
   rm(plug_manager->plugin, name);
@@ -142,7 +145,9 @@ int loadplugin(PluginManager *plug_manager, const char *plugname)
     return 0;
   }
   int r = init_func(plug_manager);
-  if (r < 0) {
+  if (r == 0)
+    return 0;
+  else if (r < 0) {
     dlclose(lib);
     fprintf(stderr, "Init function returns %d.\n", r);
     fprintf(stderr, "Plugin loading failed.\n");

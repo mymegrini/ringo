@@ -10,6 +10,7 @@ extern PluginManager plugin_manager;
 typedef int (*PluginAction)(const char *, const char *, int); // action to do, take the message, content and lookup_flag
 typedef int (*PluginCommand)(int, char **); // plugin command
 typedef int (*PluginInitFunc)(PluginManager*);
+typedef void (*PluginCloseFunc)();
 
 
 
@@ -30,10 +31,11 @@ typedef struct PluginCommand_t {
 
 
 typedef struct Plugin {
-  int              size_command;
+  int             size_command;
   PluginCommand_t *command;
-  int              size_action;
+  int             size_action;
   PluginAction_t  *action;
+  PluginCloseFunc close_plugin;
 } Plugin;
 
 

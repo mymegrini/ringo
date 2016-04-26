@@ -28,7 +28,8 @@ Plugin plug_zyva = {
   1,
   &pcmd_zyva,
   1,
-  &paction_zyva
+  &paction_zyva,
+  NULL
 };
 
 
