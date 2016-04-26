@@ -3,11 +3,9 @@
   plugin_register;
   send_message;
   retransmit;
-  /* some common functions (used by the chat)*/
+  info;
   isnumericn;
-  unpadstrn;
-  unpadstr;
-  padstr;
-  ent;
   itoa;
+  /* protocol interface *.
+  /* some common functions (used by the chat)*/
 };

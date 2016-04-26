@@ -6,7 +6,7 @@
 
 
 static int cmd_zyva(int argc, char **argv);
-static int action_zyva(char *message, char *content, int lookup_flag);
+static int action_zyva(const char *message, const char *content, int lookup_flag);
 
 #define ZYVA_TYPE "ZYVAKOI!"
 
@@ -48,7 +48,7 @@ static int cmd_zyva(int argc, char **argv)
   return 0;
 }
 
-static int action_zyva(char *message, char *content, int lookup_flag)
+static int action_zyva(const char *message, const char *content, int lookup_flag)
 {
   printf("someone said: %s\n", content);
   printf("KOI KESKYA?!\n");

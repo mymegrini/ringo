@@ -56,9 +56,6 @@ void verbosity(int mode);
 
 #define CTNT_OFFST 5
 
-void padstr(char *padded, const char *str, int size);
-void unpadstr(char *unpadded, const char *str);
-void unpadstrn(char *unpadded, const char *str, int len);
 int isnumeric(const char *str);
 int isnumericn(const char *str, int n);
 //char *itoa4(int i);

@@ -1,5 +1,4 @@
 #include "../protocol/common.h"
-#include "../protocol/protocol.h"
 #include "../plugin_system/plugin_interface.h"
 #include "../plugin_system/protocol_interface.h"
 
@@ -12,7 +11,18 @@
 #include <readline/readline.h>
 
 
-// chat message: "APPL idm CHAT#### SIZE NAME CONTENT"
+////////////////////////////////////////////////////////////////////////////////
+// GLOBALS
+////////////////////////////////////////////////////////////////////////////////
+static void getmessage(char *message);
+static void help(char *argv0);
+static void usage(char *argv0);
+static void send_chat(const char *mess);
+static void print_chat(const char *name, const char *content);
+static void unpadstrn(char *unpadded, const char *str, int len);
+static void unpadstr(char *unpadded, const char *str);
+static void padstr(char *padded, const char *str, int size);
+
 
 #define   MSIZE        485
 #define   IDAPP_CHAT   "CHAT####"
@@ -20,13 +30,21 @@
 
 static int chat_fd = STDOUT_FILENO;
 
+//// END OF GLOBALS
 
 
 
-static int cmd_chat(int argc, char **argv);
-static int action_chat(char *message, char *content, int lookup_flag);
+
+////////////////////////////////////////////////////////////////////////////////
+// PLUGIN DATAS
+////////////////////////////////////////////////////////////////////////////////
 
 #define CHAT_TYPE "CHAT####"
+
+static int cmd_chat(int argc, char **argv);
+static int action_chat(const char *message, const char *content, int lookup_flag);
+
+
 
 PluginCommand_t pcmd_chat = {
   "chat",
@@ -35,11 +53,13 @@ PluginCommand_t pcmd_chat = {
 };
 
 
+
 PluginAction_t paction_chat = {
   CHAT_TYPE,
   "Plugins chat message.",
   &action_chat
 };
+
 
 
 Plugin plug_chat = {
@@ -50,6 +70,7 @@ Plugin plug_chat = {
 };
 
 
+
 int init_chat(PluginManager *p)
 {
   return plugin_register(p, "chat", &plug_chat);
@@ -57,17 +78,7 @@ int init_chat(PluginManager *p)
 
 
 
-
-
-static void print_chat(char *name, char *content) {
-  char uname[9];
-  unpadstr(uname, name);
-  dprintf(chat_fd, UNDERLINED "%-8s:" RESET " %s\n", name, content);
-}
-
-
-
-int action_chat(char *mess, char *content, int lookup_flag) {
+int action_chat(const char *mess, const char *content, int lookup_flag) {
 
   if (lookup_flag)
     return 1;
@@ -96,19 +107,6 @@ int action_chat(char *mess, char *content, int lookup_flag) {
 
 
 
-static void send_chat(char *mess) {
-  unsigned len = strlen(mess);
-  unsigned size = MSIZE < len ? MSIZE : len;
-  char ssize[4];
-  itoa(ssize, 4, size);
-  char name[9];
-  padstr(name, ent->id, 8);
-  send_message(IDAPP_CHAT, "%s %s %s", ssize, name, mess);
-  print_chat(ent->id, mess);
-}
-
-
-
 #define   OPT_HELP    'h'
 #define   OPTL_HELP   "help"
 #define   OPT_MESS    'm'
@@ -121,29 +119,6 @@ static struct option longopts[] = {
   {OPTL_MESS,     required_argument, 0, OPT_MESS},
   {0, 0, 0, 0}
 };
-
-
-
-static void usage(char *argv0)
-{
-  printf("Usage:\t%s [-m message] [-h]\n", argv0);
-}
-
-
-
-static void help(char *argv0)
-{
-  usage(argv0);
-}
-
-
-
-static void getmessage(char *message)
-{
-  char *line = readline(BOLD "Enter your message:\n" RESET);
-  strncpy(message, line, 481);
-  free(line);
-}
 
 
 #define FLAG_MESS 1
@@ -181,3 +156,91 @@ int cmd_chat(int argc, char **argv)
   }
   return 0;
 }
+
+//// END OF PLUGIN DATAS
+
+
+////////////////////////////////////////////////////////////////////////////////
+// TOOLS
+////////////////////////////////////////////////////////////////////////////////
+
+static void print_chat(const char *name, const char *content)
+{
+  char uname[9];
+  unpadstr(uname, name);
+  dprintf(chat_fd, UNDERLINED "%-8s:" RESET " %s\n", name, content);
+}
+
+
+
+
+
+static void send_chat(const char *mess)
+{
+  unsigned len = strlen(mess);
+  unsigned size = MSIZE < len ? MSIZE : len;
+  char ssize[4];
+  itoa(ssize, 4, size);
+  char name[9];
+  padstr(name, info->id, 8);
+  send_message(IDAPP_CHAT, "%s %s %s", ssize, name, mess);
+  print_chat("You", mess);
+}
+
+
+
+static void usage(char *argv0)
+{
+  printf("Usage:\t%s [-m message] [-h]\n", argv0);
+}
+
+
+
+static void help(char *argv0)
+{
+  usage(argv0);
+}
+
+
+
+static void getmessage(char *message)
+{
+  char *line = readline(BOLD "Enter your message:\n" RESET);
+  strncpy(message, line, 481);
+  free(line);
+}
+
+static void padstr(char *padded, const char *str, int size)
+{
+  int len = strlen(str);
+  int pad = size - len;
+  int i;
+  for (i = 0; i < pad; ++i)
+    padded[i] = ' ';
+  strncpy(&padded[i], str, size < len ? size : len);
+  padded[size] = 0;
+}
+
+
+
+static void unpadstr(char *unpadded, const char *str)
+{
+  while (*str == ' ')
+    ++str;
+  strcpy(unpadded, str);
+}
+
+
+
+static void unpadstrn(char *unpadded, const char *str, int len)
+{
+  debug("unpadstr", GREEN "str: \"%s\"", str);
+  while (*str == ' ' && --len >= 0)
+    ++str;
+  strncpy(unpadded, str, len);
+  unpadded[len] = 0;
+}
+
+//// END OF TOOLS
+
+

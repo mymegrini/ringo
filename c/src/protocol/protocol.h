@@ -23,15 +23,15 @@ typedef struct entity {
     uint16_t        mdiff_port[NRING];
 } entity;
 
-typedef struct _entity {
-    int socklisten;
-    int socksend;
-    struct sockaddr_in receiver[NRING];
-    int sockmdiff[NRING];
-    int socktcp;
-} _entity;
+  typedef struct _entity {
+      int socklisten;
+      int socksend;
+      struct sockaddr_in receiver[NRING];
+      int sockmdiff[NRING];
+      int socktcp;
+  } _entity;
 
-struct test_data {
+  struct test_data {
     int count;
     int nring;
     char ring_check[NRING];
@@ -40,8 +40,9 @@ struct test_data {
 
 extern volatile struct test_data* test_data;
 
-extern entity *ent;
+extern entity * ent;
 extern _entity *_ent;
+extern entity _ent_;
 
 char *entitytostr(int ring);
 void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen, 
@@ -55,9 +56,9 @@ void* ring_tester(void *args);
 
 int join(const char *host, const char *tcpport);
 int dupplicate_rqst(const char *host, const char *tcpport);
-void sendpacket_all(char *content);
-void sendpacket(char *content, int ring);
-void sendpacket_sockaddr(char *content, struct sockaddr_in *receiver);
+void sendpacket_all(const char *content);
+void sendpacket(const char *content, int ring);
+void sendpacket_sockaddr(const char *content, const struct sockaddr_in *receiver);
 void rm_ring(int ring);
 
 extern const volatile int *ring_number;

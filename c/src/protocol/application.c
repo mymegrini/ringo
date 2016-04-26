@@ -63,7 +63,7 @@ int parseappmsg(char *message, char *content, int lookup_flag) {
 
 
 
-void sendappmessage_all(char *type, char *format, ...)
+void sendappmessage_all(const char *type, const char *format, ...)
 {
     char content[490];
 

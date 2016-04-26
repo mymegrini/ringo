@@ -29,7 +29,7 @@ void *message_manager(void *args);
  * Current entity
  */
 entity _ent_;
-entity *ent = &_ent_;
+entity * ent = (entity * )&_ent_;
 
 _entity __ent;
 _entity *_ent = & __ent;
@@ -725,7 +725,7 @@ void *message_manager(void *args)
 
 
 
-void sendpacket(char *content, int ring)
+void sendpacket(const char *content, int ring)
 {
     rlock_entity();
     debug("sendpacket(char *content, int ring)",
@@ -739,7 +739,7 @@ void sendpacket(char *content, int ring)
     unlock_entity();
 }
 
-void sendpacket_all(char *content)
+void sendpacket_all(const char *content)
 {
     rlock_entity();
     debug("sendpacket_all(char *content)", 
@@ -754,7 +754,7 @@ void sendpacket_all(char *content)
 }
 
 
-void sendpacket_sockaddr(char *content, struct sockaddr_in *receiver)
+void sendpacket_sockaddr(const char *content, const struct sockaddr_in *receiver)
 {
     debug("sendpacket_sockaddr(char *content, struct sockaddr_in *receiver)", 
             BLUE "Sending packet solo:\n---\n%s\n---\n...\n"

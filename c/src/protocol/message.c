@@ -12,20 +12,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 // EXTERNAL
 ////////////////////////////////////////////////////////////////////////////////
-extern int parseappmsg(char *message, char *content, int lookup_flag);
-static int action_whos(char *message, char *content, int lookup_flag);
-static int action_memb(char *message, char *content, int lookup_flag);
-static int action_test(char *message, char *content, int lookup_flag);
+extern int parseappmsg(const char *message, const char *content, int lookup_flag);
+static int action_whos(const char *message, const char *content, int lookup_flag);
+static int action_memb(const char *message, const char *content, int lookup_flag);
+static int action_test(const char *message, const char *content, int lookup_flag);
 
-extern int action_gbye(char *message, char *content, int lookup_flag);
-extern int action_eybg(char *message, char *content, int lookup_flag);
+extern int action_gbye(const char *message, const char *content, int lookup_flag);
+extern int action_eybg(const char *message, const char *content, int lookup_flag);
 ////////////////////////////////////////////////////////////////////////////////
 // TYPES
 ////////////////////////////////////////////////////////////////////////////////
 
 typedef struct protocol_msg {
     char type[5];
-    int (*action)(char *, char *, int lookup_flag);
+    int (*action)(const char *, const char *, int lookup_flag);
     // action should return -1 when message doesn't follow the protocol
     // so it's not retransmitted
 } protocol_msg;
@@ -45,7 +45,7 @@ protocol_msg pmsg[] = {
 };
 
 
-extern entity *ent;
+/* extern entity *ent; */
 extern volatile int nring;
 extern _entity *_ent;
 extern volatile int ring_check[NRING];
@@ -98,7 +98,7 @@ static void messageid(char* hash) {
 }
 
 
-static int action_whos(char *message, char *content, int lookup_flag) {
+static int action_whos(const char *message, const char *content, int lookup_flag) {
     // message already seen
     if (lookup_flag)
         return 0;
@@ -114,7 +114,7 @@ static int action_whos(char *message, char *content, int lookup_flag) {
 }
 
 
-static int action_memb(char* message, char* content, int lookup_flag) {
+static int action_memb(const char* message, const char* content, int lookup_flag) {
     // message already seen
     if (lookup_flag)
         return 0;
@@ -151,7 +151,7 @@ static int action_memb(char* message, char* content, int lookup_flag) {
     /*}*/
     /*return 0;*/
 /*}*/
-static int action_test(char *message, char *content, int lookup_flag) {
+static int action_test(const char *message, const char *content, int lookup_flag) {
     debug("action_test", RED "entering function...");
     if (content[15] != ' ' || content[20] != 0) {
         debug("action_test", RED "content not following the protocol."\
@@ -250,7 +250,7 @@ static void makemessage(char* buff, const char* type,
 }
 
 
-void sendmessage_all(char *type, char *format, ...) {
+void sendmessage_all(const char *type, const char *format, ...) {
     char buff[513];
     va_list aptr;
 
@@ -262,7 +262,7 @@ void sendmessage_all(char *type, char *format, ...) {
 }
 
 
-void sendmessage(int ring, char *type, char *format, ...) {
+void sendmessage(int ring, const char *type, const char *format, ...) {
     char buff[513];
     va_list aptr;
 
@@ -275,7 +275,7 @@ void sendmessage(int ring, char *type, char *format, ...) {
     debug("sendmessag(int ring, type, format, ...)", BLUE "message sent->");
 }
 
-void sendmessage_sockaddr(struct sockaddr_in *receiver, char *type, char *format, ...) {
+void sendmessage_sockaddr(const struct sockaddr_in *receiver, const char *type, const char *format, ...) {
     char buff[513];
     va_list aptr;
 
