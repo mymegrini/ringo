@@ -167,7 +167,7 @@ int loadplugin(PluginManager *plug_manager, const char *plug_dir, const char *pl
     return 0;
   }
   plug_reg->lib = lib;
-  printf("Plugin "BOLD "%s" RESET " now available.\n", plugname);
+  printf("Plugin "BOLD "%s" RESET " now available.\n\n", plugname);
   return 1;
 }
 

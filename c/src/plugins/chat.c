@@ -151,9 +151,14 @@ static struct option longopts[] = {
 
 int cmd_chat(int argc, char **argv)
 {
+  char message[481];
+  if (argc == 1) {
+    getmessage(message);
+    send_chat(message);
+    return 0;
+  }
   int c, indexptr;
   short flag = 0;
-  char message[481];
   optind = 0;
   while ((c = getopt_long(argc, argv, OPT_STRING,
           longopts, &indexptr)) != -1) {
@@ -186,10 +191,6 @@ int cmd_chat(int argc, char **argv)
   else if (flag & FLAG_TERMOUT)
     output_term();
   if (flag & FLAG_MESS) {
-    send_chat(message);
-  }
-  else {
-    getmessage(message);
     send_chat(message);
   }
   return 0;
