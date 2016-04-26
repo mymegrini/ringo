@@ -67,5 +67,5 @@ void printpacket(const char *packet);
 int isip(const char *str);
 int isport(const char *str);
 void ipnozeros(char *nozeros, const char *ip);
-int init_outputxterm(); 
+int init_outputxterm(pid_t *pid); 
 #endif /* COMMON_H */

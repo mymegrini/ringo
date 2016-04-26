@@ -4,6 +4,7 @@
   send_message;
   retransmit;
   info;
+  open_terminal;
   isnumericn;
   itoa;
   /* protocol interface *.

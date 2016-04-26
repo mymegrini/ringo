@@ -1,12 +1,15 @@
 #include "../protocol/common.h"
 #include "../plugin_system/plugin_interface.h"
 #include "../plugin_system/protocol_interface.h"
+#include "../plugin_system/plugin_tool.h"
 
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <signal.h>
 
 #include <readline/readline.h>
 
@@ -22,13 +25,21 @@ static void print_chat(const char *name, const char *content);
 static void unpadstrn(char *unpadded, const char *str, int len);
 static void unpadstr(char *unpadded, const char *str);
 static void padstr(char *padded, const char *str, int size);
+static void outputto(int fd);
+static int  output_term();
+static void close_outputterm();
+
+//// END OF TOOLS
+
+
 
 
 #define   MSIZE        485
 #define   IDAPP_CHAT   "CHAT####"
 
 
-static int chat_fd = STDOUT_FILENO;
+static int   chat_fd = STDOUT_FILENO;
+static pid_t pid_term;
 
 //// END OF GLOBALS
 
@@ -107,21 +118,30 @@ int action_chat(const char *mess, const char *content, int lookup_flag) {
 
 
 
-#define   OPT_HELP    'h'
-#define   OPTL_HELP   "help"
-#define   OPT_MESS    'm'
-#define   OPTL_MESS   "message"
+#define   OPT_HELP       'h'
+#define   OPTL_HELP      "help"
+#define   OPT_MESS       'm'
+#define   OPTL_MESS      "message"
+#define   OPT_TERMOUT    't'
+#define   OPTL_TERMOUT   "terminal"
+#define   OPT_STDOUT     's'
+#define   OPTL_STDOUT    "stdin"
 
-#define   OPT_STRING  "hm:"
+#define   OPT_STRING     "hm:"
+
 
 static struct option longopts[] = {
-  {OPTL_HELP,     no_argument, 0, OPT_HELP},
-  {OPTL_MESS,     required_argument, 0, OPT_MESS},
-  {0, 0, 0, 0}
+  {OPTL_HELP,    no_argument,       0, OPT_HELP},
+  {OPTL_MESS,    required_argument, 0, OPT_MESS},
+  {OPTL_STDOUT,  no_argument,       0, OPT_STDOUT},
+  {OPTL_TERMOUT, no_argument,       0, OPT_TERMOUT},
+  {0,            0,                 0, 0}
 };
 
 
 #define FLAG_MESS 1
+#define FLAG_STDOUT  2
+#define FLAG_TERMOUT  4
 
 int cmd_chat(int argc, char **argv)
 {
@@ -140,6 +160,14 @@ int cmd_chat(int argc, char **argv)
         flag |= FLAG_MESS;
         strncpy(message, optarg, 481);
         break;
+      case OPT_STDOUT:
+        flag &= ~FLAG_TERMOUT;
+        flag |= FLAG_STDOUT;
+        break;
+      case OPT_TERMOUT:
+        flag &= ~FLAG_STDOUT;
+        flag |= FLAG_TERMOUT;
+        break;
       default:
         usage(argv[0]);
         return 1;
@@ -147,6 +175,10 @@ int cmd_chat(int argc, char **argv)
     }
   }
 
+  if (flag & FLAG_STDOUT)
+    outputto(STDOUT_FILENO);
+  else if (flag & FLAG_TERMOUT)
+    output_term();
   if (flag & FLAG_MESS) {
     send_chat(message);
   }
@@ -234,11 +266,39 @@ static void unpadstr(char *unpadded, const char *str)
 
 static void unpadstrn(char *unpadded, const char *str, int len)
 {
-  debug("unpadstr", GREEN "str: \"%s\"", str);
   while (*str == ' ' && --len >= 0)
     ++str;
   strncpy(unpadded, str, len);
   unpadded[len] = 0;
+}
+
+
+static void close_outputterm()
+{
+  if (chat_fd != STDOUT_FILENO) {
+    kill(pid_term, SIGKILL);
+    close(chat_fd);
+  }
+}
+
+
+static void outputto(int fd)
+{
+  if (chat_fd != STDOUT_FILENO)
+    close_outputterm();
+  chat_fd = fd;
+}
+
+
+
+static int output_term()
+{
+  int fd = open_terminal(&pid_term);
+  if (fd == -1)
+    return 0;
+  else
+    outputto(fd);
+  return 1;
 }
 
 //// END OF TOOLS

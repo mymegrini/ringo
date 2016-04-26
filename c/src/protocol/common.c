@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <signal.h>
 
 #ifndef NRING
 #define NRING 2
@@ -175,6 +176,7 @@ static void fifo_path(char *name) {
 }
 
 static int fd_xterm = -1;
+static pid_t pid_xterm;
 
 /* static void init_verbosexterm() { */
 /*     char path[60]; */
@@ -201,10 +203,12 @@ static int fd_xterm = -1;
 /*     } */
 /* } */
 static void init_verbosexterm() {
-  fd_xterm = init_outputxterm();
+  fd_xterm = init_outputxterm(&pid_xterm);
 }
 
-int init_outputxterm() {
+
+
+int init_outputxterm(pid_t *pid) {
     char path[60];
     fifo_path(path);
     mkfifo(path, 0600);
@@ -212,11 +216,15 @@ int init_outputxterm() {
     strcpy(cat_cmd, "/bin/cat ");
     strcat(cat_cmd, path);
     int fd;
-    switch (fork()) {
+    sigset_t mask;
+    pid_t p = fork();
+    switch (p) {
         case -1:
             fprintf(stderr, "Fork error.\n");
             break;
         case 0:
+            sigfillset(&mask);
+            sigprocmask(SIG_SETMASK, &mask, NULL);
             execlp("xterm", "xterm", "-e", cat_cmd, NULL);
             printf("FAILURE\n");
             exit(EXIT_FAILURE);
@@ -226,6 +234,7 @@ int init_outputxterm() {
                 fprintf(stderr, "Can't open pipe\n");
                 return -1;
             }
+            *pid = p;
             return fd;
             break;
     }
