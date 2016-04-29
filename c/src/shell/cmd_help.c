@@ -17,7 +17,7 @@ static void print_cmd(command *c) {
 
 int cmd_help(int argc, char *argv[])
 {
-  for (int i = 0; *cmd[i].name; ++i)
+  for (int i = 0; cmd[i].name; ++i)
     print_cmd(&cmd[i]);
   return 0;
 }

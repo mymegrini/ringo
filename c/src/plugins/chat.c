@@ -28,7 +28,6 @@ static void outputto(int fd);
 static int  output_term();
 static void close_outputterm();
 
-//// END OF TOOLS
 
 
 
