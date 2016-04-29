@@ -3,12 +3,14 @@
 
 
 
-all	: C Java
+all	: c java
 
-C	:
+.PHONY	: c java
+
+c	:
 	$(MAKE) $(MFLAGS) -C c
 
-Java	:
+java	:
 	$(MAKE) $(MFLAGS) -C java/src
 
 debug	:
