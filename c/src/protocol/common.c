@@ -245,7 +245,7 @@ static void verbose_xterm(char *format, ...) {
     dprintf(fd_xterm, BOLD UNDERLINED "verbose - " RESET);
     va_list aptr;
     va_start(aptr, format);
-    dprintf(fd_xterm, format, aptr);
+    vdprintf(fd_xterm, format, aptr);
     va_end(aptr);
 }
 
