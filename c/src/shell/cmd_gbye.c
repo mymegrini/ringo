@@ -101,10 +101,12 @@ int action_eybg(char *message, char *content, int lookup_flag)
 
 
 
+/*
 static void usage(char *argv0)
 {
         printf("Usage:\t%s", argv0);
 }
+*/
 
 
 

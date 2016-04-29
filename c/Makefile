@@ -8,7 +8,7 @@ export PLUGIN_CFLAGS  = $(CFLAGS)
 export PLUGIN_LDFLAGS = -fPIC
 export CFLAGS         = -Wall -O2 -std=gnu99 -D PLUG_DIR="\"$(CPLUGPATH)\"" #--pedantic -std = c11
 
-.SILENT: 
+#.SILENT: 
 
 
 all:
@@ -16,7 +16,7 @@ all:
 
 debug: CFLAGS += -D DEBUG -g
 debug: all 
-	#$(MAKE) $(MFLAGS) -C src debug
+	$(MAKE) $(MFLAGS) -C src debug
 
 clean:
 	$(MAKE) $(MFLAGS) clean -C src

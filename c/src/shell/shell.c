@@ -78,7 +78,10 @@ static void extract_dir_from_path(char *dir, const char *path)
 static void actualize_prompt()
 {
   char buff[1024];
-  getcwd(buff, 1024);
+  if (getcwd(buff, 1024) == NULL){
+      perror("load_all_plugins");
+      return;
+  }
   char dir[255];
   extract_dir_from_path(dir, buff);
   sprintf(prompt, BOLD GREEN "[" CYAN "%s" GREEN "]" YELLOW " $> " RESET, dir);
@@ -124,11 +127,11 @@ static int exec_cmd(const char *str) {
       if (strcmp(wordx.we_wordv[0], "ls") == 0) {
         char *ls = malloc(strlen(str) + 15);
         sprintf(ls, "%s --color=auto", str);
-        system(ls);
+        if (system(ls));
         free(ls);
       }
       else {
-        system(str);
+	  if(system(str));
       }
       break;
   }

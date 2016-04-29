@@ -179,8 +179,14 @@ static void list_available(char *plug_dir)
     /* print all the files and directories within directory */
     struct dirent *ent;
     char wd[256];
-    getcwd(wd, 256);
-    chdir(plug_dir);
+    if(getcwd(wd, 256) == NULL){
+	perror("list_available");
+	return ;
+    }
+    if(chdir(plug_dir)){
+	perror("list_available");
+	return ;
+    }
     while ((ent = readdir (dir)) != NULL) {
       struct stat info;
       /* debug("load_all_plugins", "file: %s, S_ISREG: %d, S_ISDIR: %d", ent->d_name, S_ISREG(info.st_mode), S_ISDIR(info.st_mode)); */
@@ -192,7 +198,10 @@ static void list_available(char *plug_dir)
         }
       }
     }
-    chdir(wd);
+    if(chdir(wd)){
+	perror("list_available");
+	return ;
+    }
     closedir(dir);
   }
   else {

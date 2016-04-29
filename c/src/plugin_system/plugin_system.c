@@ -207,8 +207,14 @@ int load_all_plugins(PluginManager *plug_manager, const char *plug_dir)
     /* print all the files and directories within directory */
     struct dirent *ent;
     char wd[256];
-    getcwd(wd, 256);
-    chdir(plug_dir);
+    if (getcwd(wd, 256) == NULL){
+	perror("load_all_plugins");
+	return 1;
+    }
+    if (chdir(plug_dir)){
+	perror("load_all_plugins");
+	return 1;
+    }
     while ((ent = readdir (dir)) != NULL) {
       struct stat info;
       /* debug("load_all_plugins", "file: %s, S_ISREG: %d, S_ISDIR: %d", ent->d_name, S_ISREG(info.st_mode), S_ISDIR(info.st_mode)); */
@@ -220,7 +226,10 @@ int load_all_plugins(PluginManager *plug_manager, const char *plug_dir)
         }
       }
     }
-    chdir(wd);
+    if(chdir(wd)){
+	perror("load_all_plugins");
+	return 1;
+    }
     closedir(dir);
     return 1;
   }
