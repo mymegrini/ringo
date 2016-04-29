@@ -1,8 +1,5 @@
-*
-!*.h
-!*.c
-!Make*
 .*
 #*
 test*
+*~
 !.gitignore

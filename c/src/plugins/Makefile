@@ -1,16 +1,11 @@
-CSRC		= $(wildcard *.c)
-DOBJS		=  $(CSRC:%.c=$(CPLUGPATH)/%.so)
-OBJS		=  $(CSRC:%.c=$(CPLUGPATH)/%.o)
+.PHONY	: all clean
 
-all		: $(DOBJS)
+all	:
+	make -C chat
+	make -C zyva
+	make -C pong
 
-$(CPLUGPATH)/%.so	: $(CPLUGPATH)/%.o
-	$(CC) $(PLUGIN_CFLAGS) -o $@ $< -shared
-
-$(CPLUGPATH)/%.o 	: %.c
-	$(CC) $(PLUGIN_CFLAGS) $(PLUGIN_LDFLAGS) -c -o $@ $<
-
-.PHONY: clean
-clean		:
-	rm -f $(DOBJS)
-	rm -f $(OBJS)
+clean	:
+	make -C chat clean
+	make -C zyva clean
+	make -C pong clean

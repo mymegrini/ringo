@@ -1,5 +1,5 @@
-#include "../plugin_system/plugin_interface.h"
-#include "../plugin_system/protocol_interface.h"
+#include "../../plugin_system/plugin_interface.h"
+#include "../../plugin_system/protocol_interface.h"
 
 #include <stdio.h>
 #include <stdlib.h>
