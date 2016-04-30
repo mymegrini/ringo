@@ -1,13 +1,5 @@
-*
-!*.h
-!*.c
-!Make*
-.*
+*~
 #*
+.*
 test*
 !.gitignore
-!protocol
-!shell
-!plugin_system
-!plugins
-!plugin_system.list
