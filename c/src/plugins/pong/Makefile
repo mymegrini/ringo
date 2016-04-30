@@ -1,18 +1,24 @@
-CSRC		= $(wildcard *.c)
+CSRC		= pong.c gui.c render.c
 DOBJS		= $(CPLUGPATH)/pong.so
 OBJS		= $(CSRC:%.c=$(CPLUGPATH)/%.o)
 HSDL		= `pkg-config --cflags sdl2`
 LIBSDL		= `pkg-config --libs sdl2 SDL2_gfx`
 
+.PHONY: all clean
+
 all		: $(DOBJS)
 
-$(CPLUGPATH)/%.so	: $(OBJS)
+$(DOBJS)	: $(OBJS)
 	$(CC) $(PLUGIN_CFLAGS) -o $@ $^ -shared $(LIBSDL)
 
-$(CPLUGPATH)/%.o 	: %.c
+$(CPLUGPATH)/%.o: %.c
 	$(CC) $(PLUGIN_CFLAGS) $(PLUGIN_LDFLAGS) $(HSDL) -c -o $@ $<
 
-.PHONY: clean
+$(CPLUGPATH)/ping.o	: ping.h gui.h render.h
+$(CPLUGPATH)/gui.o	: gui.h render.h
+$(CPLUGPATH)/render.o   : render.h
+
+
 clean		:
 	rm -f $(DOBJS)
 	rm -f $(OBJS)

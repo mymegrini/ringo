@@ -1,0 +1,117 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <SDL2/SDL.h>
+#include "gui.h"
+#include "render.h"
+
+/**
+ * The window we'll be rendering to
+ */
+static SDL_Window* window = NULL;       /***< SDL window >*/
+
+/**
+ * SDL Renderer
+ */
+static SDL_Renderer* renderer = NULL;   /***< SDL renderer >*/
+
+/**
+ * This function initializes SDL and creates a renderer
+ * @return void
+ */
+void
+initSDL(){
+    
+    //Initialize SDL
+    if(SDL_Init(SDL_INIT_VIDEO) < 0){
+	printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+	return;
+    }
+
+    //Create window
+    window = SDL_CreateWindow("pong",
+			      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+			      WINDOW_WIDTH, WINDOW_HEIGHT,
+			      SDL_WINDOW_SHOWN );
+  
+    if( window == NULL ) {
+	printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError());
+	return;
+    }
+
+    //get Renderer
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC
+				  | SDL_RENDERER_ACCELERATED);
+
+    if( renderer == NULL ) {
+	printf( "Renderer could not be created! SDL_Eroor: %s\n",
+		SDL_GetError());
+	return;
+    }
+    
+    return;
+}
+
+/**
+ * This function closes SDL after freeing textures
+ * @return void
+ */
+void
+closeSDL(){    
+
+    //Destroy textures
+    destroyTextures();
+    
+    //Destroy renderer
+    SDL_DestroyRenderer( renderer );
+    renderer = NULL;
+    
+    //Destroy window
+    SDL_DestroyWindow( window );
+    window = NULL;
+    
+    //Quit SDL subsystems
+    SDL_Quit();
+
+    return;
+}
+
+/**
+ * This function handles SDL events
+ * @return 0 except on quit where it returns 1
+ */
+int
+handleEvents(){
+    
+    SDL_Event evt;
+    
+    while(SDL_PollEvent(&evt)) {
+	if(evt.type == SDL_QUIT) {
+	    
+	    closeSDL();	    
+	    return 1; // 1 value to break out of loop
+	}
+    }
+
+    return 0;
+}
+
+int
+launchPong() {
+       
+    initSDL();
+    loadTextures(renderer);
+    renderLogo(renderer);
+
+    //event loop
+    while(!handleEvents());
+    return 0;
+}
+
+/**
+ * This function quits pong
+ */
+void
+quitPong(){
+    
+    return closeSDL();
+}

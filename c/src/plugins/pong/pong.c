@@ -1,9 +1,9 @@
 #include "../../plugin_system/plugin_interface.h"
 #include "../../plugin_system/protocol_interface.h"
+#include "gui.h"
 
 static int cmd_pong(int argc, char **argv);
 static int action_pong(const char *message, const char* content, int lookup_flag);
-static void close_pong();
 
 PluginCommand_t pcmd_pong = {
     "pong",
@@ -22,21 +22,22 @@ Plugin plugin_pong = {
     &pcmd_pong,
     1,
     &paction_pong,
-    close_pong
+    quitPong
 };
 
 
 int init_pong(PluginManager *p)
 {
+    
     return plugin_register(p, "pong", &plugin_pong);
 }
 
 
 
 
-static int cmd_pong(int argc, char **argv) 
-{
-    return 0;
+static int cmd_pong(int argc, char **argv){
+    
+    return launchPong();    
 }
 
 static int action_pong(const char *message, const char *content, int lookup_flag)
@@ -44,7 +45,3 @@ static int action_pong(const char *message, const char *content, int lookup_flag
     return 0;
 }
 
-static void close_pong(){
-
-    return;
-}
