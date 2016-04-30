@@ -7,7 +7,7 @@ LIBSDL		= `pkg-config --libs sdl2 SDL2_gfx`
 all		: $(DOBJS)
 
 $(CPLUGPATH)/%.so	: $(OBJS)
-	$(CC) $(PLUGIN_CFLAGS) -o $@ $^ -shared $(LIBSDL) -static
+	$(CC) $(PLUGIN_CFLAGS) -o $@ $^ -shared $(LIBSDL)
 
 $(CPLUGPATH)/%.o 	: %.c
 	$(CC) $(PLUGIN_CFLAGS) $(PLUGIN_LDFLAGS) $(HSDL) -c -o $@ $<
