@@ -15,18 +15,26 @@ static SDL_Window* window = NULL;       /***< SDL window >*/
 static SDL_Renderer* renderer = NULL;   /***< SDL renderer >*/
 
 /**
- * This function initializes SDL and creates a renderer
+ * This function initializes SDL subsystems
  * @return void
  */
 void
-initSDL(){
+initPong(){
     
     //Initialize SDL
     if(SDL_Init(SDL_INIT_VIDEO) < 0){
 	printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 	return;
     }
+}
 
+/**
+ * This function creates an SDL window and renderer
+ * @return void
+ */
+void
+launchWindow(){
+    
     //Create window
     window = SDL_CreateWindow("pong",
 			      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -47,16 +55,22 @@ initSDL(){
 		SDL_GetError());
 	return;
     }
+
+    //load asset Textures
+    loadTextures(renderer);
+
+    //render splash screen
+    renderLogo(renderer);
     
     return;
 }
 
 /**
- * This function closes SDL after freeing textures
+ * This function frees textures and destroys the window and renderer
  * @return void
  */
 void
-closeSDL(){    
+closeWindow(){    
 
     //Destroy textures
     destroyTextures();
@@ -68,6 +82,16 @@ closeSDL(){
     //Destroy window
     SDL_DestroyWindow( window );
     window = NULL;
+
+    return;
+}
+
+/**
+ * This function shuts SDL subsystems down
+ * @return void
+ */
+void
+closePong(){
     
     //Quit SDL subsystems
     SDL_Quit();
@@ -86,8 +110,8 @@ handleEvents(){
     
     while(SDL_PollEvent(&evt)) {
 	if(evt.type == SDL_QUIT) {
-	    
-	    closeSDL();	    
+
+	    quitPong();
 	    return 1; // 1 value to break out of loop
 	}
     }
@@ -96,11 +120,9 @@ handleEvents(){
 }
 
 int
-launchPong() {
-       
-    initSDL();
-    loadTextures(renderer);
-    renderLogo(renderer);
+launchPong(int argc, char **argv) {
+    
+    launchWindow();
 
     //event loop
     while(!handleEvents());
@@ -112,6 +134,8 @@ launchPong() {
  */
 void
 quitPong(){
-    
-    return closeSDL();
+
+    closeWindow();
+    closePong();
+    return;
 }

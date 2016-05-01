@@ -1,47 +1,33 @@
 #include "../../plugin_system/plugin_interface.h"
 #include "../../plugin_system/protocol_interface.h"
 #include "gui.h"
+#include "netcode.h"
 
-static int cmd_pong(int argc, char **argv);
-static int action_pong(const char *message, const char* content, int lookup_flag);
-
-PluginCommand_t pcmd_pong = {
+PluginCommand_t cmd_pong = {
     "pong",
     "Classic multiplayer tennis game running over the network.",
-    cmd_pong
+    launchPong
 };
 
-PluginAction_t paction_pong = {
+PluginAction_t action_pong = {
     "PONG####",
     "Network packet for 'pong' application.",
-    action_pong
+    parsePong
 };
 
 Plugin plugin_pong = {
     1,
-    &pcmd_pong,
+    &cmd_pong,
     1,
-    &paction_pong,
+    &action_pong,
     quitPong
 };
 
 
 int init_pong(PluginManager *p)
 {
-    
+    initPong();
     return plugin_register(p, "pong", &plugin_pong);
 }
 
-
-
-
-static int cmd_pong(int argc, char **argv){
-    
-    return launchPong();    
-}
-
-static int action_pong(const char *message, const char *content, int lookup_flag)
-{
-    return 0;
-}
 

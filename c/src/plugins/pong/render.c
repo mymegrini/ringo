@@ -1,9 +1,9 @@
 #include <SDL2/SDL.h>
 #include <stdlib.h>
 
-
 #define DATA_PATH "c/src/plugins/pong/data/"
 #define LOGO_BMP DATA_PATH "logo.bmp"
+#define FIELD_BMP DATA_PATH "field.bmp"
 #define SKULL_BMP DATA_PATH "skull.bmp"
 #define TROPHY_BMP DATA_PATH "trophy.bmp"
 
@@ -11,6 +11,7 @@
  * Asset textures
  */
 static SDL_Texture* logoTexture = NULL;
+static SDL_Texture* fieldTexture = NULL;
 static SDL_Texture* skullTexture = NULL;
 static SDL_Texture* trophyTexture = NULL;
 static SDL_Texture* digitTexture[10] = { NULL };
@@ -43,13 +44,24 @@ void
 loadTextures(SDL_Renderer* renderer){
 
     loadTexture(renderer, LOGO_BMP, &logoTexture);
+    if(!logoTexture)
+	puts(SDL_GetError());
+    loadTexture(renderer, FIELD_BMP, &fieldTexture);
+    if(!fieldTexture)
+	puts(SDL_GetError());
     loadTexture(renderer, SKULL_BMP, &skullTexture);
+    if(!skullTexture)
+	puts(SDL_GetError());
     loadTexture(renderer, TROPHY_BMP, &trophyTexture);
+    if(!trophyTexture)
+	puts(SDL_GetError());
     
     for(int i = 0; i<10; i++){
 	char digit_bmp[256] = { 0 };
 	sprintf(digit_bmp, "%s%d.bmp", DATA_PATH, i);
 	loadTexture(renderer, digit_bmp, digitTexture + i);
+	if(!digitTexture[i])
+	    puts(SDL_GetError());
     }
     return;
 }
@@ -86,5 +98,6 @@ renderLogo(SDL_Renderer* renderer){
     
     SDL_RenderCopy(renderer, logoTexture, NULL, NULL);
     SDL_RenderPresent(renderer);
+    SDL_Delay(500);
     return;
 }
