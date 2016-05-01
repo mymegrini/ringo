@@ -1,5 +1,4 @@
 #include "../../plugin_system/plugin_interface.h"
-#include "../../plugin_system/protocol_interface.h"
 #include "gui.h"
 #include "netcode.h"
 

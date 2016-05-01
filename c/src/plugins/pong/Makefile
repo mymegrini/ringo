@@ -14,9 +14,10 @@ $(DOBJS)	: $(OBJS)
 $(CPLUGPATH)/%.o: %.c
 	$(CC) $(PLUGIN_CFLAGS) $(PLUGIN_LDFLAGS) $(HSDL) -c -o $@ $<
 
-$(CPLUGPATH)/ping.o	: ping.h gui.h render.h
-$(CPLUGPATH)/gui.o	: gui.h render.h
-$(CPLUGPATH)/render.o   : render.h
+$(CPLUGPATH)/pong.o: pong.h gui.h render.h ../../plugin_system/plugin_interface.h
+$(CPLUGPATH)/gui.o: gui.h render.h
+$(CPLUGPATH)/render.o: render.h netcode.h
+$(CPLUGPATH)/netcode.o: netcode.h
 
 
 clean		:
