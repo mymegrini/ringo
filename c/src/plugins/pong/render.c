@@ -1,5 +1,6 @@
 #include <SDL2/SDL.h>
 #include <stdlib.h>
+#include "engine.h"
 
 #define DATA_PATH "c/src/plugins/pong/data/"
 #define LOGO_BMP DATA_PATH "logo.bmp"
@@ -112,5 +113,57 @@ renderLogo(SDL_Renderer* renderer){
     SDL_RenderCopy(renderer, logoTexture, NULL, NULL);
     SDL_RenderPresent(renderer);
     SDL_Delay(500);
+    return;
+}
+
+/**
+ * This function takes care of rendering the rackets
+ */
+static void
+renderRackets(int r1, int r2){
+
+    return;
+}
+
+/**
+ * This function takes care of rendering the rackets
+ */
+static void
+renderScore(int s1, int s2){
+
+    return;
+}
+
+/**
+ * This function takes care of rendering the ball
+ */
+static void
+renderBall(int x, int y){
+    
+    return;
+}
+    
+
+/**
+ * This function renders the current state of the game
+ */
+void
+render(SDL_Renderer* renderer){
+
+    state s;
+    getState(&s);
+    if(s.available){
+	
+	if (fieldTexture == NULL)
+	loadTextures(renderer);
+	
+	SDL_RenderCopy(renderer, fieldTexture, NULL, NULL);
+	renderRackets(s.racket1, s.racket2);
+	renderBall(s.ballx, s.bally);
+	renderScore(s.score1, s.score2);
+	SDL_RenderPresent(renderer);
+	SDL_Delay(100);
+    }
+    
     return;
 }

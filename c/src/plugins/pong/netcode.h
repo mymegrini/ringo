@@ -2,6 +2,7 @@
 #define NETCODE_H
 
 int parsePong(const char *message, const char *content, int lookup_flag);
-int login(const char* name);
+void loginPong();
+void sendupdate();
 
 #endif

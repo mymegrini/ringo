@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <SDL2/SDL.h>
+#include <readline/readline.h>
+#include "pong.h"
 #include "gui.h"
 #include "render.h"
+#include "netcode.h"
+#include "engine.h"
+
 
 /**
  * The window we'll be rendering to
@@ -106,11 +111,14 @@ handleEvents(){
 
 int
 launchPong(int argc, char **argv) {
-
+    
     launchWindow();
-
+    loginPong();
+	
     //event loop
-    while(!handleEvents());
+    while(!handleEvents())
+	render(renderer);
+
     return 0;
 }
 
