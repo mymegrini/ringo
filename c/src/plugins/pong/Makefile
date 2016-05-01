@@ -1,4 +1,4 @@
-CSRC		= pong.c gui.c render.c
+CSRC		= pong.c gui.c render.c netcode.c physics.c
 DOBJS		= $(CPLUGPATH)/pong.so
 OBJS		= $(CSRC:%.c=$(CPLUGPATH)/%.o)
 HSDL		= `pkg-config --cflags sdl2`

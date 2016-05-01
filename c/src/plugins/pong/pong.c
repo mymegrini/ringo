@@ -1,6 +1,9 @@
 #include "../../plugin_system/plugin_interface.h"
+//#include "../../plugin_system/protocol_interface.h"
+#include "pong.h"
 #include "gui.h"
 #include "netcode.h"
+
 
 PluginCommand_t cmd_pong = {
     "pong",
@@ -9,7 +12,7 @@ PluginCommand_t cmd_pong = {
 };
 
 PluginAction_t action_pong = {
-    "PONG####",
+    PONG_TYPE,
     "Network packet for 'pong' application.",
     parsePong
 };

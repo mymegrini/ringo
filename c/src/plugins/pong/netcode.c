@@ -1,10 +1,11 @@
+#include <stdio.h>
 
 /**
  * This function parses pong application messages
  */
 int parsePong(const char* message, const char* content, int lookup_flag){
 
-    printf("%d\n", content-message);
+    printf("%ld\n", content-message);
     return 0;
 }
 
