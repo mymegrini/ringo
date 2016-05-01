@@ -3,6 +3,7 @@
 
 #define DATA_PATH "c/src/plugins/pong/data/"
 #define LOGO_BMP DATA_PATH "logo.bmp"
+#define ICON_BMP DATA_PATH "icon.bmp"
 #define FIELD_BMP DATA_PATH "field.bmp"
 #define SKULL_BMP DATA_PATH "skull.bmp"
 #define TROPHY_BMP DATA_PATH "trophy.bmp"
@@ -15,6 +16,18 @@ static SDL_Texture* fieldTexture = NULL;
 static SDL_Texture* skullTexture = NULL;
 static SDL_Texture* trophyTexture = NULL;
 static SDL_Texture* digitTexture[10] = { NULL };
+
+/**
+ * This function sets window icon
+ */
+void
+setIcon(SDL_Window* window){
+    
+    SDL_Surface* icon = SDL_LoadBMP(ICON_BMP);
+    SDL_SetWindowIcon(window, icon);
+    SDL_FreeSurface(icon);
+    return;
+}
 
 /**
  * This function loads one file into an SDL texture

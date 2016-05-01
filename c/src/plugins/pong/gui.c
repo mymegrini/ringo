@@ -46,6 +46,9 @@ launchWindow(){
 	return;
     }
 
+    //set icon
+    setIcon(window);
+    
     //get Renderer
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC
 				  | SDL_RENDERER_ACCELERATED);
@@ -111,8 +114,8 @@ handleEvents(){
     while(SDL_PollEvent(&evt)) {
 	if(evt.type == SDL_QUIT) {
 
-	    quitPong();
-	    return 1; // 1 value to break out of loop
+	    closeWindow();
+	    return 1; // nonzero value to break out of loop
 	}
     }
 
