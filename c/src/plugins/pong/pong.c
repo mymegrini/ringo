@@ -1,5 +1,4 @@
 #include "../../plugin_system/plugin_interface.h"
-//#include "../../plugin_system/protocol_interface.h"
 #include "pong.h"
 #include "gui.h"
 #include "netcode.h"
@@ -28,7 +27,6 @@ Plugin plugin_pong = {
 
 int init_pong(PluginManager *p)
 {
-    initPong();
     return plugin_register(p, "pong", &plugin_pong);
 }
 

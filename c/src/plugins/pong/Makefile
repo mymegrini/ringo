@@ -17,8 +17,7 @@ $(CPLUGPATH)/%.o: %.c
 $(CPLUGPATH)/pong.o: pong.h gui.h render.h ../../plugin_system/plugin_interface.h
 $(CPLUGPATH)/gui.o: gui.h render.h
 $(CPLUGPATH)/render.o: render.h netcode.h
-$(CPLUGPATH)/netcode.o: netcode.h
-
+$(CPLUGPATH)/netcode.o: netcode.h physics.h ../../plugin_system/protocol_interface.h
 
 clean		:
 	rm -f $(DOBJS)

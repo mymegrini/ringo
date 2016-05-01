@@ -15,25 +15,17 @@ static SDL_Window* window = NULL;       /***< SDL window >*/
 static SDL_Renderer* renderer = NULL;   /***< SDL renderer >*/
 
 /**
- * This function initializes SDL subsystems
+ * This function creates an SDL window and renderer
  * @return void
  */
 void
-initPong(){
+launchWindow(){
     
     //Initialize SDL
     if(SDL_Init(SDL_INIT_VIDEO) < 0){
 	printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 	return;
     }
-}
-
-/**
- * This function creates an SDL window and renderer
- * @return void
- */
-void
-launchWindow(){
     
     //Create window
     window = SDL_CreateWindow("pong",
@@ -85,16 +77,6 @@ closeWindow(){
     //Destroy window
     SDL_DestroyWindow( window );
     window = NULL;
-
-    return;
-}
-
-/**
- * This function shuts SDL subsystems down
- * @return void
- */
-void
-closePong(){
     
     //Quit SDL subsystems
     SDL_Quit();
@@ -114,7 +96,7 @@ handleEvents(){
     while(SDL_PollEvent(&evt)) {
 	if(evt.type == SDL_QUIT) {
 
-	    closeWindow();
+	    quitPong();
 	    return 1; // nonzero value to break out of loop
 	}
     }
@@ -124,7 +106,7 @@ handleEvents(){
 
 int
 launchPong(int argc, char **argv) {
-    
+
     launchWindow();
 
     //event loop
@@ -139,6 +121,5 @@ void
 quitPong(){
 
     closeWindow();
-    closePong();
     return;
 }
