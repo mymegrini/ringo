@@ -78,8 +78,8 @@ void createSession(const char* host, const char* guest, int self_index){
 
     //initializing the engine
     engine = malloc(sizeof(core));
-    engine->w = WINDOW_WIDTH - 2 * MARGIN;
-    engine->h = WINDOW_HEIGHT - 2 * MARGIN;
+    engine->w = FIELD_X;
+    engine->h = FIELD_Y;
     strncpy(engine->player[0].id, host, ID_SIZE);
     engine->player[0].id[ID_SIZE] = 0;
     strncpy(engine->player[1].id, guest, ID_SIZE);
@@ -88,14 +88,14 @@ void createSession(const char* host, const char* guest, int self_index){
     engine->player[1].score = 0;
     engine->player[0].racket = -1;
     engine->player[1].racket = -1;
-    engine->ball.x = engine->w / 2;
-    engine->ball.y = engine->h / 2;
+    engine->ball.x = ( engine->w - BALL_SIZE )/ 2;
+    engine->ball.y = ( engine->h - BALL_SIZE )/ 2;
 
     //seting up the pointers
     self = engine->player[self_index].id;
     opponent = engine->player[1-self_index].id;
     racket = &(engine->player[self_index].racket);
-    *racket = engine->h / 2;
+    *racket = ( engine->h - RACKET_Y )/ 2;
 
     return;
 }

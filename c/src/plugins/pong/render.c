@@ -1,6 +1,7 @@
 #include <SDL2/SDL.h>
 #include <stdlib.h>
 #include "engine.h"
+#include "pong.h"
 
 #define DATA_PATH "c/src/plugins/pong/data/"
 #define LOGO_BMP DATA_PATH "logo.bmp"
@@ -120,17 +121,31 @@ renderLogo(SDL_Renderer* renderer){
  * This function takes care of rendering the rackets
  */
 static void
-renderRackets(int r1, int r2){
+renderRackets(SDL_Renderer* renderer, int y1, int y2){
 
+    if(y1>-1){
+	SDL_Rect racket1 = { X(-RACKET_X), Y(y1), RACKET_X, RACKET_Y };      
+	SDL_RenderDrawRect(renderer, &racket1);
+    }
+    if(y2>-1){
+	SDL_Rect racket2 = { X(FIELD_X), Y(y2), RACKET_X, RACKET_Y };
+	SDL_RenderDrawRect(renderer, &racket2);
+    }
     return;
 }
 
 /**
- * This function takes care of rendering the rackets
+ * This function takes care of rendering the score
  */
 static void
-renderScore(int s1, int s2){
+renderScore(SDL_Renderer* renderer, int s1, int s2){
 
+    SDL_Rect digit1 = { WINDOW_WIDTH / 2 - 2 * DIGIT_X, Y(0), DIGIT_X, DIGIT_Y};
+    SDL_RenderCopy(renderer, digitTexture[s1], NULL, &digit1);
+    
+    SDL_Rect digit2 = { WINDOW_WIDTH / 2 + DIGIT_X, Y(0), DIGIT_X, DIGIT_Y};
+    SDL_RenderCopy(renderer, digitTexture[s2], NULL, &digit2);
+    
     return;
 }
 
@@ -138,8 +153,10 @@ renderScore(int s1, int s2){
  * This function takes care of rendering the ball
  */
 static void
-renderBall(int x, int y){
-    
+renderBall(SDL_Renderer* renderer, int x, int y){
+
+    SDL_Rect ball = { X(x), Y(y), BALL_SIZE, BALL_SIZE };		      
+    SDL_RenderFillRect(renderer, &ball);
     return;
 }
     
@@ -158,9 +175,10 @@ render(SDL_Renderer* renderer){
 	loadTextures(renderer);
 	
 	SDL_RenderCopy(renderer, fieldTexture, NULL, NULL);
-	renderRackets(s.racket1, s.racket2);
-	renderBall(s.ballx, s.bally);
-	renderScore(s.score1, s.score2);
+	renderScore(renderer, s.score1, s.score2);
+	renderRackets(renderer, s.racket1, s.racket2);
+	renderBall(renderer, s.ballx, s.bally);
+
 	SDL_RenderPresent(renderer);
 	SDL_Delay(100);
     }

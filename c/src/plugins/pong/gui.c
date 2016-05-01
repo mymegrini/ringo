@@ -8,6 +8,8 @@
 #include "netcode.h"
 #include "engine.h"
 
+#define WHITE 255, 255, 255, 255
+
 
 /**
  * The window we'll be rendering to
@@ -56,6 +58,9 @@ launchWindow(){
 	return;
     }
 
+    //Set draw color
+    SDL_SetRenderDrawColor(renderer, WHITE);
+    
     //load asset Textures
     loadTextures(renderer);
 
