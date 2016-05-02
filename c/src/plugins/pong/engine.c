@@ -21,6 +21,7 @@ typedef struct {
 } player;
     
 typedef struct {
+    int self;
     int w;
     int h;
     player player[2];
@@ -78,6 +79,7 @@ void createSession(const char* host, const char* guest, int self_index){
 
     //initializing the engine
     engine = malloc(sizeof(core));
+    engine->self = self_index;
     engine->w = FIELD_X;
     engine->h = FIELD_Y;
     strncpy(engine->player[0].id, host, ID_SIZE);
@@ -92,11 +94,9 @@ void createSession(const char* host, const char* guest, int self_index){
     engine->ball.y = ( engine->h - BALL_SIZE )/ 2;
 
     //seting up the pointers
-    self = engine->player[self_index].id;
-    opponent = engine->player[1-self_index].id;
-    racket = &(engine->player[self_index].racket);
-    *racket = ( engine->h - RACKET_Y )/ 2;
-
+    self = engine->player[engine->self].id;
+    opponent = engine->player[1-engine->self].id;
+    engine->player[engine->self].racket = ( engine->h - BALL_SIZE )/ 2;
     return;
 }
 
@@ -128,12 +128,12 @@ void getState(state* s){
 
     if(engineState()){
 	s->available = 1;
-	s->score1    = engine->player[0].score;
-	s->score2    = engine->player[1].score;	
-	s->racket1   = engine->player[0].racket;
-	s->racket2   = engine->player[1].racket;
-	s->ballx     = engine->ball.x;
-	s->bally     = engine->ball.y;
+	s->score[0]    = engine->player[0].score;
+	s->score[1]    = engine->player[1].score;
+	s->racket[0]   = engine->player[0].racket;
+	s->racket[1]   = engine->player[1].racket;
+	s->ball[0]     = engine->ball.x;
+	s->ball[1]     = engine->ball.y;
     } else {
 	s->available = 0;
     }
@@ -144,6 +144,25 @@ void getState(state* s){
  * This function updates the state of the game
  */
 void moveRacket(int step){
-    *racket += step;
+
+    int* r = &engine->player[engine->self].racket;
+    if(*r + step < 0)
+	*r = 0;
+    else if(*r + step > engine->h - RACKET_Y)
+	*r = engine->h - RACKET_Y;
+    else
+	*r += step;
+
+    return;
+}
+
+/**
+ * This function updates state
+ */
+void updateState(const state* s){
+
+    int opponent = 1 - engine->self;
+    engine->player[opponent].racket = s->racket[opponent];
+    //engine->score[opponent] = s.score[opponent];
     return;
 }

@@ -155,7 +155,7 @@ renderScore(SDL_Renderer* renderer, int s1, int s2){
 static void
 renderBall(SDL_Renderer* renderer, int x, int y){
 
-    SDL_Rect ball = { X(x), Y(y), BALL_SIZE, BALL_SIZE };		      
+    SDL_Rect ball = { x, Y(y), BALL_SIZE, BALL_SIZE };
     SDL_RenderFillRect(renderer, &ball);
     return;
 }
@@ -175,12 +175,12 @@ render(SDL_Renderer* renderer){
 	loadTextures(renderer);
 	
 	SDL_RenderCopy(renderer, fieldTexture, NULL, NULL);
-	renderScore(renderer, s.score1, s.score2);
-	renderRackets(renderer, s.racket1, s.racket2);
-	renderBall(renderer, s.ballx, s.bally);
+	renderScore(renderer, s.score[0], s.score[1]);
+	renderRackets(renderer, s.racket[0], s.racket[1]);
+	renderBall(renderer, s.ball[0], s.ball[1]);
 
 	SDL_RenderPresent(renderer);
-	SDL_Delay(100);
+	SDL_Delay(10);
     }
     
     return;

@@ -5,14 +5,11 @@
 
 typedef struct {
     int available;
-    int score1;
-    int score2;
-    int racket1;
-    int racket2;
-    int ballx;
-    int bally;
+    int score[2];
+    int racket[2];
+    int ball[2];
 } state;
-    
+
 char* self;
 char* opponent;
 
@@ -21,6 +18,7 @@ void playerid(char* id);
 void createSession(const char* host, const char* opponent, int self);
 void destroySession();
 void getState(state* s);
+void updateState(const state* s);
 void moveRacket(int step);
 
 #endif

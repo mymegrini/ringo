@@ -3,7 +3,7 @@
 #include "../../plugin_system/protocol_interface.h"
 #include "pong.h"
 #include "engine.h"
-#define DEBUG_NETCODE
+//#define DEBUG_NETCODE
 
 #define TYPE_SIZE 6
 #define LOGIN     "LOGIN "
@@ -58,11 +58,17 @@ static int parseShake(const char* message, const char* content, int lookup_flag)
         #ifdef DEBUG_NETCODE
 	printf("creating session from handshake\n");
         #endif
-	createSession(id, content+ID_SIZE, 1);
+	createSession(content+ID_SIZE, id, 1);
         #ifdef DEBUG_NETCODE
-	printf("acknowledging handshake\n");
+	printf("acknowledging handshake %s%s%s\n", HANDSHAKE, opponent, self);
         #endif
 	send_message(PONG_TYPE, "%s%s%s", HANDSHAKE, opponent, self);
+    } else if (*id != 0 && engineState() &&
+	       strncmp(content, self, ID_SIZE) == 0
+	       && strncmp(content + ID_SIZE, opponent, ID_SIZE) == 0){
+            #ifdef DEBUG_NETCODE
+	    printf("handshake acknowledged\n");
+            #endif
     } else if (!lookup_flag)	
 	retransmit(message);
     
@@ -74,6 +80,31 @@ static int parseShake(const char* message, const char* content, int lookup_flag)
  */
 static int parseState(const char* message, const char* content, int lookup_flag){
 
+    if (!strncmp(content, opponent, ID_SIZE)
+	&& !strncmp(content + ID_SIZE, self, ID_SIZE)
+	&& !lookup_flag){
+        #ifdef DEBUG_NETCODE
+	printf("parsing state update %s\n", content);
+        #endif
+	state s;
+	int r = sscanf(content + 2 * ID_SIZE, "%d %d %d %d %d %d",
+		       &s.score[0], &s.score[1], &s.racket[0], &s.racket[1],
+		       &s.ball[0], &s.ball[1]);
+
+	if (r == 6){
+            #ifdef DEBUG_NETCODE
+	    printf("updating state\n");
+            #endif
+	    updateState(&s);
+	} else {
+	    return 1;
+	}
+    } else if(!lookup_flag){
+        #ifdef DEBUG_NETCODE
+	printf("transmitting status update %s\n", content);
+        #endif
+	retransmit(message);
+    }
     return 0;
 }
 
@@ -85,6 +116,8 @@ int parsePong(const char* message, const char* content, int lookup_flag){
     #ifdef DEBUG_NETCODE
     printf("received : %s\n", message);
     #endif
+    if (strncmp(STATE, content, TYPE_SIZE) == 0)
+	return parseState(message, content+TYPE_SIZE, lookup_flag);
     if (strncmp(LOGIN, content, TYPE_SIZE) == 0)
 	return parseLogin(message, content+TYPE_SIZE, lookup_flag);
     if (strncmp(HANDSHAKE, content, TYPE_SIZE) == 0)
@@ -108,5 +141,30 @@ void loginPong(){
     #ifdef DEBUG_NETCODE
     printf("sent : %s %s%s\n", PONG_TYPE, LOGIN, id);
     #endif
+    return;
+}
+
+/**
+ * This function sends updates
+ */
+void sendUpdate(){
+
+    #ifdef DEBUG_NETCODE
+    printf("Sending an update\n");
+    #endif
+    state s;
+    #ifdef DEBUG_NETCODE
+    printf("Obtaining the state\n");
+    #endif
+    getState(&s);
+    send_message(PONG_TYPE, "%s%s%s %d %d %d %d %d %d", STATE,
+		 self, opponent, s.score[0], s.score[1],
+		 s.racket[0], s.racket[1], s.ball[0], s.ball[1]);
+    #ifdef DEBUG_NETCODE
+    printf("sent : %s %s%s%s %d %d %d %d %d %d\n", PONG_TYPE, STATE,
+	   self, opponent, s.score[0], s.score[1], s.racket[0], s.racket[1],
+	   s.ball[0], s.ball[1]);
+    #endif
+
     return;
 }

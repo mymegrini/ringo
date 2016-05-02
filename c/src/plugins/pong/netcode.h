@@ -3,6 +3,6 @@
 
 int parsePong(const char *message, const char *content, int lookup_flag);
 void loginPong();
-void sendupdate();
+void sendUpdate();
 
 #endif

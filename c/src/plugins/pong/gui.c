@@ -9,7 +9,7 @@
 #include "engine.h"
 
 #define WHITE 255, 255, 255, 255
-
+#define STEP 5
 
 /**
  * The window we'll be rendering to
@@ -104,13 +104,24 @@ handleEvents(){
     SDL_Event evt;
     
     while(SDL_PollEvent(&evt)) {
-	if(evt.type == SDL_QUIT) {
-
-	    quitPong();
+	switch(evt.type){
+	case SDL_QUIT :
 	    return 1; // nonzero value to break out of loop
+	case SDL_KEYDOWN :
+	    if(evt.key.keysym.sym == SDLK_ESCAPE)
+		return 1;
 	}
     }
 
+    const Uint8* state = SDL_GetKeyboardState(NULL);
+    if (state[SDL_SCANCODE_UP]){
+	moveRacket(-STEP);
+	sendUpdate();
+    }
+    if (state[SDL_SCANCODE_DOWN]){
+	moveRacket(STEP);
+	sendUpdate();
+    }
     return 0;
 }
 
@@ -124,6 +135,8 @@ launchPong(int argc, char **argv) {
     while(!handleEvents())
 	render(renderer);
 
+    //quitting
+    quitPong();
     return 0;
 }
 
