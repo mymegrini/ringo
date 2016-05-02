@@ -4,8 +4,8 @@ Implements a network based on a ring-shaped communication protocol
 
 Compilation options :
 	    make
-	    make C
-	    make Java
+	    make c
+	    make java
 	    make clean
 
 Usage :
