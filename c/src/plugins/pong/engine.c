@@ -142,18 +142,28 @@ void getState(state* s){
 
 /**
  * This function updates the state of the game
+ * returns 1 if modified, 0 if not
  */
-void moveRacket(int step){
+int moveRacket(int step){
 
     int* r = &engine->player[engine->self].racket;
+    
     if(*r + step < 0)
-	*r = 0;
+	if (*r == 0)
+	    return 0;
+	else
+	    *r = 0;
+    
     else if(*r + step > engine->h - RACKET_Y)
-	*r = engine->h - RACKET_Y;
+	if (*r == engine->h - RACKET_Y)
+	    return 0;
+	else
+	    *r = engine->h - RACKET_Y;
+    
     else
 	*r += step;
-
-    return;
+    
+    return 1;
 }
 
 /**

@@ -115,12 +115,12 @@ handleEvents(){
 
     const Uint8* state = SDL_GetKeyboardState(NULL);
     if (state[SDL_SCANCODE_UP]){
-	moveRacket(-STEP);
-	sendUpdate();
+	if (moveRacket(-STEP))
+	    sendUpdate();
     }
     if (state[SDL_SCANCODE_DOWN]){
-	moveRacket(STEP);
-	sendUpdate();
+	if (moveRacket(STEP))
+	    sendUpdate();
     }
     return 0;
 }

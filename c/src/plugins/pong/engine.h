@@ -19,6 +19,6 @@ void createSession(const char* host, const char* opponent, int self);
 void destroySession();
 void getState(state* s);
 void updateState(const state* s);
-void moveRacket(int step);
+int moveRacket(int step);
 
 #endif
