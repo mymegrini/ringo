@@ -6,7 +6,7 @@ public class Jring{
     static Entity ent;
     static ArrayList<String> mess_list;
     
-    public static void main(String[] args) throws InterruptedException{
+    public static void main(String[] args){
         mess_list = new ArrayList<String>();
         InetAddress host_ip =host_ip();
         System.out.println(host_ip.toString());
@@ -29,8 +29,11 @@ public class Jring{
             ent.port_next=u;
         }
         else{            
-            if(args[0].equals("insert")) stage1=insert(args[1],Integer.parseInt(args[2]));
-            if(args[0].equals("duplicate")) stage1=duplicate(args[1],Integer.parseInt(args[2]));
+            if(args.length==3){
+                if(args[0].equals("insert")) stage1=insert(args[1],Integer.parseInt(args[2]));
+                if(args[0].equals("duplicate")) stage1=duplicate(args[1],Integer.parseInt(args[2]));
+            }
+            else stage1=false;
         }
         if(stage1){
             try{
@@ -39,9 +42,15 @@ public class Jring{
                 Thread tcp_t = new Thread(tcp_mode);
                 tcp_t.start();
                 //Udp
-                Udp_thread udp_mode = new Udp_thread(ent,mess_list);
+                DatagramSocket dso_udp =  new DatagramSocket(ent.udp);
+                Udp_thread udp_mode = new Udp_thread(ent,mess_list,dso_udp);
                 Thread udp_t = new Thread(udp_mode);
                 udp_t.start();
+                dso_udp.close();
+                //Diff
+                Diff_thread diff_mode = new Diff_thread(ent,1,dso_udp);
+                Thread diff_t = new Thread(diff_mode);
+                diff_t.start();
                 //Send a message
                 byte[] data = new byte[512];
                 DatagramSocket dso = new DatagramSocket();
@@ -49,7 +58,9 @@ public class Jring{
                 Down_thread dwn;
                 Thread dwn_t;
                 String m_id;
-                while(true){       
+                int size_mess;
+                boolean f=true;
+                while(true){
                     mess_send= sc.nextLine();
                     if(udp_mode.quit) break;
                     m_id=message_id();
@@ -68,14 +79,31 @@ public class Jring{
                     }
                     if(mess_send.equals("TEST")){
                         mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
-                        dwn = new Down_thread(ent,mess_list,m_id,2);
+                        dwn = new Down_thread(ent,mess_list,m_id,0);
                         dwn_t = new Thread(dwn);
                         dwn_t.start();
                     }
-                    mess_list.add(m_id);
-                    Udp_thread.send_mess(ent,dso,mess_send);
+                    if(mess_send.equals("DIFF")){
+                        System.out.println("Give your message (less than 512-x characters)");
+                        mess_send= sc.nextLine();
+                        size_mess=mess_send.length();
+                        if(size_mess<486) mess_send="APPL "+m_id+" "+"DIFF#### "+size_mess+" "+mess_send;
+                        else mess_send = "";
+                    }
+                    if(mess_send.equals("TRANS")){
+                        System.out.println("Give the name of the file");
+                        mess_send= sc.nextLine();
+                        size_mess=mess_send.length();
+                        if(size_mess<482) mess_send="APPL "+m_id+" "+"TRANS### "+"REQ "+size_mess+" "+mess_send;
+                        else mess_send = "";
+                    }
+                    if(mess_send.equals("")){
+                        mess_list.add(m_id);
+                        Udp_thread.send_mess(ent,dso,mess_send);
+                    }
                 }
-            }catch(Exception e){
+            }
+            catch(Exception e){
                 System.out.println(e);
                 e.printStackTrace();
             }
@@ -132,10 +160,6 @@ public class Jring{
             Welc_mess data_welc = Welc_mess.parse_welc(mess_recv);
             boolean dupl=false;
             if(data_welc!=null){
-                /*ent.ip_next=data_welc.ip_next;
-                  ent.port_next=data_welc.port_next;
-                  ent.mdiff_ip=data_welc.mdiff_ip;
-                  ent.mdiff_port=data_welc.mdiff_port;*/
                 String mess_send = "DUPL "+ent.ip+" "+ent.udp+" "+ip_mdiff2+" "+port_mdiff2;
                 pw.println(mess_send);
                 pw.flush();
@@ -164,6 +188,10 @@ public class Jring{
         }
     }
 
+    public static void diffuse(String mess,String m_id){
+        
+    }
+
     public static InetAddress host_ip(){
         try{
             Enumeration<NetworkInterface> listNi=NetworkInterface.getNetworkInterfaces();
@@ -188,17 +216,11 @@ public class Jring{
     public static String message_id(){
         String id="";
         Random rand = new Random();
-        //long h = rand.nextInt((int)(Math.pow(2,16))-1);
         long h=rand.nextInt(1000);
         long cofh;
-        //System.out.println(h);
         String s =Long.toString(new java.util.Date().getTime())+ent.ip+Integer.toString(ent.udp);
-        //String s =Long.toString(new java.util.Date().getTime())+"192.168.1.145"+"8888";
-        //System.out.println(s.length());
         for(int i=0;i<s.length();i++){
             h=h*33+s.charAt(i);
-            //h=h*33;
-            // System.out.println(h);
         }
         long k;
         for(int i=0;i<8;i++){
@@ -207,10 +229,32 @@ public class Jring{
             cofh=(k%62)+48;
             if(cofh>57) cofh+=7;
             if(cofh>90) cofh+=6;
-            //System.out.println("cof "+cofh);
             id=id+ (char)(cofh);
             h=(int)(h/62);
         }
         return id;
+    }
+    
+    public static String ip_form(String ip){
+        String []tab = ip.split("\\.");
+        if(ip.length()==15) return ip;
+        return add_zero(tab[0],3)+"."+add_zero(tab[1],3)+"."+add_zero(tab[2],3)+"."+add_zero(tab[3],3);
+    }
+    
+    /*public static String port_form(int port){
+        
+    }*/
+    
+    public static String add_zero(String s,int length_final){
+        int l=s.length();
+        for(int i=0;i<length_final-l;i++){
+            s="0".concat(s);
+        }
+        return s;
+    }
+    
+    public static String remove_zero(String s){
+        if(s.charAt(0)=='0') return remove_zero(s.substring(1));
+        return s;
     }
 }

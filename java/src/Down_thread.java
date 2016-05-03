@@ -23,11 +23,11 @@ public class Down_thread implements Runnable{
             DatagramPacket packet_send;
             boolean found = false;
             for(int i=0;i<nb_test;i++){
-                Thread.sleep(15);
-                System.out.println("apres sleep");
-                if(!mess_list.remove(mess_id)){
+                Thread.sleep(15000);
+                if(mess_list.remove(mess_id)){
+                    System.out.println("TEST : The ring is not safe \n The test is restart to be sure !");
                     mess_id=Jring.message_id();
-                    mess_send="TESTT "+mess_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
+                    mess_send="TEST "+mess_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
                     mess_list.add(mess_id);
                     data=mess_send.getBytes();
                     packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
@@ -39,14 +39,15 @@ public class Down_thread implements Runnable{
                 }
             }
             if(!found){
-                Thread.sleep(15);
-                if(!mess_list.remove(mess_id)){
+                Thread.sleep(15000);
+                if(mess_list.remove(mess_id)){
                     mess_send="DOWN";
                     data=mess_send.getBytes();
                     packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.mdiff_ip,ent.mdiff_port));
                     dso.send(packet_send);
                 }
             }
+            
         }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();

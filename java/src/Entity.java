@@ -14,10 +14,10 @@ public class Entity{
 
     public Entity(String ide,String i,int u,int t,String mdip,int mdpo){
         id=ide;
-        ip=i;
+        ip=Jring.ip_form(i);
         udp=u;
         tcp=t;
-        mdiff_ip=mdip;
+        mdiff_ip=Jring.ip_form(mdip);
         mdiff_port=mdpo;
         port_next2=-1;
     }

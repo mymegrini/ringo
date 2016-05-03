@@ -4,11 +4,21 @@ import java.io.*;
 
 public class Diff_thread implements Runnable{
     Entity ent;
+    String ip;
     int port;
+    DatagramSocket dso_udp;
 
-    public Diff_thread(Entity e,int p){
+    public Diff_thread(Entity e,int d,DatagramSocket _dso_udp){
         ent=e;
-        port=p;
+        dso_udp=_dso_udp;
+        if(d==1){
+            ip=ent.mdiff_ip;
+            port=ent.mdiff_port;
+        }
+        else{
+            ip=ent.mdiff_ip2;
+            port=ent.mdiff_port2;
+        }
     }
     
     public void run(){
@@ -30,7 +40,10 @@ public class Diff_thread implements Runnable{
                         }
                         else ent.port_next2=-1;
                     }
-                    else break;              
+                    else{
+                        dso_udp.close();
+                    }
+                    break;
                 }
             }
         }
