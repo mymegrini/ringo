@@ -20,6 +20,7 @@ void init_threads();
 void close_tcpserver();
 void close_messagemanager();
 void close_ring_tester();
+void start_tcpserver();
 
 struct test_mutex {
     pthread_mutex_t m;

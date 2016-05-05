@@ -19,6 +19,8 @@ struct thread *thread = &_thread;
 struct mutex _mutex;
 struct mutex *mutex = &_mutex;
 
+short volatile need_thread = 1;
+
 
 static void init_mutex() {
     verbose("Initializing mutexes...\n");
@@ -32,26 +34,36 @@ static void init_mutex() {
 
 
 void init_threads() {
+  if (need_thread) {
     init_mutex();
     // lauch message managerthread
     verbose("Starting message manager...\n");
     pthread_create(&thread->message_manager, NULL, message_manager, NULL);
     verbose("Message manager started.\n");
     // lauch insertion server thread
-    verbose("Starting insertion server...\n");
-    pthread_create(&thread->tcp_server, NULL, insertion_server, NULL);
-    verbose("Insertion manager started.\n");
+    start_tcpserver();
     // launch ring tester thread
     verbose("Starting ring tester...\n");
     pthread_create(&thread->ring_tester, NULL, ring_tester, NULL);
     verbose("Ring tester started.\n");
+    need_thread = 0;
+  }
 }
+
+
+void start_tcpserver() {
+    verbose("Starting insertion server...\n");
+    pthread_create(&thread->tcp_server, NULL, insertion_server, NULL);
+    verbose("Insertion manager started.\n");
+}
+
 
 
 void close_tcpserver() {
     verbose("Closing TCP server...\n");
     verbose("Closing TCP socket...\n");
     close(_ent->socktcp);
+    _ent->socktcp = NEED_SOCKET;
     verbose("TCP socket closed.\n");
     verbose("Closing TCP server thread...\n");
     pthread_cancel(thread->tcp_server);

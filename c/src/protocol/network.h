@@ -9,6 +9,7 @@ char *getLocalIp();
 char *receptLine(const int sock);
 
 char *ipresize(char *ip);
+void ipresize_noalloc(char ipr[16], char *ip);
 
 /**
  * subscribe socket sock to multicast ip channel on port port.

@@ -38,6 +38,27 @@ char *ipresize(char *ip) {
     return ipr;
 }
 
+void ipresize_noalloc(char ipr[16], char *ip) {
+    int len = strlen(ip);
+    int j = 14;
+    int width = 0;
+    for (int i = len-1; i >= 0 ; --i) {
+        if (ip[i] == '.') {
+            for ( ; width < 3; ++width)
+                ipr[j--] = '0';
+            ipr[j--] = '.';
+            width = 0;
+        }
+        else {
+            ipr[j--] = ip[i];
+            ++width;
+        }
+    }
+    for ( ; width < 3; ++width)
+        ipr[j--] = '0';
+    ipr[15] = 0;
+}
+
 
 char *ipresize2(char *ip2) {
     char *cpy     = strdup(ip2);
