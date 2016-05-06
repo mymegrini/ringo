@@ -147,5 +147,6 @@ void
 quitPong(){
 
     closeWindow();
+    logoutPong();
     return;
 }

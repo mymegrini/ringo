@@ -181,7 +181,8 @@ render(SDL_Renderer* renderer){
 
 	SDL_RenderPresent(renderer);
 	SDL_Delay(10);
-    }
+    } else
+	renderLogo(renderer);
     
     return;
 }

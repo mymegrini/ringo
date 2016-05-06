@@ -3,12 +3,14 @@
 #include "../../plugin_system/protocol_interface.h"
 #include "pong.h"
 #include "engine.h"
-//#define DEBUG_NETCODE
+
+#define DEBUG_NETCODE
 
 #define TYPE_SIZE 6
 #define LOGIN     "LOGIN "
 #define STATE     "STATE "
 #define HANDSHAKE "SHAKE "
+#define LOGOUT    "CLOSE "
 
 static char id[ID_SIZE+1] = { 0 };
 
@@ -76,6 +78,27 @@ static int parseShake(const char* message, const char* content, int lookup_flag)
 }
 
 /**
+ * This function parses LOGOUT type packets
+ */
+static int parseLogout(const char* message, const char* content, int lookup_flag){
+
+    #ifdef DEBUG_NETCODE
+    printf("%s parsing logout message %s\n", id, content);
+    #endif
+    if(engineState()
+       && strncmp(content, self, ID_SIZE) == 0
+       && strncmp(content+ID_SIZE, opponent, ID_SIZE) == 0){
+        #ifdef DEBUG_NETCODE
+	printf("received logout packet\n");
+        #endif
+	destroySession();
+    } else if (!lookup_flag)
+	retransmit(message);
+
+    return 0;
+}
+
+/**
  * This function parses STATE type packets
  */
 static int parseState(const char* message, const char* content, int lookup_flag){
@@ -122,6 +145,8 @@ int parsePong(const char* message, const char* content, int lookup_flag){
 	return parseLogin(message, content+TYPE_SIZE, lookup_flag);
     if (strncmp(HANDSHAKE, content, TYPE_SIZE) == 0)
 	return parseShake(message, content+TYPE_SIZE, lookup_flag);
+    if (strncmp(LOGOUT, content, TYPE_SIZE) == 0)
+	return parseLogout(message, content+TYPE_SIZE, lookup_flag);
     return 1;
 }
 
@@ -166,5 +191,28 @@ void sendUpdate(){
 	   s.ball[0], s.ball[1]);
     #endif
 
+    return;
+}
+
+/**
+ * This function takes care of closing a session
+ */
+void logoutPong(){
+
+    #ifdef DEBUG_NETCODE
+    printf("sending logout message\n");
+    #endif
+    send_message(PONG_TYPE, "%s%s%s", LOGOUT, opponent, self);
+    #ifdef DEBUG_NETCODE
+    printf("sent : %s %s%s%s\n", PONG_TYPE, LOGIN, opponent, self);
+    #endif
+    #ifdef DEBUG_NETCODE
+    printf("deleting player id\n");
+    #endif
+    *id = 0;
+    #ifdef DEBUG_NETCODE
+    printf("closing engine\n");
+    #endif
+    destroySession();
     return;
 }
