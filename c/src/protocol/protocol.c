@@ -13,6 +13,10 @@
 
 #include <pthread.h>
 #include <time.h>
+#include <poll.h>
+#include <fcntl.h>
+#include <signal.h>
+
 
 
 
@@ -30,9 +34,13 @@ void *message_manager(void *args);
  * Current entity
  */
 entity _ent_;
-entity * ent = (entity * )&_ent_;
+entity *ent = (entity * )&_ent_;
 
-_entity __ent;
+_entity __ent = {
+  .socklisten = NEED_SOCKET,
+  .socksend = NEED_SOCKET,
+  .socktcp = NEED_SOCKET
+};
 _entity *_ent = & __ent;
 
 typedef struct welc_msg {
@@ -47,7 +55,9 @@ typedef struct newc_msg {
   int port;
 } newc_msg;
 
+
 typedef welc_msg dupl_msg;
+
 
 
 volatile int nring = -1;
@@ -57,6 +67,7 @@ short volatile ring_check[NRING+1];
 /*short ring_check[NRING+1];*/
 short volatile *rc = ring_check;
 
+struct pollfd poll_mdiff[NRING];
 
 extern short volatile need_thread;
 
@@ -216,6 +227,8 @@ static void insert(int ring, char *n_msg, int sock2)
   debug("insert", MAGENTA "modified entity:\n%s", entitytostr(ring));
 }
 
+
+
 static void dupplicate(char *d_msg, int sock2)
 {
   verbose("Insertion server: parsing DUPL message...\n");
@@ -353,45 +366,8 @@ static void *packet_treatment(void *args)
   return NULL;
 }
 
-/*static void test_ring2() {*/
-/*// initialize ring_check array*/
-/*[>pthread_mutex_lock(&mutexes.nring);<]*/
-/*debug("ring_tester", GREEN "setting ring_check to -1...");*/
-/*[>memset(ring_check, -1, NRING + 1);<]*/
-/*char port_diff[5];*/
-/*// send test messages in each rings*/
-/*int fixed_nring = getnring();*/
-/*for (int i = fixed_nring+1; i < NRING; ++i) {*/
-/*[>ring_check[i] = -1;<]*/
-/*rc[i] = -1;*/
-/*}*/
-/*for (int i = 0; i < fixed_nring + 1; i++) {*/
-/*debug("ring_tester", GREEN "setting ring_check %d to 0...", i);*/
-/*[>ring_check[i] = 0;<]*/
-/*rc[i] = 0;*/
-/*itoa4(port_diff, ent->mdiff_port[i]);*/
-/*debug("ring_tester", GREEN "sending test to ring %d...", i);*/
-/*sendmessage(i, "TEST", "%s %s", ent->mdiff_ip[i], port_diff);*/
-/*}*/
-/*debug("test_ring", GREEN "timeout beginning...");*/
-/*sleep(timeout);*/
-/*debug("test_ring", GREEN "end of timeout.");*/
 
-/*for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; i++) {*/
-/*debug("test_ring", GREEN "ring_check[%d]:%d", i, ring_check[i]);*/
-/*[>if (ring_check[i]) {<]*/
-/*if (rc[i]) {*/
-/*debug("test_ring", GREEN "ring %d: checked.", i);*/
-/*continue;*/
-/*}*/
-/*else {*/
-/*debug("test_ring", GREEN "ring %d: checking failed. Ring broken...", i);*/
-/*continue;*/
-/*}*/
-/*}*/
-/*[>pthread_mutex_lock(&mutexes.nring);<]*/
 
-/*}*/
 static void test_ring()
 {
   // send test messages in each rings
@@ -892,16 +868,23 @@ static void actualize_receiver(int ring, char ip_next[16], uint16_t port_next,
 
 static void add_ring(char ip_next[16], uint16_t port_next, char mdiff_ip[16],
     uint16_t mdiff_port, const struct sockaddr_in *receiver, int mdiff_sock) {
+
   verbose("Writing new entity...\n");
   wlock_entity();
 
   ++nring;
+
   strcpy(ent->ip_next[nring], ip_next);
   strcpy(ent->mdiff_ip[nring], mdiff_ip);
-  ent->port_next[nring]  = port_next;
-  ent->mdiff_port[nring] = mdiff_port;
-  _ent->receiver[nring]  = *receiver;
-  _ent->sockmdiff[nring] = mdiff_sock;
+
+  ent->port_next[nring]    = port_next;
+  ent->mdiff_port[nring]   = mdiff_port;
+  _ent->receiver[nring]    = *receiver;
+  _ent->sockmdiff[nring]   = mdiff_sock;
+  poll_mdiff[nring].fd     = mdiff_sock;
+  poll_mdiff[nring].events = POLLIN;
+
+  fcntl(mdiff_sock, F_SETFL, O_NONBLOCK);
 
   unlock_entity();
   verbose("Entity written.\n");
@@ -1155,43 +1138,6 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
 
   init_threads();
 
-  /* char next_ip[16]; */
-  /* ipnozeros(next_ip, ent->ip_next[nring]); */
-  /* if (!getsockaddr_in(&_ent->receiver[nring], next_ip, */
-  /*       ent->port_next[nring], 1)) { */
-  /*   verbose("Can't communicate with address %s on port %d.\n", */
-  /*       next_ip, ent->port_next[nring]); */
-  /*   return 0; */
-  /* } */
-  /* // multi diff */
-  /* verbose("Subscribing to channel %s...\n", ent->mdiff_ip[nring]); */
-  /* _ent->sockmdiff[nring] = socket(AF_INET, SOCK_DGRAM, 0); */
-  /* char mdiff_ip[16]; */
-  /* ipnozeros(mdiff_ip, ent->mdiff_ip[nring]); */
-  /* if (!multicast_subscribe(_ent->sockmdiff[nring], ent->mdiff_port[nring], */
-  /*       mdiff_ip)) { */
-  /*   fprintf(stderr, */ 
-  /*       "can't subscribe to multicast channel ip %s on port %d\n", */
-  /*       mdiff_ip, ent->mdiff_port[nring]); */
-  /*   return 0; */
-  /* } */
-  /* verbose("Entity subscribed to channel.\n"); */
-  /* v */
-  /* verbose("Modifying current entity..."); */
-  
-  /* verbose("Current entity:\n%s\n", entitytostr(nring)); */
-  /* ent->port_next[nring] = atoi(&msg[5]); */
-  /* verbose("Modified entity:\n%s\n", entitytostr(nring)); */
-  /* // Socket creation */
-  /* _ent->socksend = socket(PF_INET, SOCK_DGRAM, 0); */
-  /* verbose("Socket for udp sending created.\n"); */
-  /* verbose("Preparing structure for receiver address...\n"); */
-  /* // receiver (next entity) socket */
-  /* erbose("Structure prepared.\n"); */
-  /* verbose("Socket for UDP communication prepared.\n"); */
-  /* verbose("Insertion done.\n"); */
-
-  /* init_threads(); */
   return 1;
 }
 
@@ -1217,6 +1163,73 @@ void rm_ring(int ring)
     strcpy(ent->mdiff_ip[ring], ent->mdiff_ip[nring]);
     ent->mdiff_port[ring] = ent->mdiff_port[nring];
   }
-  --nring;
+  close(_ent->sockmdiff[ring]);
+  verbose("Ring %d quit.\n", ring);
+  debug(RED "rm_ring", RED "Ring %d quit.\n", ring);
   unlock_entity();
+  if (--nring == -1) {
+    verbose("Last ring quit.\n");
+    close_threads();
+  }
+  else {
+    debug("rm_ring", "Actual number of ring: %d", nring);
+    debug("rm_ring", "Sending SIGUSR1 signal to mdiff_manager...");
+    int r = pthread_kill(thread->mdiff_manager, SIGUSR1);
+    debug("rm_ring", "SIGUSR1 sent, kill retval: %d.", r);
+  }
 }
+
+
+
+
+void *mdiff_manager(void *args)
+{
+  sigset_t mask;
+	sigemptyset (&mask);
+	sigaddset (&mask, SIGUSR1);
+  pthread_sigmask(SIG_BLOCK, &mask, NULL);
+  char buff[513];
+  int ret;
+#ifdef DEBUG
+  int count = 0;
+#endif
+  while (1) {
+    debug("mdiff_manager", "ppoll number %d...", ++count);
+    int ret = ppoll(poll_mdiff, nring+1, NULL, &mask);
+    if (ret > 0) {
+#ifdef DEBUG
+      int found = 0;
+#endif
+      for (int i = 0; i < nring; ++i) {
+        if (poll_mdiff[i].revents == POLLIN) {
+#ifdef DEBUG
+          found = 1;
+#endif
+          int rec1 = recv(poll_mdiff[i].fd, buff, 512, 0);
+          if (rec1 >= 0) {
+            buff[rec1] = 0;
+            debug("mdiff_manager", "message received: %s", buff);
+            if (strcmp(buff, "DOWN"))
+              rm_ring(i);
+          }
+#ifdef DEBUG
+          else {
+            debug("mdiff_manager", "poll_mdiff[%d].revents == POLLIN whereas recv returns %d",
+                i, rec1);
+          }
+#endif
+        }
+      }
+#ifdef DEBUG
+      if (!found) 
+        debug("mdiff_manager", "Is it SIGUSR1?");
+#endif
+    }
+#ifdef DEBUG
+    else {
+      debug("mdiff_manager", "pprol retval: %d", ret);
+    }
+#endif
+  }
+}
+

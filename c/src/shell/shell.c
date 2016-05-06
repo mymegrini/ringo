@@ -277,13 +277,12 @@ static void signal_handler(int signum)
 }
 
 
+#ifndef HISTORY_FILE
+#define HISTORY_FILE NULL
+#endif
 
-////////////////////////////////////////////////////////////////////////////////
-// GLOBAL
-////////////////////////////////////////////////////////////////////////////////
-
-void run_shell() {
-
+static void init_shell()
+{
   signal(SIGINT, signal_handler);
   signal(SIGTERM, signal_handler);
   signal(SIGQUIT, signal_handler);
@@ -291,18 +290,25 @@ void run_shell() {
   if ((homedir = getenv("HOME")) == NULL)
     homedir = getpwuid(getuid())->pw_dir;
 
-  actualize_prompt();
+  if (read_history(HISTORY_FILE) != 0) {
+    debug("init_shell", "cannot read history from %s", HISTORY_FILE);
+    FILE *fp = fopen(HISTORY_FILE, "ab+");
+    fclose(fp);
+  }
+}
 
-  initialize_readline ();
+////////////////////////////////////////////////////////////////////////////////
+// GLOBAL
+////////////////////////////////////////////////////////////////////////////////
+
+void run_shell() {
+
+  init_shell();
+  actualize_prompt();
+  initialize_readline();
+
   char *line = NULL;
   while(1) {
-    /*
-     *prompt();
-     *char *line = NULL;
-     *size_t size = 0;
-     *size = getline(&line, &size, stdin);
-     *line[size-1] = 0;
-     */
     if (line) {
       free(line);
       line = NULL;
@@ -310,6 +316,7 @@ void run_shell() {
     line = readline(prompt);
     if (line && *line) {
       add_history(line);
+      append_history(1, HISTORY_FILE);
       exec_cmd(line);
     }
   }

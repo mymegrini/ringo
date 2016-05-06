@@ -11,6 +11,7 @@ struct thread {
     pthread_t tcp_server;
     pthread_t message_manager;
     pthread_t ring_tester;
+    pthread_t mdiff_manager;
 };
 
 extern struct thread *thread;

@@ -95,17 +95,20 @@ int main(int argc, char *argv[])
     
     switch(mode) {
         case MODE_CREATE:
-            create_ring();
+            if (!create_ring2(mdiff_ip, mport)) {
+                fprintf(stderr, "An error occur during ring creation.\n");
+                return EXIT_FAILURE;
+            }
             break;
         case MODE_JOIN:
-            if (!join(host_addr, host_port)) {
-                fprintf(stderr, "An error occur on insertion.\n");
+            if (!join2(host_addr, host_port)) {
+                fprintf(stderr, "An error occur during insertion.\n");
                 return EXIT_FAILURE;
             }
             break;
         case MODE_DUPL:
-            if (!dupplicate_rqst(host_addr, host_port)) {
-                fprintf(stderr, "An error occur on insertion.\n");
+            if (!duplicate_rqst2(host_addr, host_port, mdiff_ip, mport)) {
+                fprintf(stderr, "An error occur during duplication\n");
                 return EXIT_FAILURE;
             }
             break;

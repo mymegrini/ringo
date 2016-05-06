@@ -52,6 +52,7 @@ void create_ring();
 void *insertion_server(void *args);
 void *message_manager(void *args);
 void* ring_tester(void *args);
+void *mdiff_manager(void *args);
 
 
 int join(const char *host, const char *tcpport);
