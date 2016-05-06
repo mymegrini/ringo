@@ -199,20 +199,25 @@ void sendUpdate(){
  */
 void logoutPong(){
 
-    #ifdef DEBUG_NETCODE
-    printf("sending logout message\n");
-    #endif
-    send_message(PONG_TYPE, "%s%s%s", LOGOUT, opponent, self);
-    #ifdef DEBUG_NETCODE
-    printf("sent : %s %s%s%s\n", PONG_TYPE, LOGIN, opponent, self);
-    #endif
+    if(engineState()){
+
+        #ifdef DEBUG_NETCODE
+	printf("sending logout message\n");
+        #endif
+	send_message(PONG_TYPE, "%s%s%s", LOGOUT, opponent, self);
+        #ifdef DEBUG_NETCODE
+	printf("sent : %s %s%s%s\n", PONG_TYPE, LOGIN, opponent, self);
+        #endif
+
+        #ifdef DEBUG_NETCODE
+	printf("closing engine\n");
+        #endif
+	destroySession();
+    }
+
     #ifdef DEBUG_NETCODE
     printf("deleting player id\n");
     #endif
     *id = 0;
-    #ifdef DEBUG_NETCODE
-    printf("closing engine\n");
-    #endif
-    destroySession();
     return;
 }

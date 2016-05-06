@@ -108,6 +108,8 @@ destroySession(){
     
     free(engine);
     engine = NULL;
+    self = NULL;
+    opponent = NULL;
     return;
 }
 
