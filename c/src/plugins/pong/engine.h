@@ -13,6 +13,8 @@ typedef struct {
 char* self;
 char* opponent;
 
+void initEngine();
+void quitEngine();
 int  engineState();
 void playerid(char* id);
 void createSession(const char* host, const char* opponent, int self);

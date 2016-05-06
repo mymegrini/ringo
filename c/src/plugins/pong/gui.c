@@ -132,6 +132,7 @@ int
 launchPong(int argc, char **argv) {
     
     launchWindow();
+    initEngine();
     loginPong();
 	
     //event loop
@@ -151,5 +152,6 @@ quitPong(){
 
     closeWindow();
     logoutPong();
+    quitEngine();
     return;
 }

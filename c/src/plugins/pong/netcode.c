@@ -206,7 +206,7 @@ void logoutPong(){
         #endif
 	send_message(PONG_TYPE, "%s%s%s", LOGOUT, opponent, self);
         #ifdef DEBUG_NETCODE
-	printf("sent : %s %s%s%s\n", PONG_TYPE, LOGIN, opponent, self);
+	printf("sent : %s %s%s%s\n", PONG_TYPE, LOGOUT, opponent, self);
         #endif
 
         #ifdef DEBUG_NETCODE
