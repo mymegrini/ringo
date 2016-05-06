@@ -22,6 +22,11 @@ public class Down_thread implements Runnable{
             DatagramSocket dso = new DatagramSocket();
             DatagramPacket packet_send;
             boolean found = false;
+            mess_send="DOWN";
+            data=mess_send.getBytes();
+            packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.mdiff_ip,ent.mdiff_port));
+            dso.send(packet_send);
+            /*
             for(int i=0;i<nb_test;i++){
                 Thread.sleep(15000);
                 if(mess_list.remove(mess_id)){
@@ -37,7 +42,7 @@ public class Down_thread implements Runnable{
                     found=true;
                     break;
                 }
-            }
+                }
             if(!found){
                 Thread.sleep(15000);
                 if(mess_list.remove(mess_id)){
@@ -46,8 +51,7 @@ public class Down_thread implements Runnable{
                     packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.mdiff_ip,ent.mdiff_port));
                     dso.send(packet_send);
                 }
-            }
-            
+                }          */  
         }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
