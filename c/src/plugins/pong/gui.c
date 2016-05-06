@@ -113,16 +113,19 @@ handleEvents(){
 	}
     }
 
-    const Uint8* state = SDL_GetKeyboardState(NULL);
-    if (state[SDL_SCANCODE_UP]){
-	if (moveRacket(-STEP))
-	    sendUpdate();
-    }
-    if (state[SDL_SCANCODE_DOWN]){
-	if (moveRacket(STEP))
-	    sendUpdate();
-    }
-    return 0;
+    if(engineState()){
+	const Uint8* state = SDL_GetKeyboardState(NULL);
+	if (state[SDL_SCANCODE_UP]){
+	    if (moveRacket(-STEP))
+		sendUpdate();
+	}
+	if (state[SDL_SCANCODE_DOWN]){
+	    if (moveRacket(STEP))
+		sendUpdate();
+	}
+	return 0;
+    } else
+	return 0;
 }
 
 int
