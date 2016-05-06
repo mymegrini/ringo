@@ -7,7 +7,7 @@
 
 #define MODE_JOIN "join"
 #define MODE_CREA "create"
-#define MODE_DUPL "dupplicate"
+#define MODE_DUPL "duplicate"
 
 /* #define OPT_JOIN 'j' */
 /* #define OPT_DUPL 'd' */
@@ -84,7 +84,7 @@ int cmd_ring(int argc, char **argv) {
       case OPT_MODE:
         if (strcmp(optarg, MODE_CREA) == 0)
           mode = CREA;
-        else if (strcmp(optarg, MODE_CREA) == 0)
+        else if (strcmp(optarg, MODE_DUPL) == 0)
           mode = DUPL;
         else if (strcmp(optarg, MODE_JOIN) == 0)
           mode = JOIN;
@@ -130,7 +130,7 @@ int cmd_ring(int argc, char **argv) {
         return 1;
      }
      else
-       return create_ring2(mdiff_port, mdiff_ip);
+       return create_ring2(mdiff_ip, mdiff_port);
     case JOIN:
      if (hostname == NULL) {
         fprintf(stderr, "Hostname is missing.\n");
@@ -142,6 +142,25 @@ int cmd_ring(int argc, char **argv) {
      }
      else
        return join2(hostname, host_port);
+    case DUPL:
+     if (hostname == NULL) {
+        fprintf(stderr, "Hostname is missing.\n");
+        return 1;
+     }
+     else if (host_port == 0) {
+        fprintf(stderr, "Host tcp port is missing.\n");
+        return 1;
+     }
+     else if (mdiff_ip == NULL) {
+        fprintf(stderr, "Multi diffusion ip is missing.\n");
+        return 1;
+     }
+     else if (mdiff_port == 0) {
+        fprintf(stderr, "Multi diffusion port is missing.\n");
+        return 1;
+     }
+     else
+       return duplicate_rqst2(hostname, host_port, mdiff_ip, mdiff_port);
     default:
       fprintf(stderr, "No mode specified.\n");
       return 1;

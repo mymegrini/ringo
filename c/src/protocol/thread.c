@@ -69,10 +69,16 @@ void close_threads()
 
 
 
+void msg_exit()
+{
+  printf("Bye bye!\n");
+}
+
+
 void close_threads_and_exit()
 {
   close_threads();
-  printf("Bye bye!\n");
+  msg_exit();
   exit(0);
 }
 

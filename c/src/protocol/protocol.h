@@ -60,8 +60,9 @@ void sendpacket_all(const char *content);
 void sendpacket(const char *content, int ring);
 void sendpacket_sockaddr(const char *content, const struct sockaddr_in *receiver);
 void rm_ring(int ring);
-int create_ring2(uint16_t mdiff_port, char *mdiff_ip);
+int create_ring2(char *mdiff_ip, uint16_t mdiff_port);
 int join2(const char *host, const char *tcpport);
+int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip, uint16_t mdiff_port);
 
 extern const volatile int *ring_number;
 

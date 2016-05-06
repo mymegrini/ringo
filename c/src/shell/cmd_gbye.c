@@ -210,7 +210,12 @@ int cmd_gbye(int argc, char **argv)
 
 int cmd_exit(int argc, char **argv)
 {
-  gbye_all_rings(close_threads_and_exit);
+  if (*ring_number >= 0)
+    gbye_all_rings(close_threads_and_exit);
+  else {
+    msg_exit();
+    exit(0);
+  }
   return 0;
 }
 

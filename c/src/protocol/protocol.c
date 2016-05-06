@@ -943,7 +943,7 @@ static int tcp_connection(const char *host, const char *tcpport)
  * Create the sockets if needed.(socket == NEED_SOCKET)
  * Launch the threads if needed (need_thread == 1)
  */
-int create_ring2(uint16_t mdiff_port, char *mdiff_ip)
+int create_ring2(char *mdiff_ip, uint16_t mdiff_port)
 {
   if (nring == NRING-1) {
     fprintf(stderr, "Maximum number of ring reached (%d).\n", NRING);
@@ -996,9 +996,8 @@ int create_ring2(uint16_t mdiff_port, char *mdiff_ip)
  */
 int join2(const char *host, const char *tcpport)
 {
-  /* if (nring != -1) { */
   if (nring == NRING-1) {
-    fprintf(stderr, "You cannot join a new ring if you're already on a ring.\n");
+    fprintf(stderr, "Maximum number of rings reached (%d).\n", NRING);
     return 0;
   }
   int sock = tcp_connection(host, tcpport);
@@ -1078,41 +1077,16 @@ int join2(const char *host, const char *tcpport)
  * @param port of the entity on the ring
  * @return 1 if insertion succed, 0 else
  */
-int dupplicate_rqst2(const char *host, const char *tcpport)
+int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip, uint16_t mdiff_port)
 {
-  ++nring;
-  // preparing the structure
-  struct sockaddr_in addr;
-  if (!getsockaddr_in(&addr, host, atoi(tcpport), 0)) {
-    verbose("Can't get address of %s at port %s.\n", host, tcpport);
+  if (nring == NRING-1) {
+    fprintf(stderr, "Maximum number of rings reached (%d).\n", NRING);
     return 0;
   }
-  // socket creation
-  int sock = socket(AF_INET, SOCK_STREAM, 0);
-  if (connect(sock, (struct sockaddr *)&addr,
-        (socklen_t)sizeof(struct sockaddr_in)) != 0)
-  {
-    close(sock);
-    fprintf(stderr,
-        "Can't establish connection with %s on port %s.\n", host, tcpport);
+  int sock = tcp_connection(host, tcpport);
+  if (!sock) {
     return 0;
   }
-  verbose("Connection established with %s on port %s.\n", host, tcpport);
-  verbose("Creating sockets for UDP listening...\n");
-  _ent->socklisten = socket(PF_INET, SOCK_DGRAM, 0);
-  verbose("Socket for udp listening created.\n");
-  verbose("Binding socket for listening...\n");
-  if (!bind_udplisten(_ent->socklisten, ent->udp)) {
-    fprintf(stderr, "Binding error, insertion failed.\n");
-    return 0;
-  }
-  verbose("Binding done.\n");
-  // set up ip_next directly so only port will be missing
-  char *ip_next = inet_ntoa(addr.sin_addr);
-  char *ipsized = ipresize(ip_next);
-  strcpy(ent->ip_next[nring], ipsized);
-  free(ipsized);
-  // WELC message reception
   verbose("waitig for WELC message...\n");
   char *msg = receptLine(sock);
   verbose("Message received : \"%s\".\n", msg);
@@ -1148,41 +1122,76 @@ int dupplicate_rqst2(const char *host, const char *tcpport)
         "Needed port, found \"%s\".\n", &msg[5]);
     return 0;
   }
-  verbose("Modifying current entity...");
-  verbose("Current entity:\n%s\n", entitytostr(nring));
-  ent->port_next[nring] = atoi(&msg[5]);
-  verbose("Modified entity:\n%s\n", entitytostr(nring));
-  // Socket creation
-  _ent->socksend = socket(PF_INET, SOCK_DGRAM, 0);
-  verbose("Socket for udp sending created.\n");
-  verbose("Preparing structure for receiver address...\n");
-  // receiver (next entity) socket
-  char next_ip[16];
-  ipnozeros(next_ip, ent->ip_next[nring]);
-  if (!getsockaddr_in(&_ent->receiver[nring], next_ip,
-        ent->port_next[nring], 1)) {
+
+  // Preparing structure
+  if (!init_sockets(ent->udp)) {
+    fprintf(stderr, "Socket error.\n");
+    return 0;
+  }
+  char ipnz[16];
+  ipnozeros(ipnz, welc->ip);
+  struct sockaddr_in receiver;
+  if (!getsockaddr_in(&receiver, ipnz,
+        welc->port, 1)) {
     verbose("Can't communicate with address %s on port %d.\n",
-        next_ip, ent->port_next[nring]);
+        ipnz, welc->port);
     return 0;
   }
   // multi diff
-  verbose("Subscribing to channel %s...\n", ent->mdiff_ip[nring]);
-  _ent->sockmdiff[nring] = socket(AF_INET, SOCK_DGRAM, 0);
-  char mdiff_ip[16];
-  ipnozeros(mdiff_ip, ent->mdiff_ip[nring]);
-  if (!multicast_subscribe(_ent->sockmdiff[nring], ent->mdiff_port[nring],
-        mdiff_ip)) {
+  verbose("Subscribing to channel %s...\n", mdiff_ip);
+  int sockmdiff = socket(AF_INET, SOCK_DGRAM, 0);
+  if (!multicast_subscribe(sockmdiff, mdiff_port, mdiff_ip)) {
     fprintf(stderr, 
         "can't subscribe to multicast channel ip %s on port %d\n",
-        mdiff_ip, ent->mdiff_port[nring]);
+        mdiff_ip, welc->port_diff);
     return 0;
   }
-  verbose("Entity subscribed to channel.\n");
-  verbose("Structure prepared.\n");
-  verbose("Socket for UDP communication prepared.\n");
-  verbose("Insertion done.\n");
+  
+  char mdiff_ipr[16];
+  ipresize_noalloc(mdiff_ipr, mdiff_ip);
+  add_ring(welc->ip, welc->port, mdiff_ipr, mdiff_port, &receiver, sockmdiff);
+  verbose("Dupplication done.\n");
+  debug("dupplicate_rqst", MAGENTA "modified entity:\n%s", entitytostr( nring ));
 
   init_threads();
+
+  /* char next_ip[16]; */
+  /* ipnozeros(next_ip, ent->ip_next[nring]); */
+  /* if (!getsockaddr_in(&_ent->receiver[nring], next_ip, */
+  /*       ent->port_next[nring], 1)) { */
+  /*   verbose("Can't communicate with address %s on port %d.\n", */
+  /*       next_ip, ent->port_next[nring]); */
+  /*   return 0; */
+  /* } */
+  /* // multi diff */
+  /* verbose("Subscribing to channel %s...\n", ent->mdiff_ip[nring]); */
+  /* _ent->sockmdiff[nring] = socket(AF_INET, SOCK_DGRAM, 0); */
+  /* char mdiff_ip[16]; */
+  /* ipnozeros(mdiff_ip, ent->mdiff_ip[nring]); */
+  /* if (!multicast_subscribe(_ent->sockmdiff[nring], ent->mdiff_port[nring], */
+  /*       mdiff_ip)) { */
+  /*   fprintf(stderr, */ 
+  /*       "can't subscribe to multicast channel ip %s on port %d\n", */
+  /*       mdiff_ip, ent->mdiff_port[nring]); */
+  /*   return 0; */
+  /* } */
+  /* verbose("Entity subscribed to channel.\n"); */
+  /* v */
+  /* verbose("Modifying current entity..."); */
+  
+  /* verbose("Current entity:\n%s\n", entitytostr(nring)); */
+  /* ent->port_next[nring] = atoi(&msg[5]); */
+  /* verbose("Modified entity:\n%s\n", entitytostr(nring)); */
+  /* // Socket creation */
+  /* _ent->socksend = socket(PF_INET, SOCK_DGRAM, 0); */
+  /* verbose("Socket for udp sending created.\n"); */
+  /* verbose("Preparing structure for receiver address...\n"); */
+  /* // receiver (next entity) socket */
+  /* erbose("Structure prepared.\n"); */
+  /* verbose("Socket for UDP communication prepared.\n"); */
+  /* verbose("Insertion done.\n"); */
+
+  /* init_threads(); */
   return 1;
 }
 
