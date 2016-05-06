@@ -33,6 +33,16 @@ core* engine = NULL;
 int* racket = NULL;
 
 /**
+ * This function returns the current time
+ */
+double clock(){
+
+    struct timeval time;
+    gettimeofday(&time, NULL);
+    return (double) time.tv_sec + time.tv_usec / 1000;
+}
+
+/**
  * Generate a unique player identificator
  *
  * @param content message content to be included in hash
@@ -80,7 +90,7 @@ void initEngine(){
 	if (!mutex)
 	    printf("initEngine : Couldn't create mutex\n");
     }
-    
+
     return;
 }
 

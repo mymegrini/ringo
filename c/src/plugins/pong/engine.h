@@ -13,6 +13,7 @@ typedef struct {
 char* self;
 char* opponent;
 
+double clock();
 void initEngine();
 void quitEngine();
 int  engineState();
