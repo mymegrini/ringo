@@ -996,8 +996,9 @@ int create_ring2(uint16_t mdiff_port, char *mdiff_ip)
  */
 int join2(const char *host, const char *tcpport)
 {
+  /* if (nring != -1) { */
   if (nring == NRING-1) {
-    fprintf(stderr, "Maximum number of ring reached (%d).\n", NRING);
+    fprintf(stderr, "You cannot join a new ring if you're already on a ring.\n");
     return 0;
   }
   int sock = tcp_connection(host, tcpport);
@@ -1023,7 +1024,6 @@ int join2(const char *host, const char *tcpport)
   verbose("Sending: \"%s\".\n", newc_str);
   send(sock, newc_str, strlen(newc_str), 0);
   verbose("Message sent->\n");
-  fflush(stdout);
   // ACKC message reception
   verbose("Waiting for ACKC confirmation message...\n");
   msg = receptLine(sock);

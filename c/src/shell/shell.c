@@ -33,6 +33,7 @@ static int cmd_pwd(int argc, char **argv);
 static int cmd_whos(int argc, char **argv);
 
 extern int cmd_gbye(int argc, char **argv);
+extern int cmd_exit(int argc, char **argv);
 extern int cmd_info(int argc, char **argv);
 extern int cmd_help(int argc, char **argv);
 extern int cmd_diff(int argc, char **argv);
@@ -46,7 +47,8 @@ extern int cmd_ring(int argc, char **argv);
 ////////////////////////////////////////////////////////////////////////////////
 
 command cmd[] = {
-  { "cd", "Change working directory", cmd_cd },
+  { "cd", "Change working directory.", cmd_cd },
+  { "exit", "Quit all rings and exit shell.", cmd_exit},
   { "pwd", "Print working directory.", cmd_pwd},
   { "rdif", "Send messages on the ring.", cmd_diff },
   { "gbye", "Quit a ring.", cmd_gbye },

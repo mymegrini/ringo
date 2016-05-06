@@ -107,10 +107,17 @@ static void usage(char *argv0)
 }
 
 
+typedef struct goodbye_args {
+  int ring;
+  void (*no_more_ring_action)(void);
+} goodbye_args;
+
+
 
 static void *gbye(void *arg)
 {
-  int ring = *((int *)arg);
+  goodbye_args *args = (goodbye_args *)arg;
+  int ring = args->ring;
   free(arg);
   verbose("Quitting process for ring %d...\n", ring);
   // discard case of a solo ring
@@ -143,11 +150,8 @@ static void *gbye(void *arg)
   debug("gbye", RED "Ring %d quit. Ring number:%d\n", ring, *ring_number);
   verbose("Ring %d quit.\n", ring);
   if (*ring_number == -1) {
-    verbose("Last ring quit, closing ring tester, insertion server "
-        "and message manager...\n");
-    close_tcpserver();
-    close_messagemanager();
-    close_ring_tester();
+    verbose("Last ring quit.\n");
+    args->no_more_ring_action();
   }
   pthread_mutex_unlock(&gbye_data->mutex);
   verbose("End of quitting process.\n");
@@ -160,20 +164,26 @@ static int compare( const void* a, const void* b);
 
 
 
+static void gbye_all_rings(void (*no_more_ring_action) (void))
+{
+    pthread_t wait_gbye_t;
+    for (int n = *ring_number; n >= 0; --n) {
+      goodbye_args *args = malloc(sizeof(goodbye_args));
+      args->ring = n;
+      args->no_more_ring_action = no_more_ring_action;
+      pthread_create(&wait_gbye_t, NULL, gbye, args);
+    }
+}
+
+
+
 int cmd_gbye(int argc, char **argv)
 {
-  debug("action_gbye", "entering function... argc:%d", argc);
-  pthread_t wait_gbye_t;
   if (argc == 1) {
-    close_tcpserver();
-    for (int n = *ring_number; n >= 0; --n) {
-      int *arg = malloc(sizeof(int));
-      *arg = n;
-      pthread_create(&wait_gbye_t, NULL, gbye, arg);
-    }
-    /* printf("All ring quit.\n"); */
+    gbye_all_rings(close_threads);
   }
   else {
+    pthread_t wait_gbye_t;
     int len = argc-1;
     int *rings = malloc(sizeof(int) * (len));
     for (int i = 1; i < argc; ++i) {
@@ -181,11 +191,26 @@ int cmd_gbye(int argc, char **argv)
     }
     qsort(rings, len, sizeof(int), compare);
     for (int i = len-1; i >= 0; --i) {
-      int *arg = malloc(sizeof(int));
-      *arg = rings[i];
-      pthread_create(&wait_gbye_t, NULL, gbye, arg);
+      goodbye_args *args = malloc(sizeof(goodbye_args));
+      args->ring = rings[i];
+      args->no_more_ring_action = close_threads;
+      pthread_create(&wait_gbye_t, NULL, gbye, args);
+      /* int *arg = malloc(sizeof(int)); */
+      /* *arg = rings[i]; */
+      /* int *arg = malloc(sizeof(int)); */
+      /* *arg = n; */
+      /* pthread_create(&wait_gbye_t, NULL, gbye, arg); */
     }
+    free(rings);
   }
+  return 0;
+}
+
+
+
+int cmd_exit(int argc, char **argv)
+{
+  gbye_all_rings(close_threads_and_exit);
   return 0;
 }
 
