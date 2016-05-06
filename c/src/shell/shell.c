@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <signal.h>
 
 #include <pthread.h>
 #include <readline/readline.h>
@@ -270,11 +271,22 @@ char *command_generator (char *text, int state)
 
 
 
+static void signal_handler(int signum)
+{
+  cmd_exit(0, NULL);
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
 
 void run_shell() {
+
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
+  signal(SIGQUIT, signal_handler);
 
   if ((homedir = getenv("HOME")) == NULL)
     homedir = getpwuid(getuid())->pw_dir;
