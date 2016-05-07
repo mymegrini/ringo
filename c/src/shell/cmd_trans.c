@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include <getopt.h>
+
+
 
 #define   TRANS_APPID            "TRANS###"
 #define   TRANS_CONTENT_MAX      463
@@ -22,12 +25,20 @@ typedef struct transfert_data {
 } transfert_data;
 
 
+typedef struct request_data {
+  int nrequest;
+} request_data;
+
+
+static int request_file(const char *filename);
 static int action_sen(char *message, char *content, int lookup_flag);
 static int action_rok(char *message, char *content, int lookup_flag);
 static int action_req(char *message, char *content, int lookup_flag);
 static int begin_transfert(FILE *f, const char *filename, const char *size_filename,
     const char *id_trans);
 static void free_transfert_data(transfert_data *t);
+static void usage(char *argv0);
+static void help(char *argv0);
 
 
 static list requested;
@@ -40,8 +51,43 @@ void init_trans_app() {
   transfert = new_list(); 
 }
 
+
+
+
+#define   OPT_HELP    'h'
+#define   OPTL_HELP   "help"
+
+#define   OPT_STRING  "h"
+
+static struct option longopts[] = {
+  {OPTL_HELP,   no_argument,         0,   OPT_HELP},
+  {0,           0,                   0,   0}
+};
+
+
+
 int cmd_trans(int argc, char **argv)
 {
+  if (argc == 1) {
+    usage(argv[0]);
+    return 0;
+  }
+  int c, indexptr;
+  optind = 0;
+  while ((c = getopt_long(argc, argv, OPT_STRING,
+          longopts, &indexptr)) != -1) {
+    switch (c) {
+      case OPT_HELP:
+        help(argv[0]);
+        return 0;
+      default:
+        usage(argv[0]);
+        return 1;
+    }
+  }
+  for (int i = 1; i < argc; ++i) {
+    request_file(argv[i]);
+  }
   return 0;
 }
 
@@ -63,19 +109,57 @@ int action_trans(char *message, char *content, int lookup_flag)
 
 
 
+static int request_file(const char *filename)
+{
+  request_data *r = malloc(sizeof(request_data));
+  r->nrequest = *ring_number+1;
+  if (!insert_one(requested, filename, r)) {
+    fprintf(stderr, "File %s already requested.\n", filename);
+    return 0;
+  }
+  char fname_size[3];
+  itoa(fname_size, 3, strlen(filename));
+  sendappmessage_all(TRANS_APPID, "REQ %s %s", fname_size, filename);
+  return 1;
+}
+
+
+
 static int action_req(char *message, char *content, int lookup_flag)
 {
   if (content[2] != ' ' || !isnumericn(content, 2)) {
     debug("action_req", "request not valid: %s", content);
     return 1;
   }
+  unsigned short size = atoi(content);
+  if (lookup_flag) {  // file already requested
+    request_data *r;
+#ifdef DEBUG
+    if (!
+#endif
+    findn((void**)&r, requested, content, size)
+#ifdef DEBUG
+    ) {
+      debug("action_req", "req message already seen but not found in the requested list:\n%s",
+          content);
+      return 1;
+    }
+#endif
+    ;
+    if (--r->nrequest == 0) {
+      char *filename = strndup(content+3, size);
+      rm(requested, filename);
+      verbose(RED "File %s not found on any rings. Transfer aborted.\n", filename);
+      free(filename);
+      return 0;
+    }
+  }
   else {
-    unsigned short size = atoi(content);
     char *filename = malloc(size);
     strncpy(filename, content + 3, size);
     filename[size] = 0;
     FILE *f = fopen(filename, "r");
-    if (f) {  // File accissble
+    if (f) {  // File accessible
       char id_trans[9];
       strncpy(id_trans, message+5, 8);
       char filename_size[3];
@@ -103,7 +187,7 @@ static int action_rok(char *message, char *content, int lookup_flag)
   unsigned short fname_size = atoi(filename_size);
   char *nummess = filename + fname_size + 1;
   if (filename[fname_size] != ' ' || !isnumericn(nummess, 8)) {
-    debug("action_rok", "request confirmaion not valid: %s", content);
+    debug("action_rok", "request confirmation not valid: %s", content);
     return 1;
   }
   
@@ -130,7 +214,6 @@ static int action_rok(char *message, char *content, int lookup_flag)
     }
     return r;
   }
-
   return 0;
 }
 
@@ -159,6 +242,8 @@ static int action_sen(char *message, char *content, int lookup_flag)
       }
     }
     else {
+      free_transfert_data(t);
+      rmn(transfert, id_trans, 8);
       verbose(RED "Transfert of %s aborted because a packet is missing.\n" RESET);
       return 1;
     }
@@ -207,4 +292,19 @@ static void free_transfert_data(transfert_data *t)
   free(t->filename);
   fclose(t->f);
   free(t);
+}
+
+
+
+
+static void usage(char *argv0)
+{
+  printf("Usage:\t%s [-h] <filename1> <filename2> ...\n", argv0);
+}
+
+
+
+static void help(char *argv0)
+{
+  usage(argv0);
 }

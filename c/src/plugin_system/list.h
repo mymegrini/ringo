@@ -9,6 +9,7 @@ typedef struct node * iterator;
 list new_list();
 void insert(list l, const char *name, void *data);
 void insert_noalloc(list l, char *name, void *data);
+int insert_one(list l, const char *name, void *data);
 int insert_one_noalloc(list l, char *name, void *data);
 int mem(list l, const char *name);
 int find(void **data, list l, const char *name);
