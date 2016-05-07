@@ -40,23 +40,9 @@ int isnumericn(const char *str, int n) {
 }
 
 
-/*
- *char *itoa4(int i) {
- *    char *s = (char *)malloc(5);
- *    s[4] = 0;
- *    s[3] = 48 + i % 10;
- *    i /= 10;
- *    s[2] = 48 + i % 10;
- *    i /= 10;
- *    s[1] = 48 + i % 10;
- *    i /= 10;
- *    s[0] = 48 + i;
- *    return s;
- *}
- */
 
 void itoa(char *s, int size, int i) {
-  s[--size] = 0;
+  /* --size; */
   while (--size >= 0) {
     s[size] = 48 + i % 10;
     i /= 10;
@@ -67,17 +53,7 @@ void itoa(char *s, int size, int i) {
 
 
 void itoa4(char *s, int i) {
-    /*
-     *s[4] = 0;
-     *s[3] = 48 + i % 10;
-     *i /= 10;
-     *s[2] = 48 + i % 10;
-     *i /= 10;
-     *s[1] = 48 + i % 10;
-     *i /= 10;
-     *s[0] = 48 + i;
-     */
-  itoa(s, 5, i);
+  itoa(s, 4, i);
 }
 
 
@@ -275,4 +251,26 @@ void verbosity(int mode) {
     if (mode == VERBM_XTERMO)
         init_verbosexterm();
     verbose = verbose_mode[mode];
+}
+
+int ltole(char *le, long l, int size) {
+  for (int i = 0; i < size; ++i)
+  {
+    le[i] = '0' + l % 10;
+    l /= 10;
+  }
+  return l == 0;
+}
+
+
+
+long letol(char *le) {
+  long l = 0;
+  long exp = 1;
+  while (isdigit(*le)) {
+    l += exp * (*le - '0');
+    exp *= 10;
+    ++le;
+  }
+  return l;
 }

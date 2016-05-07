@@ -271,10 +271,18 @@ char *command_generator (char *text, int state)
 
 
 
-static void signal_handler(int signum)
+static void signal_handler_exit(int signum)
 {
   cmd_exit(0, NULL);
 }
+
+
+
+static void signal_handler_empty(int signum)
+{
+  return ;
+}
+
 
 
 #ifndef HISTORY_FILE
@@ -283,9 +291,10 @@ static void signal_handler(int signum)
 
 static void init_shell()
 {
-  signal(SIGINT, signal_handler);
-  signal(SIGTERM, signal_handler);
-  signal(SIGQUIT, signal_handler);
+  signal(SIGINT, signal_handler_exit);
+  signal(SIGTERM, signal_handler_exit);
+  signal(SIGQUIT, signal_handler_exit);
+  signal(SIGUSR1, signal_handler_empty);
 
   if ((homedir = getenv("HOME")) == NULL)
     homedir = getpwuid(getuid())->pw_dir;
