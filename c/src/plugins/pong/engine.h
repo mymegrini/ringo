@@ -16,12 +16,12 @@ char* opponent;
 double clock();
 void initEngine();
 void quitEngine();
-int  engineState();
+int engineState();
 void playerid(char* id);
 void createSession(const char* host, const char* opponent, int self);
 void destroySession();
 void getState(state* s);
 void updateState(const state* s);
-int moveRacket(int step);
+int moveRacket(int direction);
 
 #endif

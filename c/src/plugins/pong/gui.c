@@ -8,8 +8,8 @@
 #include "netcode.h"
 #include "engine.h"
 
+#define BLACK 255, 0, 0, 0
 #define WHITE 255, 255, 255, 255
-#define STEP 5
 
 /**
  * The window we'll be rendering to
@@ -116,11 +116,11 @@ handleEvents(){
     if(engineState()){
 	const Uint8* state = SDL_GetKeyboardState(NULL);
 	if (state[SDL_SCANCODE_UP]){
-	    if (moveRacket(-STEP))
+	    if (moveRacket(UP))
 		sendUpdate();
 	}
 	if (state[SDL_SCANCODE_DOWN]){
-	    if (moveRacket(STEP))
+	    if (moveRacket(DOWN))
 		sendUpdate();
 	}
 	return 0;

@@ -113,7 +113,6 @@ renderLogo(SDL_Renderer* renderer){
     
     SDL_RenderCopy(renderer, logoTexture, NULL, NULL);
     SDL_RenderPresent(renderer);
-    SDL_Delay(500);
     return;
 }
 
@@ -180,9 +179,11 @@ render(SDL_Renderer* renderer){
 	renderBall(renderer, s.ball[0], s.ball[1]);
 
 	SDL_RenderPresent(renderer);
-	SDL_Delay(10);
-    } else
+	//SDL_Delay(10);
+    } else {
 	renderLogo(renderer);
+	SDL_Delay(500);
+    }
     
     return;
 }

@@ -4,7 +4,7 @@
 #include "pong.h"
 #include "engine.h"
 
-//#define DEBUG_NETCODE
+#define DEBUG_NETCODE
 
 #define TYPE_SIZE 6
 #define LOGIN     "LOGIN "
