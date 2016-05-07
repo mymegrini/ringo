@@ -1187,7 +1187,7 @@ void *mdiff_manager(void *args)
   sigset_t mask;
 	sigemptyset (&mask);
 	sigaddset (&mask, SIGUSR1);
-  pthread_sigmask(SIG_BLOCK, &mask, NULL);
+  /* pthread_sigmask(SIG_BLOCK, &mask, NULL); */
   char buff[513];
   int ret;
 #ifdef DEBUG
