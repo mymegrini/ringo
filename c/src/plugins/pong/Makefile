@@ -2,7 +2,7 @@ CSRC		= pong.c gui.c render.c netcode.c engine.c
 DOBJS		= $(CPLUGPATH)/pong.so
 OBJS		= $(CSRC:%.c=$(CPLUGPATH)/%.o)
 HSDL		= `pkg-config --cflags sdl2`
-LIBSDL		= `pkg-config --libs sdl2 SDL2_gfx`
+LIBSDL		= `pkg-config --libs sdl2`
 PLUGIN          = ../../plugin_system/plugin_interface.h
 PROTOCOL        = ../../plugin_system/protocol_interface.h
 
