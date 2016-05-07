@@ -16,8 +16,8 @@
 #define RACKET_X      5
 #define DIGIT_X       40
 #define DIGIT_Y       60
-#define UP            30
-#define DOWN          -30
+#define UP            -20
+#define DOWN          20
 #define X(x)          ((x)+MARGIN)
 #define Y(y)          ((y)+MARGIN)
 
