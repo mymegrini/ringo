@@ -2,6 +2,9 @@
 #define PONG_H
 
 #define PONG_TYPE "PONG####"
+#ifndef PONG_PATH
+#define PONG_PATH "./"
+#endif
 
 #define WINDOW_WIDTH  640
 #define WINDOW_HEIGHT 480

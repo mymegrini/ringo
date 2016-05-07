@@ -1,3 +1,5 @@
+PONG_PATH	= -D PONG_PATH="\"$(shell echo `pwd`)/\""
+
 CSRC		= pong.c gui.c render.c netcode.c engine.c
 DOBJS		= $(CPLUGPATH)/pong.so
 OBJS		= $(CSRC:%.c=$(CPLUGPATH)/%.o)
@@ -14,7 +16,7 @@ $(DOBJS)	: $(OBJS)
 	$(CC) $(PLUGIN_CFLAGS) -o $@ $^ -shared $(LIBSDL)
 
 $(CPLUGPATH)/%.o: %.c
-	$(CC) $(PLUGIN_CFLAGS) $(PLUGIN_LDFLAGS) $(HSDL) -c -o $@ $<
+	$(CC) $(PLUGIN_CFLAGS) $(PLUGIN_LDFLAGS) $(PONG_PATH) $(HSDL) -c -o $@ $<
 
 $(CPLUGPATH)/pong.o: pong.h gui.h render.h $(PLUGIN)
 $(CPLUGPATH)/gui.o: gui.h render.h netcode.h engine.h

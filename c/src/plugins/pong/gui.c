@@ -133,6 +133,9 @@ int
 launchPong(int argc, char **argv) {
 
     launchWindow();
+    if(window == NULL)
+	return 1;
+
     loginPong();
 
     //event loop

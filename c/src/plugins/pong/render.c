@@ -3,7 +3,7 @@
 #include "engine.h"
 #include "pong.h"
 
-#define DATA_PATH "c/src/plugins/pong/data/"
+#define DATA_PATH PONG_PATH "data/"
 #define LOGO_BMP DATA_PATH "logo.bmp"
 #define ICON_BMP DATA_PATH "icon.bmp"
 #define FIELD_BMP DATA_PATH "field.bmp"
@@ -126,6 +126,7 @@ renderLogo(SDL_Renderer* renderer){
     
     SDL_RenderCopy(renderer, logoTexture, NULL, NULL);
     SDL_RenderPresent(renderer);
+    SDL_Delay(10);
     return;
 }
 
