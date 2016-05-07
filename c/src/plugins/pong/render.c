@@ -55,30 +55,43 @@ loadTexture(SDL_Renderer* renderer, const char* file, SDL_Texture** texture){
  * This function loads all asset textures
  * @return void
  */
-void
+int
 loadTextures(SDL_Renderer* renderer){
 
+    int r = 0;
+
     loadTexture(renderer, LOGO_BMP, &logoTexture);
-    if(!logoTexture)
+    if(!logoTexture){
 	puts(SDL_GetError());
+	r++;
+    }
     loadTexture(renderer, FIELD_BMP, &fieldTexture);
-    if(!fieldTexture)
+    if(!fieldTexture){
 	puts(SDL_GetError());
+	r++;
+    }
     loadTexture(renderer, SKULL_BMP, &skullTexture);
-    if(!skullTexture)
+    if(!skullTexture){
 	puts(SDL_GetError());
+	r++;
+    }
     loadTexture(renderer, TROPHY_BMP, &trophyTexture);
-    if(!trophyTexture)
+    if(!trophyTexture){
 	puts(SDL_GetError());
+	r++;
+    }
     
     for(int i = 0; i<10; i++){
 	char digit_bmp[256] = { 0 };
 	sprintf(digit_bmp, "%s%d.bmp", DATA_PATH, i);
 	loadTexture(renderer, digit_bmp, digitTexture + i);
-	if(!digitTexture[i])
+	if(!digitTexture[i]){
 	    puts(SDL_GetError());
+	    r++;
+	}
     }
-    return;
+
+    return r;
 }
 
 /**

@@ -22,6 +22,30 @@ static SDL_Window* window = NULL;       /***< SDL window >*/
 static SDL_Renderer* renderer = NULL;   /***< SDL renderer >*/
 
 /**
+ * This function frees textures and destroys the window and renderer
+ * @return void
+ */
+void
+closeWindow(){
+
+    //Destroy textures
+    destroyTextures();
+
+    //Destroy renderer
+    SDL_DestroyRenderer( renderer );
+    renderer = NULL;
+
+    //Destroy window
+    SDL_DestroyWindow( window );
+    window = NULL;
+
+    //Quit SDL subsystems
+    SDL_Quit();
+
+    return;
+}
+
+/**
  * This function creates an SDL window and renderer
  * @return void
  */
@@ -62,34 +86,11 @@ launchWindow(){
     SDL_SetRenderDrawColor(renderer, WHITE);
 
     //load asset Textures
-    loadTextures(renderer);
-
-    //render splash screen
-    renderLogo(renderer);
-
-    return;
-}
-
-/**
- * This function frees textures and destroys the window and renderer
- * @return void
- */
-void
-closeWindow(){
-
-    //Destroy textures
-    destroyTextures();
-
-    //Destroy renderer
-    SDL_DestroyRenderer( renderer );
-    renderer = NULL;
-
-    //Destroy window
-    SDL_DestroyWindow( window );
-    window = NULL;
-
-    //Quit SDL subsystems
-    SDL_Quit();
+    if (loadTextures(renderer))
+	closeWindow();
+    else
+	//render splash screen
+	renderLogo(renderer);
 
     return;
 }
