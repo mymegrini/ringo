@@ -3,7 +3,7 @@
 #include <string.h>
 #include <SDL2/SDL.h>
 
-#define DEBUG_ENGINE
+//#define DEBUG_ENGINE
 
 #include "../../plugin_system/protocol_interface.h"
 #include "engine.h"
