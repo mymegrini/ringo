@@ -8,7 +8,8 @@ char *getLocalIp();
 
 char *receptLine(const int sock);
 
-char *ipresize(char *ip);
+char *ipresize(const char *ip);
+void ipresize_noalloc(char ipr[16], const char *ip);
 
 /**
  * subscribe socket sock to multicast ip channel on port port.
@@ -18,7 +19,7 @@ char *ipresize(char *ip);
  * @param ip
  * @return 0 if the binding failed, 1 else
  */
-int multicast_subscribe(int sock, int port, char *ip);
+int multicast_subscribe(int sock, int port, const char *ip);
 
 /**
  * bind the socket sock for udp listening on port port.

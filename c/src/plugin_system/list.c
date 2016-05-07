@@ -33,6 +33,17 @@ static node *new_node(const char *name, void *data, node *next)
 
 
 
+static node *new_node_noalloc(char *name, void *data, node *next)
+{
+  node *n = malloc(sizeof(node));
+  n->name = name;
+  n->data = data;
+  n->next = next;
+  return n;
+}
+
+
+
 static int empty(list l)
 {
   return l->first == NULL;
@@ -58,12 +69,34 @@ int mem(list l, const char *name)
 
 
 
+int memn(list l, const char *name, unsigned int len)
+{
+ void *nothing;
+ return findn(&nothing, l, name, len);
+}
+
+
+
 int find(void **data, list l, const char *name)
 {
   if (empty(l))
     return 0;
   for (node *n = l->first; n != NULL; n = n->next)
     if (strcmp(n->name, name) == 0) {
+      *data = n->data;
+      return 1;
+    }
+  return 0;
+}
+
+
+
+int findn(void **data, list l, const char *name, unsigned int len)
+{
+  if (empty(l))
+    return 0;
+  for (node *n = l->first; n != NULL; n = n->next)
+    if (strncmp(n->name, name, len) == 0) {
       *data = n->data;
       return 1;
     }
@@ -90,6 +123,24 @@ int insert_one(list l, const char *name, void *data)
 
 
 
+int insert_one_noalloc(list l, char *name, void *data)
+{
+  if (empty(l)) {
+    l->first = new_node_noalloc(name, data, NULL);
+    l->last = l->last;
+    return 1;
+  }
+  else if (mem(l, name))
+    return 0;
+  else {
+    l->last->next = new_node_noalloc(name, data, NULL);
+    l->last = l->last->next;
+    return 1;
+  }
+}
+
+
+
 void insert(list l, const char *name, void *data)
 {
   if (empty(l)) {
@@ -104,6 +155,20 @@ void insert(list l, const char *name, void *data)
 
 
 
+void insert_noalloc(list l, char *name, void *data)
+{
+  if (empty(l)) {
+    l->first = new_node_noalloc(name, data, NULL);
+    l->last = l->first;
+  }
+  else {
+    l->last->next = new_node_noalloc(name, data, NULL);
+    l->last = l->last->next;
+  }
+}
+
+
+
 static void free_node(node *n)
 {
   free(n->name);
@@ -112,16 +177,22 @@ static void free_node(node *n)
 
 
 
-static void free_node_data(node *n)
+/* static void free_node_data(node *n) */
+/* { */
+/*   free(n->name); */
+/*   free(n->data); */
+/*   free(n); */
+/* } */
+
+static void free_node_data(node *n, void (*free_func)(void *))
 {
   free(n->name);
-  free(n->data);
+  free_func(n->data);
   free(n);
 }
 
 
-
-int rm_free_data(list l, const char *name)
+int rm_free_data(list l, const char *name, void (*free_func) (void *))
 {
   if (empty(l))
     return 0;
@@ -130,7 +201,7 @@ int rm_free_data(list l, const char *name)
     /* if (l->first == l->last) */
     /*   l->first = NULL; */
     l->first = n->next;
-    free_node_data(n);
+    free_node_data(n, free_func);
     return 1;
   }
   else {
@@ -140,13 +211,98 @@ int rm_free_data(list l, const char *name)
         n->next = n->next->next;
         if (rem == l->last)
           l->last = n;
-        free_node_data(rem);
+        free_node_data(rem, free_func);
         return 1;
       }
     }
     return 0;
   }
 }
+
+int rmn_free_data(list l, const char *name, unsigned int len, void (*free_func)(void*))
+{
+  if (empty(l))
+    return 0;
+  node *n = l->first;
+  if (strncmp(n->name, name, len) == 0) {
+    /* if (l->first == l->last) */
+    /*   l->first = NULL; */
+    l->first = n->next;
+    free_node_data(n, free_func);
+    return 1;
+  }
+  else {
+    for ( ; n->next != NULL; n = n->next) {
+      if (strncmp(n->next->name, name, len) == 0) {
+        node *rem = n->next;
+        n->next = n->next->next;
+        if (rem == l->last)
+          l->last = n;
+        free_node_data(rem, free_func);
+        return 1;
+      }
+    }
+    return 0;
+  }
+}
+
+/* int rm_free_data(list l, const char *name) */
+/* { */
+/*   if (empty(l)) */
+/*     return 0; */
+/*   node *n = l->first; */
+/*   if (strcmp(n->name, name) == 0) { */
+/*     /1* if (l->first == l->last) *1/ */
+/*     /1*   l->first = NULL; *1/ */
+/*     l->first = n->next; */
+/*     free_node_data(n); */
+/*     return 1; */
+/*   } */
+/*   else { */
+/*     for ( ; n->next != NULL; n = n->next) { */
+/*       if (strcmp(n->next->name, name) == 0) { */
+/*         node *rem = n->next; */
+/*         n->next = n->next->next; */
+/*         if (rem == l->last) */
+/*           l->last = n; */
+/*         free_node_data(rem); */
+/*         return 1; */
+/*       } */
+/*     } */
+/*     return 0; */
+/*   } */
+/* } */
+
+
+
+/* int rmn_free_data(list l, const char *name, unsigned int len) */
+/* { */
+/*   if (empty(l)) */
+/*     return 0; */
+/*   node *n = l->first; */
+/*   if (strncmp(n->name, name, len) == 0) { */
+/*     /1* if (l->first == l->last) *1/ */
+/*     /1*   l->first = NULL; *1/ */
+/*     l->first = n->next; */
+/*     free_node_data(n); */
+/*     return 1; */
+/*   } */
+/*   else { */
+/*     for ( ; n->next != NULL; n = n->next) { */
+/*       if (strncmp(n->next->name, name, len) == 0) { */
+/*         node *rem = n->next; */
+/*         n->next = n->next->next; */
+/*         if (rem == l->last) */
+/*           l->last = n; */
+/*         free_node_data(rem); */
+/*         return 1; */
+/*       } */
+/*     } */
+/*     return 0; */
+/*   } */
+/* } */
+
+
 
 int rm(list l, const char *name)
 {
@@ -163,6 +319,32 @@ int rm(list l, const char *name)
   else {
     for ( ; n->next != NULL; n = n->next) {
       if (strcmp(n->next->name, name) == 0) {
+        node *rem = n->next;
+        if (rem == l->last)
+          l->last = n;
+        n->next = n->next->next;
+        free_node(rem);
+        return 1;
+      }
+    }
+    return 0;
+  }
+}
+
+
+
+int rmn(list l, const char *name, unsigned int len)
+{
+  if (empty(l))
+    return 0;
+  node *n = l->first;
+  if (strncmp(n->name, name, len) == 0) {
+    free_node(n);
+    return 1;
+  }
+  else {
+    for ( ; n->next != NULL; n = n->next) {
+      if (strncmp(n->next->name, name, len) == 0) {
         node *rem = n->next;
         if (rem == l->last)
           l->last = n;
