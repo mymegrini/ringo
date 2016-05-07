@@ -14,7 +14,7 @@
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
 
-char *ipresize(char *ip) {
+char *ipresize(const char *ip) {
     int len = strlen(ip);
     char *ipr = malloc(16);
     int j = 14;
@@ -38,8 +38,29 @@ char *ipresize(char *ip) {
     return ipr;
 }
 
+void ipresize_noalloc(char ipr[16], const char *ip) {
+    int len = strlen(ip);
+    int j = 14;
+    int width = 0;
+    for (int i = len-1; i >= 0 ; --i) {
+        if (ip[i] == '.') {
+            for ( ; width < 3; ++width)
+                ipr[j--] = '0';
+            ipr[j--] = '.';
+            width = 0;
+        }
+        else {
+            ipr[j--] = ip[i];
+            ++width;
+        }
+    }
+    for ( ; width < 3; ++width)
+        ipr[j--] = '0';
+    ipr[15] = 0;
+}
 
-char *ipresize2(char *ip2) {
+
+char *ipresize2(const char *ip2) {
     char *cpy     = strdup(ip2);
 
     char *ip      = (char *)malloc(16);
@@ -118,7 +139,7 @@ char *receptLine(const int sock) {
 }
 
 
-int multicast_subscribe(int sock, int port, char *ip) {
+int multicast_subscribe(int sock, int port, const char *ip) {
     int ok = 1;
     int r = setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &ok, sizeof(ok));
     if (r == -1) {

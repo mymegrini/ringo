@@ -11,15 +11,16 @@ struct thread {
     pthread_t tcp_server;
     pthread_t message_manager;
     pthread_t ring_tester;
+    pthread_t mdiff_manager;
 };
 
 extern struct thread *thread;
 
 
 void init_threads();
-void close_tcpserver();
-void close_messagemanager();
-void close_ring_tester();
+void close_threads();
+void close_threads_and_exit();
+void msg_exit();
 
 struct test_mutex {
     pthread_mutex_t m;

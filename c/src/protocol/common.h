@@ -39,6 +39,7 @@
 #endif
 
 
+#define NEED_SOCKET -1
 
 /*
  *#define verbose(format, ...) printf(BOLD "verbose" RESET " - " \
@@ -59,7 +60,6 @@ void verbosity(int mode);
 
 int isnumeric(const char *str);
 int isnumericn(const char *str, int n);
-//char *itoa4(int i);
 void itoa(char *s, int size, int i);
 void itoa4(char *s, int i);
 int yesno(const char *question);
@@ -69,4 +69,6 @@ int isip(const char *str);
 int isport(const char *str);
 void ipnozeros(char *nozeros, const char *ip);
 int init_outputxterm(pid_t *pid); 
+int ltole(char *le, long l, int size);
+long letol(char *le);
 #endif /* COMMON_H */

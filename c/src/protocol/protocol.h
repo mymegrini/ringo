@@ -52,6 +52,7 @@ void create_ring();
 void *insertion_server(void *args);
 void *message_manager(void *args);
 void* ring_tester(void *args);
+void *mdiff_manager(void *args);
 
 
 int join(const char *host, const char *tcpport);
@@ -60,6 +61,9 @@ void sendpacket_all(const char *content);
 void sendpacket(const char *content, int ring);
 void sendpacket_sockaddr(const char *content, const struct sockaddr_in *receiver);
 void rm_ring(int ring);
+int create_ring2(char *mdiff_ip, uint16_t mdiff_port);
+int join2(const char *host, const char *tcpport);
+int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip, uint16_t mdiff_port);
 
 extern const volatile int *ring_number;
 
