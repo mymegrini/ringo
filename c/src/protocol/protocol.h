@@ -56,7 +56,7 @@ void *mdiff_manager(void *args);
 
 
 int join(const char *host, const char *tcpport);
-int dupplicate_rqst(const char *host, const char *tcpport);
+int duplicate_rqst(const char *host, const char *tcpport);
 void sendpacket_all(const char *content);
 void sendpacket(const char *content, int ring);
 void sendpacket_sockaddr(const char *content, const struct sockaddr_in *receiver);

@@ -153,7 +153,7 @@ static int action_memb(const char* message, const char* content, int lookup_flag
 /*}*/
 static int action_test(const char *message, const char *content, int lookup_flag) {
     debug("action_test", RED "entering function...");
-    if (content[15] != ' ' || content[20] != 0) {
+    if (content[15] != ' ') {
         debug("action_test", RED "content not following the protocol."\
                 "content: \"%s\"", content);
         return 1;

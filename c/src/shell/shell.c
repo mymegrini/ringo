@@ -40,6 +40,7 @@ extern int cmd_help(int argc, char **argv);
 extern int cmd_diff(int argc, char **argv);
 extern int cmd_plugin(int argc, char **argv);
 extern int cmd_ring(int argc, char **argv);
+extern int cmd_trans(int argc, char **argv);
 
 
 
@@ -56,6 +57,7 @@ command cmd[] = {
   { "help", "Show this message.", cmd_help },
   { "info", "Display informations on current entity.", cmd_info},
   { "plug", "Add or remove plugins.", cmd_plugin},
+  { "download", "Download file.", cmd_trans},
   { "ring", "Create, duplicate and join rings.", cmd_ring},
   { "whos", "Getting to know each other...", cmd_whos },
   { NULL, NULL, NULL }

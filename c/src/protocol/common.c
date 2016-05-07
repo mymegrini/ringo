@@ -43,6 +43,7 @@ int isnumericn(const char *str, int n) {
 
 void itoa(char *s, int size, int i) {
   /* --size; */
+  s[size] = 0;
   while (--size >= 0) {
     s[size] = 48 + i % 10;
     i /= 10;
