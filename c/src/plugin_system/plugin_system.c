@@ -149,14 +149,10 @@ int loadplugin(PluginManager *plug_manager, const char *plug_dir, const char *pl
     fprintf(stderr,"Plugin loading failed.\n");
     return 0;
   }
-  int r = init_func(plug_manager);
-  if (r == 0)
-    return 0;
-  else if (r < 0) {
-    dlclose(lib);
-    fprintf(stderr, "Init function returns %d.\n", r);
-    fprintf(stderr, "Plugin loading failed.\n");
-    return 0;
+  if (!init_func(plug_manager)){
+      dlclose(lib);
+      fprintf(stderr, "Plugin loading failed.\n");
+      return 0;
   }
   printf("\tFinishing plugin registration...\n");
   RegisteredPlugin *plug_reg;
