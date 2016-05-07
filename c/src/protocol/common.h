@@ -39,6 +39,7 @@
 #endif
 
 
+#define NEED_SOCKET -1
 
 /*
  *#define verbose(format, ...) printf(BOLD "verbose" RESET " - " \

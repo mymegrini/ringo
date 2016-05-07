@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <signal.h>
 
 #include <pthread.h>
 #include <readline/readline.h>
@@ -33,10 +34,12 @@ static int cmd_pwd(int argc, char **argv);
 static int cmd_whos(int argc, char **argv);
 
 extern int cmd_gbye(int argc, char **argv);
+extern int cmd_exit(int argc, char **argv);
 extern int cmd_info(int argc, char **argv);
 extern int cmd_help(int argc, char **argv);
 extern int cmd_diff(int argc, char **argv);
 extern int cmd_plugin(int argc, char **argv);
+extern int cmd_ring(int argc, char **argv);
 
 
 
@@ -45,13 +48,15 @@ extern int cmd_plugin(int argc, char **argv);
 ////////////////////////////////////////////////////////////////////////////////
 
 command cmd[] = {
-  { "cd", "Change working directory", cmd_cd },
+  { "cd", "Change working directory.", cmd_cd },
+  { "exit", "Quit all rings and exit shell.", cmd_exit},
   { "pwd", "Print working directory.", cmd_pwd},
   { "rdif", "Send messages on the ring.", cmd_diff },
   { "gbye", "Quit a ring.", cmd_gbye },
   { "help", "Show this message.", cmd_help },
   { "info", "Display informations on current entity.", cmd_info},
   { "plug", "Add or remove plugins.", cmd_plugin},
+  { "ring", "Create, duplicate and join rings.", cmd_ring},
   { "whos", "Getting to know each other...", cmd_whos },
   { NULL, NULL, NULL }
 };
@@ -269,34 +274,54 @@ char *command_generator (char *text, int state)
 
 
 
+static void signal_handler(int signum)
+{
+  cmd_exit(0, NULL);
+}
+
+
+#ifndef HISTORY_FILE
+#define HISTORY_FILE NULL
+#endif
+
+static void init_shell()
+{
+  signal(SIGINT, signal_handler);
+  signal(SIGTERM, signal_handler);
+  signal(SIGQUIT, signal_handler);
+
+  if ((homedir = getenv("HOME")) == NULL)
+    homedir = getpwuid(getuid())->pw_dir;
+
+  if (read_history(HISTORY_FILE) != 0) {
+    debug("init_shell", "cannot read history from %s", HISTORY_FILE);
+    FILE *fp = fopen(HISTORY_FILE, "ab+");
+    fclose(fp);
+  }
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
 
 void run_shell() {
 
-  if ((homedir = getenv("HOME")) == NULL)
-    homedir = getpwuid(getuid())->pw_dir;
-
+  init_shell();
   actualize_prompt();
+  initialize_readline();
 
-  initialize_readline ();
   char *line = NULL;
   while(1) {
-    /*
-     *prompt();
-     *char *line = NULL;
-     *size_t size = 0;
-     *size = getline(&line, &size, stdin);
-     *line[size-1] = 0;
-     */
     if (line) {
       free(line);
       line = NULL;
     }
     line = readline(prompt);
-    if (line && *line && exec_cmd(line) == 0)
+    if (line && *line) {
       add_history(line);
+      append_history(1, HISTORY_FILE);
+      exec_cmd(line);
+    }
   }
 }
 
