@@ -135,7 +135,8 @@ int loadplugin(PluginManager *plug_manager, const char *plug_dir, const char *pl
   void *lib = dlopen(plugpath, RTLD_LAZY);
   free(plugpath);
   if (lib == NULL) {
-    fprintf(stderr, "\tCould not open plugin "BOLD "%s" RESET " from %s.\n", plugname, plug_dir);
+    fprintf(stderr, "\tCould not open plugin "BOLD "%s" RESET " from %s.\n%s\n",
+	    plugname, plug_dir, dlerror());
     fprintf(stderr,"Plugin loading failed.\n");
     return 0;
   }
