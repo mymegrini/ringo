@@ -2,6 +2,7 @@
 #include "pong.h"
 #include "gui.h"
 #include "netcode.h"
+#include "engine.h"
 
 
 PluginCommand_t cmd_pong = {
@@ -12,7 +13,7 @@ PluginCommand_t cmd_pong = {
 
 PluginAction_t action_pong = {
     PONG_TYPE,
-    "Network packet for 'pong' application.",
+    "Network packet handling for 'pong' application.",
     parsePong
 };
 
@@ -27,7 +28,6 @@ Plugin plugin_pong = {
 
 int init_pong(PluginManager *p)
 {
+    initEngine();
     return plugin_register(p, "pong", &plugin_pong);
 }
-
-

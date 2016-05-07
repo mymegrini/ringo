@@ -27,19 +27,19 @@ static SDL_Renderer* renderer = NULL;   /***< SDL renderer >*/
  */
 void
 launchWindow(){
-    
+
     //Initialize SDL
     if(SDL_Init(SDL_INIT_VIDEO) < 0){
 	printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
 	return;
     }
-    
+
     //Create window
     window = SDL_CreateWindow("pong",
-			      SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+			      SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 			      WINDOW_WIDTH, WINDOW_HEIGHT,
 			      SDL_WINDOW_SHOWN );
-  
+
     if( window == NULL ) {
 	printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError());
 	return;
@@ -47,7 +47,7 @@ launchWindow(){
 
     //set icon
     setIcon(window);
-    
+
     //get Renderer
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC
 				  | SDL_RENDERER_ACCELERATED);
@@ -60,13 +60,13 @@ launchWindow(){
 
     //Set draw color
     SDL_SetRenderDrawColor(renderer, WHITE);
-    
+
     //load asset Textures
     loadTextures(renderer);
 
     //render splash screen
     renderLogo(renderer);
-    
+
     return;
 }
 
@@ -75,19 +75,19 @@ launchWindow(){
  * @return void
  */
 void
-closeWindow(){    
+closeWindow(){
 
     //Destroy textures
     destroyTextures();
-    
+
     //Destroy renderer
     SDL_DestroyRenderer( renderer );
     renderer = NULL;
-    
+
     //Destroy window
     SDL_DestroyWindow( window );
     window = NULL;
-    
+
     //Quit SDL subsystems
     SDL_Quit();
 
@@ -100,9 +100,9 @@ closeWindow(){
  */
 int
 handleEvents(){
-    
+
     SDL_Event evt;
-    
+
     while(SDL_PollEvent(&evt)) {
 	switch(evt.type){
 	case SDL_QUIT :
@@ -130,17 +130,18 @@ handleEvents(){
 
 int
 launchPong(int argc, char **argv) {
-    
+
     launchWindow();
-    initEngine();
     loginPong();
-	
+
     //event loop
     while(!handleEvents())
 	render(renderer);
 
     //quitting
-    quitPong();
+    closeWindow();
+    logoutPong();
+
     return 0;
 }
 

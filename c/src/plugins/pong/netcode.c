@@ -47,7 +47,7 @@ static int parseLogin(const char* message, const char* content, int lookup_flag)
     #ifdef DEBUG_NETCODE
     printf("parsing complete\n");
     #endif
-    
+
     return 0;
 }
 
@@ -71,9 +71,9 @@ static int parseShake(const char* message, const char* content, int lookup_flag)
             #ifdef DEBUG_NETCODE
 	    printf("handshake acknowledged\n");
             #endif
-    } else if (!lookup_flag)	
+    } else if (!lookup_flag)
 	retransmit(message);
-    
+
     return 0;
 }
 

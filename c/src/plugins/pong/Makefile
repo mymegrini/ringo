@@ -17,8 +17,8 @@ $(CPLUGPATH)/%.o: %.c
 	$(CC) $(PLUGIN_CFLAGS) $(PLUGIN_LDFLAGS) $(HSDL) -c -o $@ $<
 
 $(CPLUGPATH)/pong.o: pong.h gui.h render.h $(PLUGIN)
-$(CPLUGPATH)/gui.o: gui.h render.h
-$(CPLUGPATH)/render.o: render.h netcode.h
+$(CPLUGPATH)/gui.o: gui.h render.h netcode.h engine.h
+$(CPLUGPATH)/render.o: render.h netcode.h engine.h
 $(CPLUGPATH)/netcode.o: netcode.h pong.h engine.h $(PROTOCOL)
 $(CPLUGPATH)/engine.o: engine.h pong.h $(PROTOCOL)
 

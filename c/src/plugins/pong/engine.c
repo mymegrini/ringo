@@ -3,6 +3,8 @@
 #include <string.h>
 #include <SDL2/SDL.h>
 
+#define DEBUG_ENGINE
+
 #include "../../plugin_system/protocol_interface.h"
 #include "engine.h"
 #include "pong.h"
@@ -84,8 +86,12 @@ void playerid(char* hash){
  */
 void initEngine(){
 
-    //creating mutex
-    if (!mutex) {
+    if (mutex == NULL) {
+
+        #ifdef DEBUG_ENGINE
+	printf("creating mutex\n");
+        #endif
+
 	mutex = SDL_CreateMutex();
 	if (!mutex)
 	    printf("initEngine : Couldn't create mutex\n");
@@ -99,10 +105,37 @@ void initEngine(){
  */
 void quitEngine(){
 
-    if(mutex){
+    if(mutex != NULL){
+
+        #ifdef DEBUG_ENGINE
+        printf("destroying mutex\n");
+        #endif
+
 	SDL_DestroyMutex(mutex);
 	mutex = NULL;
     }
+    return;
+}
+
+/**
+ * This function locks the engine
+ */
+void lockEngine(){
+
+    if (mutex && SDL_LockMutex(mutex))
+	printf("%s: %s\n", __func__, SDL_GetError());
+
+    return;
+}
+
+/**
+ * This function unlocks the engine
+ */
+void unlockEngine(){
+
+    if (mutex && SDL_UnlockMutex(mutex))
+	printf("%s: %s\n", __func__, SDL_GetError());
+
     return;
 }
 
@@ -116,7 +149,7 @@ void quitEngine(){
 void createSession(const char* host, const char* guest, int self_index){
 
     if (SDL_LockMutex(mutex))
-	puts(SDL_GetError());
+	printf("%s: %s\n", __func__, SDL_GetError());
     else {
 
 	//initializing the engine
@@ -154,7 +187,7 @@ void
 destroySession(){
 
     if (SDL_LockMutex(mutex))
-	puts(SDL_GetError());
+	printf("%s: %s\n", __func__, SDL_GetError());
     else {
 
 	free(engine);
@@ -175,18 +208,18 @@ int engineState(){
 
     int r = 0;
 
-    if (SDL_LockMutex(mutex))
-	puts(SDL_GetError());
-    else {
+    if(mutex){
+	if (SDL_LockMutex(mutex))
+	    printf("%s: %s\n", __func__, SDL_GetError());
+	else {
+	    if (engine)
+		r = 1;
 
-	if (engine)
-	    r = 1;
-	else
-	    r = 0;
-
-	//Freeing mutex
-	SDL_UnlockMutex(mutex);
+	    //Freeing mutex
+	    SDL_UnlockMutex(mutex);
+	}
     }
+
     return r;
 }
 
@@ -196,7 +229,7 @@ int engineState(){
 void getState(state* s){
 
     if (SDL_LockMutex(mutex))
-	puts(SDL_GetError());
+	printf("%s: %s\n", __func__, SDL_GetError());
     else {
 
 	if(engineState()){
@@ -226,7 +259,7 @@ int moveRacket(int step){
     int update = 1;
 
     if (SDL_LockMutex(mutex)){
-	puts(SDL_GetError());
+	printf("%s: %s\n", __func__, SDL_GetError());
 	return 0;
     } else {
 
@@ -262,7 +295,7 @@ int moveRacket(int step){
 void updateState(const state* s){
 
     if (SDL_LockMutex(mutex))
-	puts(SDL_GetError());
+	printf("%s: %s\n", __func__, SDL_GetError());
     else {
 
 	int opponent = 1 - engine->self;
