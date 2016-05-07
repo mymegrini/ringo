@@ -11,7 +11,7 @@ export PLUGIN_LDFLAGS = -fPIC
 export MACROFLAGS     = $(foreach m, $(MACROS), -D $m)
 export CFLAGS         = -Wall -O2 -std=gnu99 $(MACROFLAGS)#-D PLUG_DIR="\"$(CPLUGPATH)\"" -D _GNU_SOURCE #--pedantic -std = c11
 
-#.SILENT: 
+.SILENT: 
 
 
 all:
