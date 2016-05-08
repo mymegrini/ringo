@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include <readline/readline.h>
+#include <string.h>
 #include "pong.h"
 #include "gui.h"
 #include "render.h"
@@ -61,8 +62,7 @@ launchWindow(){
     //Create window
     window = SDL_CreateWindow("pong",
 			      SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			      WINDOW_WIDTH, WINDOW_HEIGHT,
-			      SDL_WINDOW_SHOWN );
+			      WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN );
 
     if( window == NULL ) {
 	printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -73,8 +73,8 @@ launchWindow(){
     setIcon(window);
 
     //get Renderer
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC
-				  | SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC |
+				  SDL_RENDERER_ACCELERATED);
 
     if( renderer == NULL ) {
 	printf( "Renderer could not be created! SDL_Eroor: %s\n",
@@ -88,9 +88,6 @@ launchWindow(){
     //load asset Textures
     if (loadTextures(renderer))
 	closeWindow();
-    else
-	//render splash screen
-	renderLogo(renderer);
 
     return;
 }
@@ -108,7 +105,7 @@ handleEvents(){
 	switch(evt.type){
 	case SDL_QUIT :
 	    return 1; // nonzero value to break out of loop
-	case SDL_KEYDOWN :
+	case SDL_KEYUP :
 	    if(evt.key.keysym.sym == SDLK_ESCAPE)
 		return 1;
 	}
@@ -116,21 +113,25 @@ handleEvents(){
 
     if(engineState()){
 	const Uint8* state = SDL_GetKeyboardState(NULL);
-	if (state[SDL_SCANCODE_UP]){
-	    if (moveRacket(UP))
+	if (state[SDL_SCANCODE_UP] && !state[SDL_SCANCODE_DOWN]){
+	    if (simulate(UP))
 		sendUpdate();
 	}
-	if (state[SDL_SCANCODE_DOWN]){
-	    if (moveRacket(DOWN))
+	else if (state[SDL_SCANCODE_DOWN] && !state[SDL_SCANCODE_UP]){
+	    if (simulate(DOWN))
 		sendUpdate();
 	}
-	return 0;
-    } else
-	return 0;
+	else if (simulate(STILL))
+	    sendUpdate();
+    }
+
+    return 0;
 }
 
 int
 launchPong(int argc, char **argv) {
+
+    printf("launchPong: %d args\n", argc);
 
     launchWindow();
     if(window == NULL)
@@ -140,7 +141,7 @@ launchPong(int argc, char **argv) {
 
     //event loop
     while(!handleEvents())
-	render(renderer);
+	renderSim(renderer);
 
     //quitting
     closeWindow();

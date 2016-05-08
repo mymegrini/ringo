@@ -1,7 +1,10 @@
 #include <SDL2/SDL.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include "engine.h"
 #include "pong.h"
+
+//#define FRAME_RATE
 
 #define DATA_PATH PONG_PATH "data/"
 #define LOGO_BMP DATA_PATH "logo.bmp"
@@ -24,7 +27,7 @@ static SDL_Texture* digitTexture[10] = { NULL };
  */
 void
 setIcon(SDL_Window* window){
-    
+
     SDL_Surface* icon = SDL_LoadBMP(ICON_BMP);
     SDL_SetWindowIcon(window, icon);
     SDL_FreeSurface(icon);
@@ -80,7 +83,7 @@ loadTextures(SDL_Renderer* renderer){
 	puts(SDL_GetError());
 	r++;
     }
-    
+
     for(int i = 0; i<10; i++){
 	char digit_bmp[256] = { 0 };
 	sprintf(digit_bmp, "%s%d.bmp", DATA_PATH, i);
@@ -100,12 +103,12 @@ loadTextures(SDL_Renderer* renderer){
  */
 void
 destroyTextures(){
-    
+
     //Free stored asset textures
     SDL_DestroyTexture(logoTexture);
     logoTexture = NULL;
-    SDL_DestroyTexture(skullTexture); 
-    skullTexture = NULL;   
+    SDL_DestroyTexture(skullTexture);
+    skullTexture = NULL;
     SDL_DestroyTexture(trophyTexture);
     trophyTexture = NULL;
     for(int i = 0; i<10; i++) {
@@ -113,20 +116,62 @@ destroyTextures(){
 	digitTexture[i] = NULL;
     }
 }
-    
+
+#ifdef FRAME_RATE
+/**
+ * This function calculates framerate and frametimes
+ */
+static void
+framerate(){
+
+    double dt;
+
+    static Uint32 t;
+    static int counter;
+    static int delta;
+    static double average;
+    static int minimum;
+    static int maximum;
+
+    if (counter == 0){
+
+	//initialization
+	t = SDL_GetTicks();
+	counter++;
+    }
+    else if (delta < 1000){
+	dt = SDL_GetTicks() - (t+delta);
+	delta += dt;
+
+	minimum = (minimum == 0 || dt < minimum ? dt : minimum);
+	maximum = (dt > maximum ? dt : maximum);
+	average = (average * counter + dt) / (counter + 1);
+	counter++;
+    }
+    else if (delta >=1000){
+	printf("framerate : %3d\tframetimes : %2.3f (%2d ..%3d)\ttime : %3.3f\n",
+	       counter, average, minimum, maximum, tick());
+	dt = SDL_GetTicks() - (t+delta);
+	t += delta;
+	delta = 0;
+	minimum = dt;
+	maximum = dt;
+	counter = 1;
+    }
+}
+#endif
+
 /**
  * This function creates the splash window
  * @return void
  */
 void
 renderLogo(SDL_Renderer* renderer){
-
     if (logoTexture == NULL)
 	loadTextures(renderer);
-    
+
     SDL_RenderCopy(renderer, logoTexture, NULL, NULL);
-    SDL_RenderPresent(renderer);
-    SDL_Delay(500);
+
     return;
 }
 
@@ -137,7 +182,7 @@ static void
 renderRackets(SDL_Renderer* renderer, int y1, int y2){
 
     if(y1>-1){
-	SDL_Rect racket1 = { X(-RACKET_X), Y(y1), RACKET_X, RACKET_Y };      
+	SDL_Rect racket1 = { X(-RACKET_X), Y(y1), RACKET_X, RACKET_Y };
 	SDL_RenderDrawRect(renderer, &racket1);
     }
     if(y2>-1){
@@ -155,10 +200,10 @@ renderScore(SDL_Renderer* renderer, int s1, int s2){
 
     SDL_Rect digit1 = { WINDOW_WIDTH / 2 - 2 * DIGIT_X, Y(0), DIGIT_X, DIGIT_Y};
     SDL_RenderCopy(renderer, digitTexture[s1], NULL, &digit1);
-    
+
     SDL_Rect digit2 = { WINDOW_WIDTH / 2 + DIGIT_X, Y(0), DIGIT_X, DIGIT_Y};
     SDL_RenderCopy(renderer, digitTexture[s2], NULL, &digit2);
-    
+
     return;
 }
 
@@ -172,30 +217,37 @@ renderBall(SDL_Renderer* renderer, int x, int y){
     SDL_RenderFillRect(renderer, &ball);
     return;
 }
-    
+
 
 /**
  * This function renders the current state of the game
  */
 void
-render(SDL_Renderer* renderer){
+renderSim(SDL_Renderer* renderer){
 
     state s;
     getState(&s);
+
     if(s.available){
-	
+
 	if (fieldTexture == NULL)
 	loadTextures(renderer);
-	
+
 	SDL_RenderCopy(renderer, fieldTexture, NULL, NULL);
 	renderScore(renderer, s.score[0], s.score[1]);
 	renderRackets(renderer, s.racket[0], s.racket[1]);
 	renderBall(renderer, s.ball[0], s.ball[1]);
-
-	SDL_RenderPresent(renderer);
-	SDL_Delay(15);
-    } else
+    }
+    else
 	renderLogo(renderer);
-    
+
+    SDL_RenderPresent(renderer);
+
+    #ifdef FRAME_RATE
+    framerate();
+    #endif
+
+    SDL_Delay(10);
+
     return;
 }

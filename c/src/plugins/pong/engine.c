@@ -1,8 +1,9 @@
-#include <sys/time.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <SDL2/SDL.h>
+#include <stdio.h>
 
 #define DEBUG_ENGINE
 
@@ -40,11 +41,18 @@ int* racket = NULL;
 /**
  * This function returns the current time
  */
-double clock(){
+double tick(){
 
-    struct timeval time;
-    gettimeofday(&time, NULL);
-    return (double) time.tv_sec + time.tv_usec / 1000;
+    struct timespec time;
+
+    if (clock_gettime(CLOCK_REALTIME_COARSE, &time) == -1){
+	perror("clock");
+	return -1;
+    }
+
+    //printf("%ld,%ld\n", time.tv_sec, time.tv_nsec);
+    int msec = time.tv_nsec / 100000;
+    return (double)time.tv_sec + msec/1000.0;
 }
 
 /**
@@ -56,16 +64,19 @@ double clock(){
  */
 void playerid(char* hash){
 
-    struct timeval time;
+    struct timespec time;
     uint64_t h = 5381;
     int i;
     uint8_t c;
 
     /* hash * 33 + c */
     // hashing time
-    gettimeofday(&time, NULL);
+    if (clock_gettime(CLOCK_REALTIME_COARSE, &time) == -1){
+	perror("clock");
+	return;
+    }
     h = h * 33 + (uint16_t)time.tv_sec;
-    h = h * 33 + (uint16_t)time.tv_usec;
+    h = h * 33 + (uint16_t)time.tv_nsec;
     // hashing ip and port
     for(i=0; i<16; i++) h = h * 33 + info->ip_self[i];
     h = h * 33 + info->udp;
@@ -257,9 +268,10 @@ void getState(state* s){
  * This function updates the state of the game
  * returns 1 if modified, 0 if not
  */
-int moveRacket(int step){
+int simulate(int direction){
 
     int update = 1;
+    int step = direction * 20;
 
     if (SDL_LockMutex(mutex)){
 	printf("%s: %s\n", __func__, SDL_GetError());
@@ -268,8 +280,11 @@ int moveRacket(int step){
 
 	double* r = &engine->player[engine->self].racket;
 
-	//update time
-	engine->player[engine->self].time = clock();
+	//get time intervall and store time
+	double dt = tick() - engine->player[engine->self].time;
+	if (dt<=0)
+	    return 0;
+	engine->player[engine->self].time += dt;
 
 	if(*r + step < 0)
 	    if(*r != 0)

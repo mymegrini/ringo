@@ -14,10 +14,12 @@
 #define BALL_SIZE     4
 #define RACKET_Y      30
 #define RACKET_X      5
+#define RACKET_V      FIELD_Y
 #define DIGIT_X       40
 #define DIGIT_Y       60
-#define UP            -20
-#define DOWN          20
+#define DOWN          1
+#define UP            -1
+#define STILL         0
 #define X(x)          ((x)+MARGIN)
 #define Y(y)          ((y)+MARGIN)
 

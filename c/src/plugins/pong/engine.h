@@ -13,7 +13,7 @@ typedef struct {
 char* self;
 char* opponent;
 
-double clock();
+double tick();
 void initEngine();
 void quitEngine();
 int engineState();
@@ -22,6 +22,6 @@ void createSession(const char* host, const char* opponent, int self);
 void destroySession();
 void getState(state* s);
 void updateState(const state* s);
-int moveRacket(int direction);
+int simulate(int direction);
 
 #endif
