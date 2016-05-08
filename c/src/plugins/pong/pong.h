@@ -2,6 +2,9 @@
 #define PONG_H
 
 #define PONG_TYPE "PONG####"
+#ifndef PONG_PATH
+#define PONG_PATH "./"
+#endif
 
 #define WINDOW_WIDTH  640
 #define WINDOW_HEIGHT 480
@@ -13,6 +16,8 @@
 #define RACKET_X      5
 #define DIGIT_X       40
 #define DIGIT_Y       60
+#define UP            -20
+#define DOWN          20
 #define X(x)          ((x)+MARGIN)
 #define Y(y)          ((y)+MARGIN)
 

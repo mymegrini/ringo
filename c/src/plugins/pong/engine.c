@@ -1,6 +1,7 @@
 #include <sys/time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <SDL2/SDL.h>
 
 //#define DEBUG_ENGINE
@@ -10,15 +11,17 @@
 #include "pong.h"
 
 typedef struct {
-    int x;
-    int y;
-    int vx;
-    int vy;
+    double time;
+    double x;
+    double y;
+    double velocity;
+    double direction;
 } ball;
 
 typedef struct {
     char id[ID_SIZE+1];
-    int racket;
+    double time;
+    double racket;
     int score;
 } player;
 
@@ -236,10 +239,10 @@ void getState(state* s){
 	    s->available = 1;
 	    s->score[0]    = engine->player[0].score;
 	    s->score[1]    = engine->player[1].score;
-	    s->racket[0]   = engine->player[0].racket;
-	    s->racket[1]   = engine->player[1].racket;
-	    s->ball[0]     = engine->ball.x;
-	    s->ball[1]     = engine->ball.y;
+	    s->racket[0]   = (int) engine->player[0].racket;
+	    s->racket[1]   = (int) engine->player[1].racket;
+	    s->ball[0]     = (int) engine->ball.x;
+	    s->ball[1]     = (int) engine->ball.y;
 	} else {
 	    s->available = 0;
 	}
@@ -263,7 +266,10 @@ int moveRacket(int step){
 	return 0;
     } else {
 
-	int* r = &engine->player[engine->self].racket;
+	double* r = &engine->player[engine->self].racket;
+
+	//update time
+	engine->player[engine->self].time = clock();
 
 	if(*r + step < 0)
 	    if(*r != 0)

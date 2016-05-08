@@ -8,8 +8,8 @@
 #include "netcode.h"
 #include "engine.h"
 
+#define BLACK 255, 0, 0, 0
 #define WHITE 255, 255, 255, 255
-#define STEP 5
 
 /**
  * The window we'll be rendering to
@@ -20,6 +20,30 @@ static SDL_Window* window = NULL;       /***< SDL window >*/
  * SDL Renderer
  */
 static SDL_Renderer* renderer = NULL;   /***< SDL renderer >*/
+
+/**
+ * This function frees textures and destroys the window and renderer
+ * @return void
+ */
+void
+closeWindow(){
+
+    //Destroy textures
+    destroyTextures();
+
+    //Destroy renderer
+    SDL_DestroyRenderer( renderer );
+    renderer = NULL;
+
+    //Destroy window
+    SDL_DestroyWindow( window );
+    window = NULL;
+
+    //Quit SDL subsystems
+    SDL_Quit();
+
+    return;
+}
 
 /**
  * This function creates an SDL window and renderer
@@ -62,34 +86,11 @@ launchWindow(){
     SDL_SetRenderDrawColor(renderer, WHITE);
 
     //load asset Textures
-    loadTextures(renderer);
-
-    //render splash screen
-    renderLogo(renderer);
-
-    return;
-}
-
-/**
- * This function frees textures and destroys the window and renderer
- * @return void
- */
-void
-closeWindow(){
-
-    //Destroy textures
-    destroyTextures();
-
-    //Destroy renderer
-    SDL_DestroyRenderer( renderer );
-    renderer = NULL;
-
-    //Destroy window
-    SDL_DestroyWindow( window );
-    window = NULL;
-
-    //Quit SDL subsystems
-    SDL_Quit();
+    if (loadTextures(renderer))
+	closeWindow();
+    else
+	//render splash screen
+	renderLogo(renderer);
 
     return;
 }
@@ -116,11 +117,11 @@ handleEvents(){
     if(engineState()){
 	const Uint8* state = SDL_GetKeyboardState(NULL);
 	if (state[SDL_SCANCODE_UP]){
-	    if (moveRacket(-STEP))
+	    if (moveRacket(UP))
 		sendUpdate();
 	}
 	if (state[SDL_SCANCODE_DOWN]){
-	    if (moveRacket(STEP))
+	    if (moveRacket(DOWN))
 		sendUpdate();
 	}
 	return 0;
@@ -132,6 +133,9 @@ int
 launchPong(int argc, char **argv) {
 
     launchWindow();
+    if(window == NULL)
+	return 1;
+
     loginPong();
 
     //event loop
