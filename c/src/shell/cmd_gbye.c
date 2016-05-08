@@ -226,7 +226,6 @@ int cmd_gbye(int argc, char **argv)
 
 int cmd_exit(int argc, char **argv)
 {
-  rl_deprep_terminal();
   if (*ring_number >= 0)
     gbye_all_rings(close_threads_and_shell);
   else {

@@ -210,6 +210,7 @@ void initialize_readline ()
 
   /* Tell the completer that we want a crack first. */
   rl_attempted_completion_function = ringo_completion;
+  rl_catch_signals = 0;
 }
 
 /* Attempt to complete on the contents of TEXT.  START and END show the
@@ -279,7 +280,9 @@ char *command_generator (char *text, int state)
 
 static void signal_handler_exit(int signum)
 {
+  debug("signal_handler_exit", "handler called");
   cmd_exit(0, NULL);
+  fwrite("\n", 1, 1, stdin);
 }
 
 
