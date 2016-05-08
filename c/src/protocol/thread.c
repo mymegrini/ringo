@@ -160,16 +160,9 @@ void close_threads()
 
 
 
-void msg_exit()
-{
-  printf("Bye bye!\n");
-}
-
-
-void close_threads_and_exit()
+void close_threads_and_shell()
 {
   close_threads();
-  msg_exit();
-  exit(0);
+  pthread_cancel(thread->shell);
 }
 

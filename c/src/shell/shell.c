@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 
+#include "../banner.h"
 
 
 
@@ -311,15 +312,21 @@ static void init_shell()
   }
 }
 
+static void welcome_message() {
+  printf("%s", banner[2]);
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
 
-void run_shell() {
+void *run_shell(void *nothing) {
 
   init_shell();
   actualize_prompt();
   initialize_readline();
+
+  welcome_message();
 
   char *line = NULL;
   while(1) {
@@ -334,6 +341,7 @@ void run_shell() {
       exec_cmd(line);
     }
   }
+  return NULL;
 }
 
 

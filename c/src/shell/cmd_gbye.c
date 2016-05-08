@@ -5,6 +5,7 @@
 #include "../protocol/network.h"
 #include "../protocol/thread.h"
 
+#include <readline/readline.h>
 
 static struct goodbye_data 
 {
@@ -170,17 +171,20 @@ static int compare( const void* a, const void* b);
 static void gbye_all_rings(void (*no_more_ring_action) (void))
 /* static void gbye_all_rings() */
 {
-    pthread_t wait_gbye_t;
+    /* pthread_t wait_gbye_t; */
+    pthread_t *wait_gbye_t = malloc((*ring_number+1)*sizeof(pthread_t));
     for (int n = *ring_number; n >= 0; --n) {
       goodbye_args *args = malloc(sizeof(goodbye_args));
       args->ring = n;
       args->no_more_ring_action = no_more_ring_action;
-      pthread_create(&wait_gbye_t, NULL, gbye, args);
+      pthread_create(wait_gbye_t+n, NULL, gbye, args);
       /* int *arg = malloc(sizeof(int)); */
       /* int *arg = malloc(sizeof(int)); */
       /* *arg = n; */
       /* pthread_create(&wait_gbye_t, NULL, gbye, arg); */
     }
+    for (int n = *ring_number; n >= 0; --n)
+      pthread_join(wait_gbye_t[n], NULL);
 }
 
 
@@ -222,11 +226,11 @@ int cmd_gbye(int argc, char **argv)
 
 int cmd_exit(int argc, char **argv)
 {
+  rl_deprep_terminal();
   if (*ring_number >= 0)
-    gbye_all_rings(close_threads_and_exit);
+    gbye_all_rings(close_threads_and_shell);
   else {
-    msg_exit();
-    exit(0);
+    close_threads_and_shell();
   }
   return 0;
 }
