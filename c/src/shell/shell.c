@@ -261,7 +261,7 @@ char *command_generator (char *text, int state)
   }
 
   if (iter) {
-    while ((name = iterator_getname(iter)))
+    while (iter && (name = iterator_getname(iter)))
     {
       iterate(&iter);
 
@@ -281,8 +281,6 @@ extern void exit_properly(void);
 
 static void signal_handler_exit(int signum)
 {
-  debug("signal_handler_exit", "handler called");
-  /* cmd_exit(0, NULL); */
   exit_properly();
 }
 
@@ -310,7 +308,6 @@ static void init_shell()
     homedir = getpwuid(getuid())->pw_dir;
 
   if (read_history(HISTORY_FILE) != 0) {
-    debug("init_shell", "cannot read history from %s", HISTORY_FILE);
     FILE *fp = fopen(HISTORY_FILE, "ab+");
     fclose(fp);
   }
