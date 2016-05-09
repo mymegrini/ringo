@@ -65,6 +65,6 @@ int create_ring2(char *mdiff_ip, uint16_t mdiff_port);
 int join2(const char *host, const char *tcpport);
 int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip, uint16_t mdiff_port);
 
-extern const volatile int *ring_number;
+extern volatile const int * const ring_number;
 
 #endif /* PROTOCOL_H */

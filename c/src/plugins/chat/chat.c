@@ -61,7 +61,7 @@ static void close_plugin();
 
 PluginCommand_t pcmd_chat = {
   "chat",
-  "pluging's chat command",
+  "Chat plugin.",
   cmd_chat
 };
 

@@ -8,6 +8,30 @@
   open_terminal_communication;
   isnumericn;
   itoa;
+  verbose;
+  ring_number;
+
+  new_list;
+  insert;
+  insert_noalloc;
+  insert_one;
+  insert_one_noalloc;
+  mem;
+  find;
+  findn;
+  memn;
+  rm_free_data;
+  rm;
+  rmn_free_data;
+  rmn;
+
+  iter;
+
+  get_iterator;
+  iterate;
+  *iterator_getname;
+  *iterator_getdata;
+
   /* protocol interface *.
   /* some common functions (used by the chat)*/
 };

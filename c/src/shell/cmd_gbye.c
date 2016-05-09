@@ -16,6 +16,7 @@ static struct goodbye_data
 } _data = { .wait = 0 };
 
 static pthread_t wait_gbye_t[NRING];
+static int waiting = 0;
 
 
 static struct goodbye_data *gbye_data = &_data;
@@ -175,6 +176,8 @@ static void gbye_all_rings(void (*no_more_ring_action) (void))
 {
     /* pthread_t wait_gbye_t; */
     /* pthread_t *wait_gbye_t = malloc((*ring_number+1)*sizeof(pthread_t)); */
+  if (!waiting) {
+    waiting = 1;
     for (int n = *ring_number; n >= 0; --n) {
       goodbye_args *args = malloc(sizeof(goodbye_args));
       args->ring = n;
@@ -187,6 +190,7 @@ static void gbye_all_rings(void (*no_more_ring_action) (void))
     }
     for (int n = *ring_number; n >= 0; --n)
       pthread_join(wait_gbye_t[n], NULL);
+  }
 }
 
 

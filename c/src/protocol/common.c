@@ -277,24 +277,24 @@ void verbosity(int mode) {
     verbose = verbose_mode[mode];
 }
 
-int ltole(char *le, long l, int size) {
-  for (int i = 0; i < size; ++i)
-  {
-    le[i] = '0' + l % 10;
-    l /= 10;
-  }
-  return l == 0;
-}
+/* int ltole(char *le, long l, int size) { */
+/*   for (int i = 0; i < size; ++i) */
+/*   { */
+/*     le[i] = '0' + l % 10; */
+/*     l /= 10; */
+/*   } */
+/*   return l == 0; */
+/* } */
 
 
 
-long letol(char *le) {
-  long l = 0;
-  long exp = 1;
-  while (isdigit(*le)) {
-    l += exp * (*le - '0');
-    exp *= 10;
-    ++le;
-  }
-  return l;
-}
+/* long letol(const char *le) { */
+/*   long l = 0; */
+/*   long exp = 1; */
+/*   while (isdigit(*le)) { */
+/*     l += exp * (*le - '0'); */
+/*     exp *= 10; */
+/*     ++le; */
+/*   } */
+/*   return l; */
+/* } */

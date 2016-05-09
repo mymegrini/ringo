@@ -1,11 +1,20 @@
-#include "../protocol/protocol.h"
-#include "../protocol/application.h"
-#include "../protocol/common.h"
-#include "../protocol/network.h"
-#include "../plugin_system/list.h"
+/* #include "../protocol/protocol.h" */
+/* #include "../protocol/application.h" */
+/* #include "../protocol/common.h" */
+/* #include "../protocol/network.h" */
+#include "../../protocol/common.h"
+#include "../../plugin_system/plugin_interface.h"
+#include "../../plugin_system/protocol_interface.h"
+#include "../../plugin_system/plugin_tool.h"
+#include "../../plugin_system/list.h"
 
 #include <stdio.h>
 #include <unistd.h>
+#include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 
 #include <getopt.h>
 
@@ -19,7 +28,8 @@
 
 typedef struct transfert_data {
   char *filename;
-  FILE *f;
+  /* FILE *f; */
+  int fd;
   long nummess;
   long nextnum;
 } transfert_data;
@@ -31,26 +41,21 @@ typedef struct request_data {
 
 
 static int request_file(const char *filename);
-static int action_sen(char *message, char *content, int lookup_flag);
-static int action_rok(char *message, char *content, int lookup_flag);
-static int action_req(char *message, char *content, int lookup_flag);
-static int begin_transfert(FILE *f, const char *filename, const char *size_filename,
+static int action_sen(const char *message, const char *content, int lookup_flag);
+static int action_rok(const char *message, const char *content, int lookup_flag);
+static int action_req(const char *message, const char *content, int lookup_flag);
+/* static int begin_transfert(FILE *f, const char *filename, const char *size_filename, */
+static int begin_transfert(int fd, const char *filename, const char *size_filename,
     const char *id_trans);
 static void free_transfert_data(transfert_data *t);
 static void usage(char *argv0);
 static void help(char *argv0);
+static int ltole(char *le, long l, int size);
+static long letol(const char *le);
 
 
 static list requested;
 static list transfert;
-
-
-
-void init_trans_app() {
-  requested = new_list();
-  transfert = new_list(); 
-}
-
 
 
 
@@ -93,7 +98,7 @@ int cmd_trans(int argc, char **argv)
 
 
 
-int action_trans(char *message, char *content, int lookup_flag)
+int action_trans(const char *message, const char *content, int lookup_flag)
 {
   if (strncmp(content, "REQ ", 4) == 0)
     return action_req(message, content + 4, lookup_flag);
@@ -108,6 +113,29 @@ int action_trans(char *message, char *content, int lookup_flag)
 }
 
 
+static int ltole(char *le, long l, int size)
+{
+  for (int i = 0; i < size; ++i)
+  {
+    le[i] = '0' + l % 10;
+    l /= 10;
+  }
+  return l == 0;
+}
+
+
+
+static long letol(const char *le)
+{
+  long l = 0;
+  long exp = 1;
+  while (isdigit(*le)) {
+    l += exp * (*le - '0');
+    exp *= 10;
+    ++le;
+  }
+  return l;
+}
 
 static int request_file(const char *filename)
 {
@@ -118,22 +146,24 @@ static int request_file(const char *filename)
     return 0;
   }
   char fname_size[3];
-  itoa(fname_size, 3, strlen(filename));
-  sendappmessage_all(TRANS_APPID, "REQ %s %s", fname_size, filename);
+  itoa(fname_size, 2, strlen(filename));
+  send_message(TRANS_APPID, "REQ %s %s", fname_size, filename);
   return 1;
 }
 
 
 
-static int action_req(char *message, char *content, int lookup_flag)
+static int action_req(const char *message, const char *content, int lookup_flag)
 {
+  // Protocol test
   if (content[2] != ' ' || !isnumericn(content, 2)) {
-    debug("action_req", "request not valid: %s", content);
     return 1;
   }
   unsigned short size = atoi(content);
+  // Message already seen
   if (lookup_flag) {  // file already requested
     request_data *r;
+    // test if a request for this message exists
 #ifdef DEBUG
     if (!
 #endif
@@ -146,6 +176,8 @@ static int action_req(char *message, char *content, int lookup_flag)
     }
 #endif
     ;
+    // if the request exist decrement the request counter
+    // if the counter is at 0, remove the file and free allocated ressources
     if (--r->nrequest == 0) {
       char *filename = strndup(content+3, size);
       rm(requested, filename);
@@ -154,17 +186,22 @@ static int action_req(char *message, char *content, int lookup_flag)
       return 0;
     }
   }
+  // Message not seen
   else {
+    // test if the file is present
     char *filename = malloc(size);
     strncpy(filename, content + 3, size);
     filename[size] = 0;
-    FILE *f = fopen(filename, "r");
-    if (f) {  // File accessible
+    int fd = open(filename, O_RDONLY);
+    /* if (f) {  // File accessible */
+    if (fd != -1) {  // File accessible
       char id_trans[9];
       strncpy(id_trans, message+5, 8);
+      id_trans[8] = 0;
       char filename_size[3];
       strncpy(filename_size, content, 2);
-      begin_transfert(f, filename, filename_size, id_trans);
+      filename_size[2] = 0;
+      begin_transfert(fd, filename, filename_size, id_trans);
     }
     else {
       sendpacket_all(message);
@@ -173,21 +210,21 @@ static int action_req(char *message, char *content, int lookup_flag)
     free(filename);
     return 0;
   }
+  debug("action_req", "reaching end of function, all test passed");
+  return 0;
 }
 
 
 
-static int action_rok(char *message, char *content, int lookup_flag)
+static int action_rok(const char *message, const char *content, int lookup_flag)
 {
-  char *id_trans = content, *filename_size = content + 9, *filename = content + 12;
+  const char *id_trans = content, *filename_size = content + 9, *filename = content + 12;
   if (id_trans[8] != ' ' || filename_size[2] != ' ' || !isnumericn(filename_size, 2)) {
-    debug("action_rok", "request confirmaion not valid: %s", content);
     return 1;
   }
   unsigned short fname_size = atoi(filename_size);
-  char *nummess = filename + fname_size + 1;
+  const char *nummess = filename + fname_size + 1;
   if (filename[fname_size] != ' ' || !isnumericn(nummess, 8)) {
-    debug("action_rok", "request confirmation not valid: %s", content);
     return 1;
   }
   
@@ -197,10 +234,10 @@ static int action_rok(char *message, char *content, int lookup_flag)
     // add transfert structure
     char *fname = strndup(filename, fname_size);
     // OVERWRITE EXISTING FILE
-    FILE *f = fopen(fname, "w+"); 
-    if (f) {
+    int fd = open(fname, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+    if (fd != -1) {
       transfert_data *t = malloc(sizeof(transfert_data));
-      t->f = f;
+      t->fd = fd;
       t->filename = fname;
       t->nummess  = letol(nummess);
       t->nextnum  = 0;
@@ -219,13 +256,15 @@ static int action_rok(char *message, char *content, int lookup_flag)
 
 
 
-static int action_sen(char *message, char *content, int lookup_flag)
+static int action_sen(const char *message, const char *content, int lookup_flag)
 {
-  char *id_trans = content, *nomess = id_trans + 9, *size_content = nomess + 9,
+  if (lookup_flag) {
+    return 0;
+  }
+  const char *id_trans = content, *nomess = id_trans + 9, *size_content = nomess + 9,
        *fcontent = size_content + 4;
   if ( id_trans[8] != ' ' || nomess[8] != ' ' || size_content[3] != ' ' ||
       !isnumericn(nomess, 8) || !isnumericn(size_content, 3)) {
-    debug("action_sen", "sen content not following the protocol: %s", content);
     return 1;
   }
   transfert_data *t;
@@ -234,11 +273,15 @@ static int action_sen(char *message, char *content, int lookup_flag)
     long n = letol(nomess);
     if (n == t->nextnum) {
       int size = atoi(size_content);
-      fwrite(fcontent, size, 1, t->f);
+      /* fwrite(fcontent, size, 1, t->f); */
+      /* fflush(t->f); */
+      write(t->fd, fcontent, size);
       if (++t->nextnum == t->nummess) {
+        char *filename = strdup(t->filename);
         free_transfert_data(t);
         rmn(transfert, id_trans, 8);
-        verbose("File %s downloaded.\n");
+        verbose(BOLD UNDERLINED "File %s downloaded.\n" RESET, filename);
+        free(filename);
       }
     }
     else {
@@ -249,37 +292,41 @@ static int action_sen(char *message, char *content, int lookup_flag)
     }
   } 
   else {
-    sendpacket_all(message);
+    retransmit(message);
   }
   return 0;
 }
 
 
-static int begin_transfert(FILE *f, const char *filename, const char *size_filename,
+static int begin_transfert(int fd, const char *filename, const char *size_filename,
     const char *id_trans)
 {
-  fseek(f, 0, SEEK_END);
-  long size = ftell(f);
+  long size = lseek(fd, 0, SEEK_END);
   long nummess = TRANS_NUM_MESS(size);
   char nummess_str[9];
   ltole(nummess_str, nummess, 8);
-  sendappmessage_all(TRANS_APPID, "ROK %s %s %s %s", id_trans, size_filename,
+  nummess_str[8] = 0;
+  send_message(TRANS_APPID, "ROK %s %s %s %s", id_trans, size_filename,
       filename, nummess_str);
 
   // beginning transfert
-  fseek(f, 0, SEEK_SET);
+  lseek(fd, 0, SEEK_SET);
   for (long i = 0; i < nummess; ++i) {
-    char buff[464];
-    int r = fread(buff, 464, 1, f);
-    if (r > 0) {
+    sleep(1);
+    char buff[465];
+    ssize_t r = read(fd, buff, 464);
+    if (r != -1) {
+      buff[r] = 0;
       char no[9];
       ltole(no, i, 8);
+      no[8] = 0;
       char sc[4];
       itoa(sc, 3, r);
-      sendappmessage_all(TRANS_APPID, "SEN %s %s %s %s", id_trans, no, sc, buff); 
+      sc[3] = 0;
+      send_message(TRANS_APPID, "SEN %s %s %s %s", id_trans, no, sc, buff); 
     }
     else {
-      debug("begin_transfert", "fread error, ret: %d", r);
+      debug("begin_transfert", "read error, ret: %ld", r);
       return -1;
     }
   }
@@ -289,8 +336,8 @@ static int begin_transfert(FILE *f, const char *filename, const char *size_filen
 
 static void free_transfert_data(transfert_data *t) 
 {
+  close(t->fd);
   free(t->filename);
-  fclose(t->f);
   free(t);
 }
 
@@ -308,3 +355,54 @@ static void help(char *argv0)
 {
   usage(argv0);
 }
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// PLUGIN DATA
+////////////////////////////////////////////////////////////////////////////////
+
+static void close_plugin();
+
+
+
+PluginCommand_t pcmd_download = {
+  "downl",
+  "Download files.",
+  cmd_trans 
+};
+
+PluginAction_t paction_download = {
+  TRANS_APPID,
+  "Download files plugin.",
+  &action_trans
+};
+
+
+
+Plugin plug_download = {
+  1,
+  &pcmd_download,
+  1,
+  &paction_download,
+  close_plugin
+};
+
+
+
+int init_download(PluginManager *p)
+{
+  requested = new_list();
+  transfert = new_list(); 
+  return plugin_register(p, "download", &plug_download);
+}
+
+
+
+static void close_plugin()
+{
+  return;
+}
+
+//// END OF PLUGIN DATA

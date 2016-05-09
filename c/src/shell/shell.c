@@ -58,7 +58,6 @@ command cmd[] = {
   { "help", "Show this message.", cmd_help },
   { "info", "Display informations on current entity.", cmd_info},
   { "plug", "Add or remove plugins.", cmd_plugin},
-  { "download", "Download file.", cmd_trans},
   { "ring", "Create, duplicate and join rings.", cmd_ring},
   { "whos", "Getting to know each other...", cmd_whos },
   { NULL, NULL, NULL }
