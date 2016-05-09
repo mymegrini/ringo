@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 extern int (*open_terminal)(pid_t *pid);
+extern int (*open_terminal_communication)(pid_t *pid, int *pipe);
 
 extern int isnumericn(const char *str, int n);
 

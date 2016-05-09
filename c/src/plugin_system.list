@@ -5,6 +5,7 @@
   retransmit;
   info;
   open_terminal;
+  open_terminal_communication;
   isnumericn;
   itoa;
   /* protocol interface *.

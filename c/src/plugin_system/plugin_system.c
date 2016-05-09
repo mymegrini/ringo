@@ -172,9 +172,11 @@ int loadplugin(PluginManager *plug_manager, const char *plug_dir, const char *pl
 
 int unloadplugin(PluginManager *plug_manager, const char *plugname)
 {
+  char *name = strdup(plugname);
   int r = plugin_unregister(plug_manager, plugname);
   if (r)
-      printf("Plugin unloaded.\n");
+      printf("Plugin %s closed.\n", name);
+  free(name);
   return r;
 }
 
@@ -234,5 +236,15 @@ int load_all_plugins(PluginManager *plug_manager, const char *plug_dir)
     fprintf(stderr, "Can't open directory %s.\n", plug_dir);
     return 0;
   }
+}
+
+
+int unload_all_plugins(PluginManager *plug_manager)
+{
+  int r = 1;
+  for (iterator i = get_iterator(plug_manager->plugin); i != NULL; i = get_iterator(plug_manager->plugin)) {
+    r &= unloadplugin(plug_manager, iterator_getname(i));
+  }
+  return r;
 }
 

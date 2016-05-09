@@ -43,6 +43,7 @@ void plugin_manager_init(PluginManager *p);
 int loadplugin(PluginManager *plug_manager, const char *plug_dir, const char *plugname);
 int unloadplugin(PluginManager *plug_manager, const char *plugname);
 int load_all_plugins(PluginManager *plug_manager, const char *plug_dir);
+int unload_all_plugins(PluginManager *plug_manager);
 int plugin_extract_name(char **name, const char *plug);
 
 #endif /* PLUGIN_SYSTEM_H */

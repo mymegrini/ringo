@@ -126,6 +126,8 @@ int main(int argc, char *argv[])
     pthread_join(thread->shell, NULL);
 
     rl_deprep_terminal();
+    printf("\n");
+    unload_all_plugins(&plugin_manager);
     printf(RED "\"-_-\"\n");
 
     return EXIT_FAILURE;

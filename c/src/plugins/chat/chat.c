@@ -11,6 +11,8 @@
 #include <sys/types.h>
 #include <signal.h>
 
+#include <pthread.h>
+
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -27,6 +29,7 @@ static void padstr(char *padded, const char *str, int size);
 static void outputto(int fd);
 static int  output_term();
 static void close_outputterm();
+static void* terminal_chat(void *arg);
 
 
 
@@ -101,8 +104,8 @@ int action_chat(const char *mess, const char *content, int lookup_flag) {
 
   if (content[3] != ' ' || !isnumericn(content, 3) ||
       content[12] != ' '){
-    debug(RED "action_chat", RED "message \"%s\" not valid for application.",
-        mess);
+    debug(RED "action_chat", RED "message content \"%s\" not valid for application.",
+        content);
     return 1;
   }
   char name[9];
@@ -218,7 +221,7 @@ static void send_chat(const char *mess)
   unsigned len = strlen(mess);
   unsigned size = MSIZE < len ? MSIZE : len;
   char ssize[4];
-  itoa(ssize, 4, size);
+  itoa(ssize, 3, size);
   char name[9];
   padstr(name, info->id, 8);
   send_message(IDAPP_CHAT, "%s %s %s", ssize, name, mess);
@@ -238,7 +241,6 @@ static void help(char *argv0)
 {
   usage(argv0);
 }
-
 
 
 static void getmessage(char *message)
@@ -290,12 +292,35 @@ static void outputto(int fd)
 
 static int output_term()
 {
-  int fd = open_terminal(&pid_term);
-  if (fd == -1)
+  int pipe[2];
+  if (open_terminal_communication(&pid_term, pipe) == -1)
     return 0;
-  else
-    outputto(fd);
+  else {
+    outputto(pipe[1]);
+    pthread_t communication;
+    int *xin = malloc(sizeof(int));
+    *xin = pipe[0];
+    pthread_create(&communication, NULL, terminal_chat, xin);
+  }
   return 1;
+}
+
+
+static void* terminal_chat(void *arg)
+{
+  int *fdin = (int *)arg;
+  while (1) {
+    FILE *xin = fdopen(*fdin, "r");
+    while (1) {
+      size_t n = 0;
+      char *line;
+      ssize_t r = getline(&line, &n, xin);
+      line[r-1] = 0;
+      send_chat(line);
+      free(line);
+    }
+  }
+  return NULL;
 }
 
 
