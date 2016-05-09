@@ -277,12 +277,13 @@ char *command_generator (char *text, int state)
 //// END OF COMPLETION
 
 
+extern void exit_properly(void);
 
 static void signal_handler_exit(int signum)
 {
   debug("signal_handler_exit", "handler called");
-  cmd_exit(0, NULL);
-  fwrite("\n", 1, 1, stdin);
+  /* cmd_exit(0, NULL); */
+  exit_properly();
 }
 
 

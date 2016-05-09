@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
     unload_all_plugins(&plugin_manager);
     printf(RED "\"-_-\"\n");
 
-    return EXIT_FAILURE;
+    exit(0);
 }
 
 

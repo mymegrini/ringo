@@ -163,7 +163,6 @@ void close_threads()
 void close_threads_and_shell()
 {
   close_threads();
-  int r = pthread_cancel(thread->shell);
-  debug("close_threads_and_shell", "cancel shell: %d", r);
+  pthread_cancel(thread->shell);
 }
 

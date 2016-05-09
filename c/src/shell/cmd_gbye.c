@@ -6,6 +6,7 @@
 #include "../protocol/thread.h"
 
 #include <readline/readline.h>
+#include <getopt.h>
 
 static struct goodbye_data 
 {
@@ -14,6 +15,7 @@ static struct goodbye_data
   pthread_mutex_t mutex;
 } _data = { .wait = 0 };
 
+static pthread_t wait_gbye_t[NRING];
 
 
 static struct goodbye_data *gbye_data = &_data;
@@ -172,7 +174,7 @@ static void gbye_all_rings(void (*no_more_ring_action) (void))
 /* static void gbye_all_rings() */
 {
     /* pthread_t wait_gbye_t; */
-    pthread_t *wait_gbye_t = malloc((*ring_number+1)*sizeof(pthread_t));
+    /* pthread_t *wait_gbye_t = malloc((*ring_number+1)*sizeof(pthread_t)); */
     for (int n = *ring_number; n >= 0; --n) {
       goodbye_args *args = malloc(sizeof(goodbye_args));
       args->ring = n;
@@ -224,16 +226,77 @@ int cmd_gbye(int argc, char **argv)
 
 
 
-int cmd_exit(int argc, char **argv)
+////////////////////////////////////////////////////////////////////////////////
+// EXIT
+////////////////////////////////////////////////////////////////////////////////
+
+#define   OPT_HELP      'h'
+#define   OPTL_HELP     "help"
+#define   OPT_FORCE     'f'
+#define   OPTL_FORCE    "force"
+
+#define   OPT_STRING    "hf"
+
+static struct option longopts_exit[] = {
+  {OPTL_HELP,  no_argument,   0,   OPT_HELP},
+  {OPTL_FORCE, no_argument,   0,   OPT_FORCE},
+  {0,          0,             0,   0}
+};
+
+
+
+static void usage_exit(const char *argv0) {
+  printf("Usage:\t%s [-h --force]\n", argv0);
+}
+
+
+
+static void help_exit(const char *argv0) {
+  usage_exit(argv0);
+}
+
+void exit_properly() 
 {
   if (*ring_number >= 0)
     gbye_all_rings(close_threads_and_shell);
   else {
     close_threads_and_shell();
   }
+}
+
+
+int cmd_exit(int argc, char **argv)
+{
+  char c;
+  int indexptr;
+  optind = 0;
+  while ((c = getopt_long(argc, argv, OPT_STRING,
+          longopts_exit, &indexptr)) != -1) {
+    switch (c) {
+      case OPT_HELP:
+        help_exit(argv[0]);
+        return 0;
+        break;
+      case OPT_FORCE:
+        close_threads();
+        for (int i = 0; i <= *ring_number; ++i)
+          pthread_cancel(wait_gbye_t[i]);
+        pthread_exit(NULL);
+        return 0;
+        break;
+      default:
+        usage_exit(argv[0]);
+        return 1;
+    }
+  }
+
+  exit_properly();
+
   return 0;
 }
 
+
+//// END OF EXIT
 
 
 static int compare( const void* a, const void* b)
