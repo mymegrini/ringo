@@ -243,7 +243,7 @@ int init_outputxterm(pid_t *pid) {
 }
 
 static void verbose_xterm(char *format, ...) {
-    dprintf(fd_xterm, BOLD UNDERLINED "verbose - " RESET);
+    /* dprintf(fd_xterm, BOLD UNDERLINED "verbose - " RESET); */
     va_list aptr;
     va_start(aptr, format);
     vdprintf(fd_xterm, format, aptr);

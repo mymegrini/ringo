@@ -178,7 +178,7 @@ int parsemsg(char *message) {
     idm[8] = 0;
     char *content = message+14;
 
-    verbose("Parsing message %s of type %s...\n", idm, type);
+    verbose("Parsing %s message %s...\n", type, idm);
     int lookup_flag = lookup(idm);
     debug("parsemsg", "message %s, lookup: %d", type, lookup_flag);
     // search action to do

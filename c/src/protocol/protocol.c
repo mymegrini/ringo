@@ -192,18 +192,18 @@ static char *prepare_dupl(const char *mip, uint16_t mport)
 
 static void insert(int ring, char *n_msg, int sock2)
 {
-  verbose(UNDERLINED "Insertion server: parsing NEWC message...\n" RESET);
+  verbose(REVERSE "Insertion server: parsing NEWC message...\n" RESET);
   newc_msg *newc = parse_newc(n_msg);
   if (newc == NULL) {
     fprintf(stderr, "Protocol error: bad response from client->\nInsertion failed.\n");
     free(newc);
     return;
   }
-  verbose(UNDERLINED "Insertion server: NEWC parsing successful.\n" RESET);
+  verbose(REVERSE "Insertion server: NEWC parsing successful.\n" RESET);
   // Actualize udp communication
-  verbose(UNDERLINED "Insertion server: actualizing socket informations for next entity...\n" RESET);
+  verbose(REVERSE "Insertion server: actualizing socket informations for next entity...\n" RESET);
   // receiver (next entity) socket
-  verbose(UNDERLINED "Preparing structure for receiver address...\n" RESET);
+  verbose(REVERSE "Preparing structure for receiver address...\n" RESET);
   struct sockaddr_in receiver;
   char ipnz[16];
   ipnozeros(ipnz, newc->ip);
@@ -220,21 +220,21 @@ static void insert(int ring, char *n_msg, int sock2)
 #ifndef DEBUG
   ;
 #endif
-  verbose(UNDERLINED "Structure prepared.\n" RESET);
+  verbose(REVERSE "Structure prepared.\n" RESET);
   // modifying entity
-  verbose(UNDERLINED "Insertion server: modifying current entity...\n" RESET);
-  verbose(UNDERLINED "Insertion server: current entity :\n%s\n" RESET, entitytostr(ring));
+  verbose(REVERSE "Insertion server: modifying current entity...\n" RESET);
+  verbose(REVERSE "Insertion server: current entity :\n%s\n" RESET, entitytostr(ring));
   strcpy(ent->ip_next[ring], newc->ip);
   ent->port_next[ring] = newc->port;
-  verbose(UNDERLINED "Insertion server: modified entity :\n%s\n" RESET, entitytostr(ring));
+  verbose(REVERSE "Insertion server: modified entity :\n%s\n" RESET, entitytostr(ring));
   free(newc);
   // ACKC confirmation sending
-  verbose(UNDERLINED "Insertion server: sending ACKC confirmation message...\n" RESET);
+  verbose(REVERSE "Insertion server: sending ACKC confirmation message...\n" RESET);
   send(sock2, "ACKC\n", 5, 0);
-  verbose(UNDERLINED "Insertion server: message ACKC sent.\n" RESET);
+  verbose(REVERSE "Insertion server: message ACKC sent.\n" RESET);
   _ent->receiver[ring] = receiver;
-  verbose(UNDERLINED "Actualizing receviver...\n" RESET);
-  verbose(UNDERLINED "Current structure replaced.\n" RESET);
+  verbose(REVERSE "Actualizing receviver...\n" RESET);
+  verbose(REVERSE "Current structure replaced.\n" RESET);
   // closing connection
   /*close(sock2);*/
   debug("insert", MAGENTA "modified entity:\n%s", entitytostr(ring));
@@ -244,45 +244,45 @@ static void insert(int ring, char *n_msg, int sock2)
 
 static void duplicate(char *d_msg, int sock2)
 {
-  verbose(UNDERLINED "Insertion server: parsing DUPL message...\n" RESET);
+  verbose(REVERSE "Insertion server: parsing DUPL message...\n" RESET);
   dupl_msg *dupl = parse_dupl(d_msg);
   if (dupl == NULL) {
-    verbose(UNDERLINED "Protocol error: bad response from client->\nInsertion failed.\n" RESET);
+    verbose(REVERSE "Protocol error: bad response from client->\nInsertion failed.\n" RESET);
     free(dupl);
     return;
   }
-  verbose(UNDERLINED "Insertion server: DUPL parsing successful.\n" RESET);
-  verbose(UNDERLINED "Retreiveing struct for communication udp communication...\n" RESET);
+  verbose(REVERSE "Insertion server: DUPL parsing successful.\n" RESET);
+  verbose(REVERSE "Retreiveing struct for communication udp communication...\n" RESET);
   char ip[16];
   ipnozeros(ip, dupl->ip);
   struct sockaddr_in receiver;
   if (!getsockaddr_in(&receiver, ip, dupl->port, 1)) {
-    verbose(UNDERLINED "Can't create communication with %s on port %d.\n" RESET
+    verbose(REVERSE "Can't create communication with %s on port %d.\n" RESET
         "Dupplication failed.\n", ip, dupl->port);
     free(dupl);
     return;
   }
-  verbose(UNDERLINED "Struct retreived.\n" RESET);
+  verbose(REVERSE "Struct retreived.\n" RESET);
   int sockmdiff = socket(AF_INET, SOCK_DGRAM, 0);
   ipnozeros(ip, dupl->ip_diff);
-  verbose(UNDERLINED "Subscribing to multicast channel ip %s on port %d.\n" RESET, 
+  verbose(REVERSE "Subscribing to multicast channel ip %s on port %d.\n" RESET, 
       ip, dupl->port_diff);
   if (!multicast_subscribe(sockmdiff, dupl->port_diff, ip)) {
-    verbose(UNDERLINED "Can't subscribe to channel ip %s on port %d.\n" RESET
+    verbose(REVERSE "Can't subscribe to channel ip %s on port %d.\n" RESET
         "Dupplication failed.\n", ip, dupl->port_diff);
     close(_ent->sockmdiff[nring+1]);
     free(dupl);
     return;
   }
-  verbose(UNDERLINED "Sending confirmation message with listening port...\n" RESET);
+  verbose(REVERSE "Sending confirmation message with listening port...\n" RESET);
   char msg[11];
   char port[5];
   itoa4(port, ent->udp);
   sprintf(msg, "ACKC %s\n", port);
   send(sock2, msg, 10, 0);
-  verbose(UNDERLINED "Confirmation message sent->\n" RESET);
+  verbose(REVERSE "Confirmation message sent->\n" RESET);
 
-  verbose(UNDERLINED "Modifying entity...\n" RESET);
+  verbose(REVERSE "Modifying entity...\n" RESET);
   ++nring;
   _ent->receiver[nring] = receiver;
   _ent->sockmdiff[nring] = sockmdiff;
@@ -290,16 +290,16 @@ static void duplicate(char *d_msg, int sock2)
   strcpy(ent->ip_next[nring], dupl->ip);
   ent->mdiff_port[nring] = dupl->port_diff;
   strcpy(ent->mdiff_ip[nring], dupl->ip_diff);
-  verbose(UNDERLINED "Entity modified.\n" RESET);
-  verbose(UNDERLINED "Ring number actualized. Number of rings: %d.\n" RESET, nring+1);
-  verbose(UNDERLINED "Dupplication finished.\n" RESET);
+  verbose(REVERSE "Entity modified.\n" RESET);
+  verbose(REVERSE "Ring number actualized. Number of rings: %d.\n" RESET, nring+1);
+  verbose(REVERSE "Dupplication finished.\n" RESET);
 }
 /**
  * Server waiting for new entity insertions
  */
 static void insertionsrv()
 {
-  verbose(UNDERLINED "Starting insertion server...\n" RESET);
+  verbose(REVERSE "Starting insertion server...\n" RESET);
   // socket preparation
   int sock = socket(PF_INET,SOCK_STREAM, 0);
   struct sockaddr_in addr_sock;
@@ -326,7 +326,7 @@ static void insertionsrv()
   _ent->socktcp = sock;
   while (1) {
     // wait for connection
-    verbose(UNDERLINED "Insertion server: waiting for client...\n" RESET);
+    verbose(REVERSE "Insertion server: waiting for client...\n" RESET);
     struct sockaddr_in caller;
     socklen_t size = sizeof(caller);
     int sock2;
@@ -336,34 +336,34 @@ static void insertionsrv()
       perror("Error accept.");
       continue;
     }
-    verbose(UNDERLINED "Insertion server: connection established.\n" RESET);
-    verbose(UNDERLINED "Locking access to entity...\n" RESET);
+    verbose(REVERSE "Insertion server: connection established.\n" RESET);
+    verbose(REVERSE "Locking access to entity...\n" RESET);
     wlock_entity();
-    verbose(UNDERLINED "Access locked.\n" RESET);
+    verbose(REVERSE "Access locked.\n" RESET);
     // insertion protocol
     // WELC message sending
-    verbose(UNDERLINED "Insertion server: preparing WELC message...\n" RESET);
+    verbose(REVERSE "Insertion server: preparing WELC message...\n" RESET);
     char *msg = prepare_welc();
-    verbose(UNDERLINED "Insertion server: sending \"%s\"...\n" RESET, msg);
+    verbose(REVERSE "Insertion server: sending \"%s\"...\n" RESET, msg);
     send(sock2, msg, strlen(msg), 0);
-    verbose(UNDERLINED "Insertion server: message WELC sent->\n" RESET);
+    verbose(REVERSE "Insertion server: message WELC sent->\n" RESET);
     free(msg);
     // NEWC message reception
-    verbose(UNDERLINED "Insertion server: waiting for NEWC message...\n" RESET);
+    verbose(REVERSE "Insertion server: waiting for NEWC message...\n" RESET);
     msg = receptLine(sock2);
-    verbose(UNDERLINED "Insertion server: received : \"%s\".\n" RESET, msg);
+    verbose(REVERSE "Insertion server: received : \"%s\".\n" RESET, msg);
     if (strncmp(msg, "NEWC", 4) == 0)
       insert(nring, msg, sock2);
     else if (strncmp(msg, "DUPL", 4) == 0)
       duplicate(msg, sock2);
     else
-      verbose(UNDERLINED "Message not supported: \"%s\".\n" RESET, msg);
-    verbose(UNDERLINED "Unlocking access to entity...\n" RESET);
+      verbose(REVERSE "Message not supported: \"%s\".\n" RESET, msg);
+    verbose(REVERSE "Unlocking access to entity...\n" RESET);
     unlock_entity();
-    verbose(UNDERLINED "Access unlocked.\n" RESET);
-    verbose(UNDERLINED "Closing connection...\n" RESET);
+    verbose(REVERSE "Access unlocked.\n" RESET);
+    verbose(REVERSE "Closing connection...\n" RESET);
     close(sock2);
-    verbose(UNDERLINED "Connection closed.\n" RESET);
+    verbose(REVERSE "Connection closed.\n" RESET);
     free(msg);
   }
 }
@@ -374,7 +374,7 @@ static void *packet_treatment(void *args)
 {
   char *packet = (char *)args;
   packet[512] = 0;
-  verbose("Packet received:\n%s\n", packet);
+  verbose(UNDERLINED "Packet received:\n" RESET "%s\n", packet);
   parsemsg(packet);
   free(packet);
   return NULL;
@@ -472,7 +472,7 @@ void *insertion_server(void *arg)
 void *message_manager(void *args)
 {
   char buff[513];
-  verbose(UNDERLINED "Message manager launched.\n" RESET);
+  verbose(REVERSE "Message manager launched.\n" RESET);
   while (1) {
     int rec = recv(_ent->socklisten, buff, 512, 0);
 #ifdef DEBUG
@@ -504,7 +504,7 @@ void sendpacket(const char *content, int ring)
   sendto(_ent->socksend, content, 512, 0,
       (struct sockaddr *) &_ent->receiver[ring],
       (socklen_t)sizeof(struct sockaddr_in));
-  verbose("Packet sent:\n%s\n", content);
+  verbose(UNDERLINED "Packet sent:" RESET "\n%s\n", content);
   unlock_entity();
 }
 
@@ -518,7 +518,7 @@ void sendpacket_all(const char *content)
         (struct sockaddr *)&_ent->receiver[i],
         (socklen_t)sizeof(struct sockaddr_in));
   }
-  verbose("Packets sent:\n%s\n", content);
+  verbose(UNDERLINED "Packets sent:" RESET "\n%s\n", content);
   unlock_entity();
 }
 
@@ -532,7 +532,7 @@ void sendpacket_sockaddr(const char *content, const struct sockaddr_in *receiver
   sendto(_ent->socksend, content, 512, 0,
       (struct sockaddr *) receiver,
       (socklen_t)sizeof(struct sockaddr_in));
-  verbose("Packet sent:\n%s\n", content);
+  verbose(REVERSE "Packet sent:" RESET "\n%s\n", content);
 }
 /**
  * Initialize entity with given attributes.
@@ -570,19 +570,19 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen,
 static int init_sockets(uint16_t udp_listen) {
   if (_ent->socklisten == NEED_SOCKET) {
     // Socket creation
-    verbose(UNDERLINED "Creating sockets for UDP communication...\n" RESET);
+    verbose(REVERSE "Creating sockets for UDP communication...\n" RESET);
     // listening socket
     _ent->socklisten = socket(PF_INET, SOCK_DGRAM, 0);
-    verbose(UNDERLINED "Socket for udp listening created.\n" RESET);
+    verbose(REVERSE "Socket for udp listening created.\n" RESET);
     if (!bind_udplisten(_ent->socklisten, ent->udp)) {
       fprintf(stderr, "Binding error. Ring creation failed.\n");
       return 0;
     }
-    verbose(UNDERLINED "Binding done.\n" RESET);
+    verbose(REVERSE "Binding done.\n" RESET);
   }
   if (_ent->socksend == NEED_SOCKET) {
     _ent->socksend  = socket(PF_INET, SOCK_DGRAM, 0);
-    verbose(UNDERLINED "Socket for udp sending created.\n" RESET);
+    verbose(REVERSE "Socket for udp sending created.\n" RESET);
   }
   return _ent->socklisten != -1 && _ent->socksend != -1;
 }
@@ -591,7 +591,7 @@ static int init_sockets(uint16_t udp_listen) {
 
 static void actualize_receiver(int ring, char ip_next[16], uint16_t port_next, 
     const struct sockaddr_in *receiver) {
-  verbose(UNDERLINED "Writing new entity...\n" RESET);
+  verbose(REVERSE "Writing new entity...\n" RESET);
   wlock_entity();
 
   strcpy(ent->ip_next[ring], ip_next);
@@ -599,14 +599,14 @@ static void actualize_receiver(int ring, char ip_next[16], uint16_t port_next,
   _ent->receiver[ring] = *receiver;
 
   unlock_entity();
-  verbose(UNDERLINED "Entity written.\n" RESET);
+  verbose(REVERSE "Entity written.\n" RESET);
 }
 
 
 static void add_ring(char ip_next[16], uint16_t port_next, char mdiff_ip[16],
     uint16_t mdiff_port, const struct sockaddr_in *receiver, int mdiff_sock) {
 
-  verbose(UNDERLINED "Writing new entity...\n" RESET);
+  verbose(REVERSE "Writing new entity...\n" RESET);
   wlock_entity();
 
   ++nring;
@@ -624,7 +624,7 @@ static void add_ring(char ip_next[16], uint16_t port_next, char mdiff_ip[16],
   fcntl(mdiff_sock, F_SETFL, O_NONBLOCK);
 
   unlock_entity();
-  verbose(UNDERLINED "Entity written.\n" RESET);
+  verbose(REVERSE "Entity written.\n" RESET);
 }
 
 
@@ -653,7 +653,7 @@ static int tcp_connection(const char *host, const char *tcpport)
         "Can't establish connection with %s on port %s.\n", host, tcpport);
     return 0;
   }
-  verbose(UNDERLINED "Connection established with %s on port %s.\n" RESET, host, tcpport);
+  verbose(REVERSE "Connection established with %s on port %s.\n" RESET, host, tcpport);
   return sock;
 }
 
@@ -677,18 +677,18 @@ int create_ring2(char *mdiff_ip, uint16_t mdiff_port)
   }
   struct sockaddr_in receiver;
   // receiver (next entity) socket
-  verbose(UNDERLINED "Preparing structure for receiver address...\n" RESET);
+  verbose(REVERSE "Preparing structure for receiver address...\n" RESET);
   if (!getsockaddr_in(&receiver, "localhost", ent->udp, 0)) {
     fprintf(stderr, "Can't access to localhost on port %d.\n"
         "Ring creation failed.\n", ent->udp);
     return 0;
   }
-  verbose(UNDERLINED "Sockets created.\n" RESET);
+  verbose(REVERSE "Sockets created.\n" RESET);
 
   // multidiffusion
   int sockmdiff = socket(PF_INET, SOCK_DGRAM, 0);
   // authorize multidiff on same machine
-  verbose(UNDERLINED "Subscibing to multicast channel %s on port %d...\n" RESET, 
+  verbose(REVERSE "Subscibing to multicast channel %s on port %d...\n" RESET, 
       mdiff_ip, mdiff_port);
   if (!multicast_subscribe(sockmdiff, mdiff_port,
         mdiff_ip)) {
@@ -697,14 +697,14 @@ int create_ring2(char *mdiff_ip, uint16_t mdiff_port)
         mdiff_port);
     return 0;
   }
-  verbose(UNDERLINED "Subscribed to multicast channel.\n" RESET);
+  verbose(REVERSE "Subscribed to multicast channel.\n" RESET);
   wlock_entity();
   char mdiff_ipr[16];
   ipresize_noalloc(mdiff_ipr, mdiff_ip);
   add_ring(ent->ip_self, ent->udp, mdiff_ipr, mdiff_port, &receiver, sockmdiff);
 
   init_threads();
-  verbose(UNDERLINED "Ring created.\n" RESET);
+  verbose(REVERSE "Ring created.\n" RESET);
   return 1;
 }
 
@@ -728,10 +728,10 @@ int join2(const char *host, const char *tcpport)
     return 0;
   }
   // WELC message reception
-  verbose(UNDERLINED "waitig for WELC message...\n" RESET);
+  verbose(REVERSE "waitig for WELC message...\n" RESET);
   char *msg = receptLine(sock);
-  verbose(UNDERLINED "Message received : \" RESET%s\".\n", msg);
-  verbose(UNDERLINED "Parsing message...\n" RESET);
+  verbose(REVERSE "Message received : \" RESET%s\".\n", msg);
+  verbose(REVERSE "Parsing message...\n" RESET);
   welc_msg *welc = parse_welc(msg);
   free(msg);
   if (welc == NULL) {
@@ -739,17 +739,17 @@ int join2(const char *host, const char *tcpport)
     free(welc);
     return 0;
   }
-  verbose(UNDERLINED "Parsing successfull.\n" RESET);
+  verbose(REVERSE "Parsing successfull.\n" RESET);
   // NEWC message sending
-  verbose(UNDERLINED "Preparing NEWC message...\n" RESET);
+  verbose(REVERSE "Preparing NEWC message...\n" RESET);
   char *newc_str = prepare_newc();
-  verbose(UNDERLINED "Sending: \"%s\".\n" RESET, newc_str);
+  verbose(REVERSE "Sending: \"%s\".\n" RESET, newc_str);
   send(sock, newc_str, strlen(newc_str), 0);
-  verbose(UNDERLINED "Message sent.\n" RESET);
+  verbose(REVERSE "Message sent.\n" RESET);
   // ACKC message reception
-  verbose(UNDERLINED "Waiting for ACKC confirmation message...\n" RESET);
+  verbose(REVERSE "Waiting for ACKC confirmation message...\n" RESET);
   msg = receptLine(sock);
-  verbose(UNDERLINED "Message received: \" RESET%s\".\n", msg);
+  verbose(REVERSE "Message received: \" RESET%s\".\n", msg);
   if (strcmp(msg, "ACKC") != 0) {
     fprintf(stderr, "Protocol error: bad response.\nInsertion failed.\n");
     free(welc);
@@ -773,7 +773,7 @@ int join2(const char *host, const char *tcpport)
   // multi diff
   char mdiff_ip[16];
   ipnozeros(mdiff_ip, welc->ip_diff);
-  verbose(UNDERLINED "Subscribing to channel %s...\n" RESET, mdiff_ip);
+  verbose(REVERSE "Subscribing to channel %s...\n" RESET, mdiff_ip);
   int sockmdiff = socket(AF_INET, SOCK_DGRAM, 0);
   if (!multicast_subscribe(sockmdiff, welc->port_diff,
         mdiff_ip)) {
@@ -784,7 +784,7 @@ int join2(const char *host, const char *tcpport)
   }
   
   add_ring(welc->ip, welc->port, welc->ip_diff, welc->port_diff, &receiver, sockmdiff);
-  verbose(UNDERLINED "Insertion done.\n" RESET);
+  verbose(REVERSE "Insertion done.\n" RESET);
   debug("insert", MAGENTA "modified entity:\n%s", entitytostr( nring ));
 
   init_threads();
@@ -810,10 +810,10 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
   if (!sock) {
     return 0;
   }
-  verbose(UNDERLINED "waitig for WELC message...\n" RESET);
+  verbose(REVERSE "waitig for WELC message...\n" RESET);
   char *msg = receptLine(sock);
-  verbose(UNDERLINED "Message received : \"%s\".\n" RESET, msg);
-  verbose(UNDERLINED "Parsing message...\n" RESET);
+  verbose(REVERSE "Message received : \"%s\".\n" RESET, msg);
+  verbose(REVERSE "Parsing message...\n" RESET);
   welc_msg *welc = parse_welc(msg);
   free(msg);
   if (welc == NULL) {
@@ -821,18 +821,18 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
     free(welc);
     return 0;
   }
-  verbose(UNDERLINED "Parsing successfull.\n" RESET);
+  verbose(REVERSE "Parsing successfull.\n" RESET);
   // NEWC message sending
-  verbose(UNDERLINED "Preparing DUPL message...\n" RESET);
+  verbose(REVERSE "Preparing DUPL message...\n" RESET);
   char *dupl_str = prepare_dupl(mdiff_ip, mdiff_port);
-  verbose(UNDERLINED "Sending: \"%s\".\n" RESET, dupl_str);
+  verbose(REVERSE "Sending: \"%s\".\n" RESET, dupl_str);
   send(sock, dupl_str, strlen(dupl_str), 0);
-  verbose(UNDERLINED "Message sent->\n" RESET);
+  verbose(REVERSE "Message sent->\n" RESET);
   fflush(stdout);
   // ACKC message reception
-  verbose(UNDERLINED "Waiting for ACKC confirmation message...\n" RESET);
+  verbose(REVERSE "Waiting for ACKC confirmation message...\n" RESET);
   msg = receptLine(sock);
-  verbose(UNDERLINED "Message received: \"%s\".\n" RESET, msg);
+  verbose(REVERSE "Message received: \"%s\".\n" RESET, msg);
   if (strncmp(msg, "ACKC ", 5) != 0 || strlen(msg) != 9) {
     fprintf(stderr, "Protocol error: bad response from server.\n"
         "Insertion failed.\n");
@@ -861,7 +861,7 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
     return 0;
   }
   // multi diff
-  verbose(UNDERLINED "Subscribing to channel %s...\n" RESET, mdiff_ip);
+  verbose(REVERSE "Subscribing to channel %s...\n" RESET, mdiff_ip);
   int sockmdiff = socket(AF_INET, SOCK_DGRAM, 0);
   if (!multicast_subscribe(sockmdiff, mdiff_port, mdiff_ip)) {
     fprintf(stderr, 
@@ -873,7 +873,7 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
   char mdiff_ipr[16];
   ipresize_noalloc(mdiff_ipr, mdiff_ip);
   add_ring(welc->ip, welc->port, mdiff_ipr, mdiff_port, &receiver, sockmdiff);
-  verbose(UNDERLINED "Dupplication done.\n" RESET);
+  verbose(REVERSE "Dupplication done.\n" RESET);
   debug("duplicate_rqst", MAGENTA "modified entity:\n%s", entitytostr( nring ));
 
   init_threads();
@@ -904,11 +904,11 @@ void rm_ring(int ring)
     ent->mdiff_port[ring] = ent->mdiff_port[nring];
   }
   close(_ent->sockmdiff[ring]);
-  verbose(UNDERLINED "Ring %d quit.\n" RESET, ring);
+  verbose(REVERSE "Ring %d quit.\n" RESET, ring);
   debug(RED "rm_ring", RED "Ring %d quit.\n", ring);
   unlock_entity();
   if (--nring == -1) {
-    verbose(UNDERLINED "Last ring quit.\n" RESET);
+    verbose(REVERSE "Last ring quit.\n" RESET);
     close_threads();
   }
   else {
