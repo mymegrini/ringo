@@ -42,7 +42,7 @@ public class Entity{
     public static String add_space(String id,int length_final){
         int l=id.length();
         for(int i=0;i<length_final-l;i++){
-            id=id.concat(" ");
+            id=id.concat("#");
         }
         return id;
     }

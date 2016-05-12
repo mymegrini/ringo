@@ -26,6 +26,12 @@ public class Jring{
                 t=8880;
                 d=8881;
             }
+             if(args[args.length-1].charAt(0)=='3'){
+                id="Max";
+                u=8885;
+                t=8884;
+                d=8883;
+            }
         }
         else{
             System.out.println("Give your id");
@@ -121,6 +127,8 @@ public class Jring{
                     if(mess_send.equals("TEST")){
                         mess_recognize=true;
                         mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+Entity.add_zero(ent.mdiff_port,4);
+                        /*System.out.println("How many times do you like to check the ring if it's not safe ?");
+                        int times = sc.nextInt();*/
                         dwn = new Down_thread(ent,mess_list,m_id,0);
                         dwn_t = new Thread(dwn);
                         dwn_t.start();

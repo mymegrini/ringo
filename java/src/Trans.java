@@ -5,12 +5,22 @@ import java.io.*;
 public class Trans{
     String id_trans;
     String file_name;
+    FileOutputStream fos;
     int num_mess;
+    int nb_mess;
+   
     
-    public Trans(String i, String f){
-        id_trans=i;
-        file_name=f;
-        num_mess=0;
+    public Trans(String i, String f,String nb_m){
+        try{
+            id_trans=i;
+            file_name=f;
+            fos=new FileOutputStream(new File(file_name));
+            num_mess=0;
+            nb_mess=Integer.parseInt(nb_m);
+        }catch(Exception e){
+            System.out.println(e);
+            e.printStackTrace();
+        }
     }
     
     public static int search(ArrayList<Trans> trans_list,String id){
