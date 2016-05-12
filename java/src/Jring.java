@@ -92,17 +92,17 @@ public class Jring{
                     e.printStackTrace();
                 }
             }
+            System.out.println("Give the diffusion port");
+            d = sc.nextInt();
+            while(t<1024 || t>9999){
+                System.out.println("The diffusion port is not correct, give one between 1024 and 9999");
+                d = sc.nextInt();
+            }
+            
         }
         ent = new Entity(id,host_ip.toString().substring(1),u,t,"224.0.0.0",d);
         boolean stage1=true;
         if(args.length==0 || args.length==1){
-            if(d==0){System.out.println("Give the diffusion port");
-                d = sc.nextInt();
-                while(t<1024 || t>9999){
-                    System.out.println("The diffusion port is not correct, give one between 1024 and 9999");
-                    d = sc.nextInt();
-                }
-            }
             ent.ip_next=ent.ip;
             ent.port_next=u;
         }
@@ -220,7 +220,7 @@ public class Jring{
                 ent.port_next=data_welc.port_next;
                 ent.mdiff_ip=data_welc.mdiff_ip;
                 ent.mdiff_port=data_welc.mdiff_port;
-                String mess_send = "NEWC "+ent.ip+" "+ent.udp;
+                String mess_send = "NEWC "+ent.ip+" "+Entity.add_zero(ent.udp,4);
                 pw.println(mess_send);
                 pw.flush();
                 mess_recv=br.readLine();
@@ -256,7 +256,7 @@ public class Jring{
             Welc_mess data_welc = Welc_mess.parse_welc(mess_recv);
             boolean dupl=false;
             if(data_welc!=null){
-                String mess_send = "DUPL "+ent.ip+" "+ent.udp+" "+ip_mdiff2+" "+port_mdiff2;
+                String mess_send = "DUPL "+ent.ip+" "+Entity.add_zero(ent.udp,4)+" "+ip_mdiff2+" "+Entity.add_zero(port_mdiff2,4);
                 pw.println(mess_send);
                 pw.flush();
                 mess_recv=br.readLine();

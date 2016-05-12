@@ -22,7 +22,7 @@ public class Tcp_thread implements Runnable{
                 BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 PrintWriter pw = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
                 if(!dupl){
-                    String mess = "WELC "+ent.ip_next+" "+ent.port_next+" "+ent.mdiff_ip+" "+ent.mdiff_port;
+                    String mess ="WELC "+ent.ip_next+" "+Entity.add_zero(ent.port_next,4)+" "+ent.mdiff_ip+" "+Entity.add_zero(ent.mdiff_port,4);
                     pw.println(mess);
                     pw.flush();
                     mess=br.readLine();
