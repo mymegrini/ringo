@@ -6,13 +6,15 @@ public class Tcp_thread implements Runnable{
     Entity ent;
     ServerSocket server;
 
-    public Tcp_thread(Entity e){
+    public Tcp_thread(Entity e,ServerSocket serv){
         ent=e;
+        server=serv;
     }
     
     public void run(){
         try{
-            server = new ServerSocket(ent.tcp);
+            // server = new ServerSocket(ent.tcp);
+            //System.out.println(server==null);
             boolean dupl = false;
             Socket socket;
             while(true){
@@ -37,6 +39,9 @@ public class Tcp_thread implements Runnable{
                         ent.port_next2=data_d.port2;
                         ent.mdiff_ip2=data_d.mdiff_ip2;
                         ent.mdiff_port2=data_d.mdiff_port2;
+                        Diff_thread diff_mode = new Diff_thread(ent,ent.mdiff_ip2,ent.mdiff_port2);
+                        Thread diff_t = new Thread(diff_mode);
+                        diff_t.start();
                         pw.println("ACKD "+ent.udp);
                         pw.flush();
                         dupl=true;

@@ -15,13 +15,13 @@ public class Jring{
         int u=0,t=0,d=0;
         if(args.length!=0 && args[args.length-1].substring(1).equals("auto")){
             if(args[args.length-1].charAt(0)=='1'){
-                id="K";
+                id="Soheib";
                 u=8888;
                 t=8887;
                 d=8886;
             }
             if(args[args.length-1].charAt(0)=='2'){
-                id="L";
+                id="Kate";
                 u=8889;
                 t=8880;
                 d=8881;
@@ -46,16 +46,17 @@ public class Jring{
                 System.out.println("The tcp port is not correct, give one between 1024 and 9999");
                 t = sc.nextInt();
             }
-            System.out.println("Give the diffusion port");
-            d = sc.nextInt();
-            while(t<1024 || t>9999){
-                System.out.println("The diffusion port is not correct, give one between 1024 and 9999");
-                d = sc.nextInt();
-            }
         }
-        ent = new Entity(id,host_ip.toString().substring(1),u,t,"255.255.255.255",d);
+        ent = new Entity(id,host_ip.toString().substring(1),u,t,"224.0.0.0",d);
         boolean stage1=true;
         if(args.length==0 || args.length==1){
+            if(d==0){System.out.println("Give the diffusion port");
+                d = sc.nextInt();
+                while(t<1024 || t>9999){
+                    System.out.println("The diffusion port is not correct, give one between 1024 and 9999");
+                    d = sc.nextInt();
+                }
+            }
             ent.ip_next=ent.ip;
             ent.port_next=u;
         }
@@ -69,19 +70,21 @@ public class Jring{
         if(stage1){
             try{
                 //Diff
-                Diff_thread diff_mode = new Diff_thread(ent,1);
+                Diff_thread diff_mode = new Diff_thread(ent,ent.mdiff_ip,ent.mdiff_port);
                 Thread diff_t = new Thread(diff_mode);
                 diff_t.start();
                 //Tcp
-                Tcp_thread tcp_mode = new Tcp_thread(ent);
+                ServerSocket server = new ServerSocket(ent.tcp);
+                Tcp_thread tcp_mode = new Tcp_thread(ent,server);
                 Thread tcp_t = new Thread(tcp_mode);
                 tcp_t.start();
                 //Udp
-                Udp_thread udp_mode = new Udp_thread(ent,mess_list,diff_mode.dso);
+                DatagramSocket dso_udp = new DatagramSocket(ent.udp);
+                Udp_thread udp_mode = new Udp_thread(ent,mess_list,dso_udp,diff_mode.mso);
                 Thread udp_t = new Thread(udp_mode);
                 udp_t.start();
-                diff_mode.dso_udp=udp_mode.dso;
-                diff_mode.server_tcp=tcp_mode.server;
+                diff_mode.dso_udp=dso_udp;
+                diff_mode.server_tcp=server;
                 //Send a message
                 byte[] data = new byte[512];
                 DatagramSocket dso = new DatagramSocket();
@@ -91,15 +94,21 @@ public class Jring{
                 Thread dwn_t;
                 String m_id;
                 int size_mess;
-                boolean f=true;
+                boolean mess_recognize=false;
                 while(true){
+                    mess_recognize=false;
                     mess_send= sc.nextLine();
-                    if(mess_send.equals("quit")) break;
+                    if(mess_send.equals("INFO")){
+                        ent.all_info();
+                    }
+                    //if(mess_send.equals("quit")) break;
                     m_id=message_id();
                     if(mess_send.equals("WHOS")){
                         mess_send="WHOS "+m_id;
+                        mess_recognize=true;
                     }
                     if(mess_send.equals("GBYE")){
+                        mess_recognize=true;
                         tcp_mode.server.close();
                         mess_send="GBYE "+m_id+" "+ent.ip+" "+Entity.add_zero(ent.udp,4)+" "+ent.ip_next+" "+Entity.add_zero(ent.port_next,4);
                         if(ent.port_next2!=-1){
@@ -110,26 +119,35 @@ public class Jring{
                         }
                     }
                     if(mess_send.equals("TEST")){
+                        mess_recognize=true;
                         mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+Entity.add_zero(ent.mdiff_port,4);
                         dwn = new Down_thread(ent,mess_list,m_id,0);
                         dwn_t = new Thread(dwn);
                         dwn_t.start();
                     }
                     if(mess_send.equals("DIFF")){
+                        mess_recognize=true;
                         System.out.println("Give your message (less than 512-x characters)");
                         mess_send= sc.nextLine();
                         size_mess=mess_send.length();
                         if(size_mess<486) mess_send="APPL "+m_id+" "+"DIFF#### "+Entity.add_zero(size_mess,3)+" "+mess_send;
-                        else mess_send = "";
+                        else{
+                            System.out.println("The length of message is more than 482o");
+                            mess_recognize=false;
+                        }
                     }
                     if(mess_send.equals("TRANS")){
+                        mess_recognize=true;
                         System.out.println("Give the name of the file");
                         mess_send= sc.nextLine();
                         size_mess=mess_send.length();
                         if(size_mess<482) mess_send="APPL "+m_id+" "+"TRANS### "+"REQ "+Entity.add_zero(size_mess,2)+" "+mess_send;
-                        else mess_send = "";
+                        else{
+                            System.out.println("The length of message is more than 482o");
+                            mess_recognize=false;
+                        }
                     }
-                    if(!mess_send.equals("")){
+                    if(mess_recognize){
                         mess_list.add(m_id);
                         Udp_thread.send_mess(ent,dso,mess_send);
                     }
@@ -181,7 +199,7 @@ public class Jring{
             Scanner sc = new Scanner(System.in);
             /*System.out.println("Give the ip adress of the new ring");
               String ip_mdiff2 = sc.nextLine();*/
-            String ip_mdiff2 = "255.255.255.255";
+            String ip_mdiff2 = "224.0.0.0";
             System.out.println("Give the port of the new ring");
             int port_mdiff2=sc.nextInt();
             Socket socket = new Socket(adress,tcp);

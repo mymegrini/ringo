@@ -7,19 +7,15 @@ public class Udp_thread implements Runnable{
     static ArrayList<String> mess_list;
     static ArrayList<Trans> trans_list;
     DatagramSocket dso;
-    DatagramSocket dso_diff;
+    MulticastSocket mso;
     
 
-    public Udp_thread(Entity e,ArrayList<String> list,DatagramSocket dso_d){
-        try{
-            ent=e;
-            mess_list=list;
-            trans_list=new ArrayList<Trans>();
-            dso =  new DatagramSocket(ent.udp);
-            dso_diff=dso_d;
-        }catch(SocketException f){
-            System.out.println(f);
-        }
+    public Udp_thread(Entity e,ArrayList<String> list,DatagramSocket dso_u,MulticastSocket mso_d){
+        ent=e;
+        mess_list=list;
+        trans_list=new ArrayList<Trans>();
+        dso =  dso_u;
+        mso=mso_d;
     }
     
     public void run(){
@@ -102,11 +98,16 @@ public class Udp_thread implements Runnable{
     }
 
     public void mess_recv_EYBG(String[] tab){
-        if(tab.length==2 && tab[0].equals("EYBG") && mess_list.remove(tab[1])){
-            dso_diff.close();
-            dso.close();
-            //System.exit(0);
-            System.out.println("Write quit to leave");
+        try{
+            if(tab.length==2 && tab[0].equals("EYBG") && mess_list.remove(tab[1])){
+                mso.leaveGroup(InetAddress.getByName(ent.mdiff_ip));
+                if(ent.port_next2!=-1) mso.leaveGroup(InetAddress.getByName(ent.mdiff_ip2));
+                dso.close();
+                System.exit(0);
+                //System.out.println("Write quit to leave");
+            }
+        }catch(Exception e){
+            System.out.println(e);
         }
     }
     
@@ -156,6 +157,7 @@ public class Udp_thread implements Runnable{
                     }
                     catch(FileNotFoundException e){
                         System.out.println("fichier n'est pas present ici");
+                        send_mess(ent,dso,mess_recv);                        
                     }
                     catch(IOException e){
                         e.printStackTrace();
