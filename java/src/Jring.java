@@ -10,6 +10,7 @@ public class Jring{
         mess_list = new ArrayList<String>();
         InetAddress host_ip =host_ip();
         System.out.println(host_ip.toString());
+        System.out.println("If you don't know how to use the programm write help, you will have all the command.");
         Scanner sc = new Scanner(System.in);
         String id="";
         int u=0,t=0,d=0;
@@ -120,7 +121,6 @@ public class Jring{
                 Thread diff_t = new Thread(diff_mode);
                 diff_t.start();
                 //Tcp
-                
                 Tcp_thread tcp_mode = new Tcp_thread(ent,server);
                 Thread tcp_t = new Thread(tcp_mode);
                 tcp_t.start();
@@ -143,16 +143,27 @@ public class Jring{
                 while(true){
                     mess_recognize=false;
                     mess_send= sc.nextLine();
-                    if(mess_send.equals("INFO")){
+                    m_id=message_id();
+                    if(mess_send.equals("help")){
+                        System.out.println("info : Display informations on current entity.");
+                        System.out.println("whos : Getting to know each other...");
+                        System.out.println("gbye : Exit.");                        
+                        System.out.println("diff : Send messages on the ring.");
+                        System.out.println("test : Know if the ring is still correct.");
+                        System.out.println("trans : Have a file that another computer in the ring have.");
+                        System.out.println("ls : Know what is in your repository.");
+                    }
+                    if(mess_send.equals("ls")){
+                        cmd_ls();
+                    }
+                    if(mess_send.equals("info")){
                         ent.all_info();
                     }
-                    //if(mess_send.equals("quit")) break;
-                    m_id=message_id();
-                    if(mess_send.equals("WHOS")){
+                    if(mess_send.equals("whos")){
                         mess_send="WHOS "+m_id;
                         mess_recognize=true;
                     }
-                    if(mess_send.equals("GBYE")){
+                    if(mess_send.equals("gbye")){
                         mess_recognize=true;
                         tcp_mode.server.close();
                         mess_send="GBYE "+m_id+" "+ent.ip+" "+Entity.add_zero(ent.udp,4)+" "+ent.ip_next+" "+Entity.add_zero(ent.port_next,4);
@@ -163,7 +174,7 @@ public class Jring{
                             mess_send="GBYE "+m_id+" "+ent.ip+" "+Entity.add_zero(ent.udp,4)+" "+ent.ip_next2+" "+Entity.add_zero(ent.port_next2,4);
                         }
                     }
-                    if(mess_send.equals("TEST")){
+                    if(mess_send.equals("test")){
                         mess_recognize=true;
                         mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+Entity.add_zero(ent.mdiff_port,4);
                         /*System.out.println("How many times do you like to check the ring if it's not safe ?");
@@ -172,7 +183,7 @@ public class Jring{
                         dwn_t = new Thread(dwn);
                         dwn_t.start();
                     }
-                    if(mess_send.equals("DIFF")){
+                    if(mess_send.equals("diff")){
                         mess_recognize=true;
                         System.out.println("Give your message (less than 512-x characters)");
                         mess_send= sc.nextLine();
@@ -183,7 +194,7 @@ public class Jring{
                             mess_recognize=false;
                         }
                     }
-                    if(mess_send.equals("TRANS")){
+                    if(mess_send.equals("trans")){
                         mess_recognize=true;
                         System.out.println("Give the name of the file");
                         mess_send= sc.nextLine();
@@ -327,8 +338,20 @@ public class Jring{
         return id;
     }
     
-    public static String remove_zero(String s){
-        if(s.charAt(0)=='0') return remove_zero(s.substring(1));
-        return s;
+    public static void cmd_ls(){
+        try{
+            Process process = Runtime.getRuntime().exec("ls -a");
+            BufferedReader stdout = new BufferedReader(new InputStreamReader( process.getInputStream()));
+            String line = stdout.readLine() ;
+            while(line != null){
+                System.out.println(line);
+                line = stdout.readLine() ;
+            }
+            stdout.close(); 
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            System.exit(-1);
+        }
     }
 }
