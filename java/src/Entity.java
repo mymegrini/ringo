@@ -1,3 +1,5 @@
+import java.math.*;
+
 public class Entity{
     String id;
     String ip;
@@ -47,6 +49,8 @@ public class Entity{
         return id;
     }
     
+    
+    
     public static String add_zero(int port,int length_final){
         String s=""+port;
         int l=s.length();
@@ -62,6 +66,26 @@ public class Entity{
             s="0".concat(s);
         }
         return s;
+    }
+
+    public static String lend(long l){
+        BigInteger n = BigInteger.valueOf(l);
+        String lit="";
+        BigInteger[] t = new BigInteger[2];
+        for(int i=8;i>=0;i--){
+            t = n.divideAndRemainder(BigInteger.valueOf((int)Math.pow(256,i)));
+            lit=t[0].toString().concat(lit);
+            n=t[1];
+        }
+        return lit;
+    }
+    
+    public static long denl(String s){
+        long k=0;
+        for(int i=0;i<8;i++){
+            k+=(int)Math.pow(256,i)*Integer.parseInt(String.valueOf(s.charAt(i)));
+        }
+        return k;
     }
     
 }

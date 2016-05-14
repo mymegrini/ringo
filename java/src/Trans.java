@@ -6,8 +6,8 @@ public class Trans{
     String id_trans;
     String file_name;
     FileOutputStream fos;
-    int num_mess;
-    int nb_mess;
+    long num_mess;
+    long nb_mess;
    
     
     public Trans(String i, String f,String nb_m){
@@ -16,7 +16,7 @@ public class Trans{
             file_name=f;
             fos=new FileOutputStream(new File(file_name));
             num_mess=0;
-            nb_mess=Integer.parseInt(nb_m);
+            nb_mess=Long.parseLong(nb_m);
         }catch(Exception e){
             System.out.println(e);
             e.printStackTrace();
