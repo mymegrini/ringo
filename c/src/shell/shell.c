@@ -36,6 +36,7 @@ static int cmd_whos(int argc, char **argv);
 
 extern int cmd_gbye(int argc, char **argv);
 extern int cmd_exit(int argc, char **argv);
+extern int cmd_rinfo(int argc, char **argv);
 extern int cmd_info(int argc, char **argv);
 extern int cmd_help(int argc, char **argv);
 extern int cmd_diff(int argc, char **argv);
@@ -50,13 +51,14 @@ extern int cmd_trans(int argc, char **argv);
 ////////////////////////////////////////////////////////////////////////////////
 
 command cmd[] = {
+  { "info", "Informations about the program", cmd_info},
   { "cd", "Change working directory.", cmd_cd },
   { "exit", "Quit all rings and exit shell.", cmd_exit},
   { "pwd", "Print working directory.", cmd_pwd},
   { "rdif", "Send messages on the ring.", cmd_diff },
   { "gbye", "Quit a ring.", cmd_gbye },
   { "help", "Show this message.", cmd_help },
-  { "info", "Display informations on current entity.", cmd_info},
+  { "rinfo", "Informations on current entity.", cmd_rinfo},
   { "plug", "Add or remove plugins.", cmd_plugin},
   { "ring", "Create, duplicate and join rings.", cmd_ring},
   { "whos", "Getting to know each other...", cmd_whos },
