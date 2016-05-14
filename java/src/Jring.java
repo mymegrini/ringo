@@ -1,6 +1,7 @@
 import java.util.*;
 import java.net.*;
 import java.io.*;
+import java.math.*;
 
 public class Jring{
     static Entity ent;
@@ -10,7 +11,6 @@ public class Jring{
         mess_list = new ArrayList<String>();
         InetAddress host_ip =host_ip();
         System.out.println(host_ip.toString());
-        System.out.println("If you don't know how to use the programm write help, you will have all the command.");
         Scanner sc = new Scanner(System.in);
         String id="";
         int u=0,t=0,d=0;
@@ -99,7 +99,6 @@ public class Jring{
                 System.out.println("The diffusion port is not correct, give one between 1024 and 9999");
                 d = sc.nextInt();
             }
-            
         }
         ent = new Entity(id,host_ip.toString().substring(1),u,t,"224.0.0.0",d);
         boolean stage1=true;
@@ -140,6 +139,7 @@ public class Jring{
                 String m_id;
                 int size_mess;
                 boolean mess_recognize=false;
+                System.out.println("If you don't know how to use the programm write help, you will have all the command.");
                 while(true){
                     mess_recognize=false;
                     mess_send= sc.nextLine();
@@ -152,6 +152,7 @@ public class Jring{
                         System.out.println("test : Know if the ring is still correct.");
                         System.out.println("trans : Have a file that another computer in the ring have.");
                         System.out.println("ls : Know what is in your repository.");
+                        System.out.println("insert duplication ?");
                     }
                     if(mess_send.equals("ls")){
                         cmd_ls();

@@ -10,9 +10,9 @@
 #include <sys/time.h>
 #include <signal.h>
 
-#ifndef NRING
-#define NRING 2
-#endif
+/* #ifndef NRING */
+/* #define NRING 2 */
+/* #endif */
 
 
 
@@ -127,7 +127,8 @@ void ipnozeros(char *nozeros, const char *ip) {
             else
                 lz = 0;
         }
-        else if (ip[i+1] == '.') {
+        /* else if (ip[i+1] == '.') { */
+        else if (! isdigit(ip[i+1])) {
             nozeros[j++] = ip[i];
         } 
     }

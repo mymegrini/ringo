@@ -94,6 +94,7 @@ int main(int argc, char *argv[])
     init_entity(id, atoi(udp_listen), atoi(tcp_listen), mdiff_ip, mport);
     verbosity(VERBM_XTERMO);
     plugin_manager_init(&plugin_manager);
+    init_mutex();
     
     switch(mode) {
         case MODE_CREATE:
@@ -181,12 +182,12 @@ void get_info() {
         size = 0;
     }
     if (mode != MODE_JOIN && mdiff_ip == NULL) {
-        printf("Choose a multi diffusion ip (default 239.0.0.1): ");
+        printf("Choose a multi diffusion ip (default 225.0.0.1): ");
         if (getline(&mdiff_ip, &size, stdin)==-1) perror("getline");
         mdiff_ip[strlen(mdiff_ip)-1] = 0;
         if (mdiff_ip[0] == 0) {
             mdiff_ip = realloc(mdiff_ip, 16);
-            strcpy(mdiff_ip, "239.0.0.1");
+            strcpy(mdiff_ip, "225.0.0.1");
         }
         size = 0;
     }

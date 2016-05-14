@@ -21,6 +21,12 @@ extern struct thread *thread;
 void init_threads();
 void close_threads();
 void close_threads_and_shell();
+void restart_mdiffmanager();
+/* void restart_mdiffmanager_request(); */
+
+void start_tcpserver();
+void close_tcpserver();
+
 
 struct test_mutex {
     pthread_mutex_t m;
@@ -31,6 +37,8 @@ struct mutex {
     pthread_mutex_t   listmsg;
     pthread_rwlock_t  entity_rw;
     struct test_mutex test;
+    pthread_mutex_t   mdiff;
+    pthread_cond_t    mdiff_restart_cond;
 };
 
 
@@ -38,8 +46,11 @@ struct mutex {
 extern struct mutex *mutex;
 
 
+void init_mutex();
 void wlock_entity();
 void unlock_entity();
 void rlock_entity();
+void lock_mdiff();
+void unlock_mdiff();
 
 #endif /* THREAD_H */

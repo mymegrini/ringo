@@ -22,7 +22,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // PROTOTYPES
-////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////Condition Varia//////////////
 int parseappmsg(char *message);
 void *message_manager(void *args);
 
@@ -68,6 +68,7 @@ short volatile ring_check[NRING+1];
 short volatile *rc = ring_check;
 
 struct pollfd poll_mdiff[NRING];
+short volatile mdiff_working = 1;
 
 extern short volatile need_thread;
 
@@ -75,6 +76,7 @@ extern short volatile need_thread;
 
 volatile struct test_data _test_data;
 volatile struct test_data *test_data = &_test_data;
+
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
 ////////////////////////////////////////////////////////////////////////////////
@@ -176,19 +178,57 @@ static char *prepare_dupl(const char *mip, uint16_t mport)
   debug("prepare_dupl", "%s\nmdiff_ip:%s\nmdiff_port:%s", msg, mdiff_ip, mdiff_port);
   return msg;
 }
-/* static char *prepare_dupl() */
-/* { */
-/*   char *msg = (char *)malloc(50); */
-/*   char port[5], mdiff_port[5]; */
-/*   itoa4(port, ent->udp); */
-/*   itoa4(mdiff_port, ent->mdiff_port[nring]); */
-/*   sprintf(msg, "DUPL %s %s %s %s\n", */
-/*       ent->ip_self, port, */
-/*       ent->mdiff_ip[nring], mdiff_port); */
-/*   debug("prepare_dupl", "%s\nmdiff_ip:%s\nmdiff_port:%s", msg, ent->mdiff_ip[nring], mdiff_port); */
-/*   return msg; */
-/* } */
 
+
+static void add_ring(char ip_next[16], uint16_t port_next, char mdiff_ip[16],
+    uint16_t mdiff_port, const struct sockaddr_in *receiver, int mdiff_sock, 
+    const struct sockaddr_in *mdiff) {
+
+  verbose(REVERSE "Writing new entity...\n" RESET);
+  wlock_entity();
+
+  ++nring;
+
+  strcpy(ent->ip_next[nring], ip_next);
+  strcpy(ent->mdiff_ip[nring], mdiff_ip);
+
+  ent->port_next[nring]    = port_next;
+  ent->mdiff_port[nring]   = mdiff_port;
+  _ent->receiver[nring]    = *receiver;
+  _ent->sockmdiff[nring]   = mdiff_sock;
+  _ent->mdiff[nring]       = *mdiff;
+
+  fcntl(mdiff_sock, F_SETFL, O_NONBLOCK);
+
+  unlock_entity();
+  verbose(REVERSE "Entity written.\n" RESET);
+  init_threads();
+  if (nring > 0) // if not it means that there was no thread before
+    restart_mdiffmanager();
+    /* restart_mdiffmanager_request(); */
+}
+
+
+
+static void actualize_receiver(int ring, char ip_next[16], uint16_t port_next, 
+    const struct sockaddr_in *receiver)
+{
+  verbose(REVERSE "Writing new entity...\n" RESET);
+  wlock_entity();
+
+  strcpy(ent->ip_next[ring], ip_next);
+  ent->port_next[ring] = port_next;
+  _ent->receiver[ring] = *receiver;
+
+  unlock_entity();
+  verbose(REVERSE "Entity written.\n" RESET);
+}
+
+
+
+#define if_receptLine(msg, sock) \
+  if ( (msg = receptLine(sock)) == NULL ) { \
+    verbose(REVERSE "Connection lost with client, timeout excedeed.\n"); return; }
 
 static void insert(int ring, char *n_msg, int sock2)
 {
@@ -221,22 +261,21 @@ static void insert(int ring, char *n_msg, int sock2)
   ;
 #endif
   verbose(REVERSE "Structure prepared.\n" RESET);
-  // modifying entity
-  verbose(REVERSE "Insertion server: modifying current entity...\n" RESET);
-  verbose(REVERSE "Insertion server: current entity :\n%s\n" RESET, entitytostr(ring));
-  strcpy(ent->ip_next[ring], newc->ip);
-  ent->port_next[ring] = newc->port;
-  verbose(REVERSE "Insertion server: modified entity :\n%s\n" RESET, entitytostr(ring));
-  free(newc);
   // ACKC confirmation sending
   verbose(REVERSE "Insertion server: sending ACKC confirmation message...\n" RESET);
   send(sock2, "ACKC\n", 5, 0);
   verbose(REVERSE "Insertion server: message ACKC sent.\n" RESET);
+  // modifying entity
+  verbose(REVERSE "Insertion server: modifying current entity...\n" RESET);
+  verbose(REVERSE "Insertion server: current entity :\n%s\n" RESET, entitytostr(ring));
+  /* actualize_receiver(ring, newc->ip, newc->port, &receiver); */
+  strcpy(ent->ip_next[ring], newc->ip);
+  ent->port_next[ring] = newc->port;
+  /* verbose(REVERSE "Insertion server: modified entity :\n%s\n" RESET, entitytostr(ring)); */
+  free(newc);
   _ent->receiver[ring] = receiver;
   verbose(REVERSE "Actualizing receviver...\n" RESET);
   verbose(REVERSE "Current structure replaced.\n" RESET);
-  // closing connection
-  /*close(sock2);*/
   debug("insert", MAGENTA "modified entity:\n%s", entitytostr(ring));
 }
 
@@ -267,10 +306,11 @@ static void duplicate(char *d_msg, int sock2)
   ipnozeros(ip, dupl->ip_diff);
   verbose(REVERSE "Subscribing to multicast channel ip %s on port %d.\n" RESET, 
       ip, dupl->port_diff);
-  if (!multicast_subscribe(sockmdiff, dupl->port_diff, ip)) {
+  struct sockaddr_in mdiff_addr;
+  if (!multicast_subscribe(&mdiff_addr, sockmdiff, dupl->port_diff, ip)) {
     verbose(REVERSE "Can't subscribe to channel ip %s on port %d.\n" RESET
         "Dupplication failed.\n", ip, dupl->port_diff);
-    close(_ent->sockmdiff[nring+1]);
+    close(sockmdiff);
     free(dupl);
     return;
   }
@@ -282,15 +322,16 @@ static void duplicate(char *d_msg, int sock2)
   send(sock2, msg, 10, 0);
   verbose(REVERSE "Confirmation message sent->\n" RESET);
 
-  verbose(REVERSE "Modifying entity...\n" RESET);
-  ++nring;
-  _ent->receiver[nring] = receiver;
-  _ent->sockmdiff[nring] = sockmdiff;
-  ent->port_next[nring] = dupl->port;
-  strcpy(ent->ip_next[nring], dupl->ip);
-  ent->mdiff_port[nring] = dupl->port_diff;
-  strcpy(ent->mdiff_ip[nring], dupl->ip_diff);
-  verbose(REVERSE "Entity modified.\n" RESET);
+  add_ring(dupl->ip, dupl->port, dupl->ip_diff, dupl->port_diff, &receiver, sockmdiff, &mdiff_addr);
+  /* verbose(REVERSE "Modifying entity...\n" RESET); */
+  /* ++nring; */
+  /* _ent->receiver[nring] = receiver; */
+  /* _ent->sockmdiff[nring] = sockmdiff; */
+  /* ent->port_next[nring] = dupl->port; */
+  /* strcpy(ent->ip_next[nring], dupl->ip); */
+  /* ent->mdiff_port[nring] = dupl->port_diff; */
+  /* strcpy(ent->mdiff_ip[nring], dupl->ip_diff); */
+  /* verbose(REVERSE "Entity modified.\n" RESET); */
   verbose(REVERSE "Ring number actualized. Number of rings: %d.\n" RESET, nring+1);
   verbose(REVERSE "Dupplication finished.\n" RESET);
 }
@@ -299,7 +340,7 @@ static void duplicate(char *d_msg, int sock2)
  */
 static void insertionsrv()
 {
-  verbose(REVERSE "Starting insertion server...\n" RESET);
+  /* verbose(REVERSE "Starting insertion server...\n" RESET); */
   // socket preparation
   int sock = socket(PF_INET,SOCK_STREAM, 0);
   struct sockaddr_in addr_sock;
@@ -336,9 +377,10 @@ static void insertionsrv()
       perror("Error accept.");
       continue;
     }
+    fcntl(sock2, F_SETFL, O_NONBLOCK);
     verbose(REVERSE "Insertion server: connection established.\n" RESET);
     verbose(REVERSE "Locking access to entity...\n" RESET);
-    wlock_entity();
+    /* wlock_entity(); */
     verbose(REVERSE "Access locked.\n" RESET);
     // insertion protocol
     // WELC message sending
@@ -350,16 +392,21 @@ static void insertionsrv()
     free(msg);
     // NEWC message reception
     verbose(REVERSE "Insertion server: waiting for NEWC message...\n" RESET);
-    msg = receptLine(sock2);
+    /* msg = receptLine(sock2); */
+    if_receptLine(msg, sock2);
     verbose(REVERSE "Insertion server: received : \"%s\".\n" RESET, msg);
     if (strncmp(msg, "NEWC", 4) == 0)
       insert(nring, msg, sock2);
-    else if (strncmp(msg, "DUPL", 4) == 0)
-      duplicate(msg, sock2);
+    else if (strncmp(msg, "DUPL", 4) == 0) {
+      if (nring == NRING - 1)
+        send(sock2, "MAX\n", 4, 0);
+      else
+        duplicate(msg, sock2);
+    }
     else
       verbose(REVERSE "Message not supported: \"%s\".\n" RESET, msg);
     verbose(REVERSE "Unlocking access to entity...\n" RESET);
-    unlock_entity();
+    /* unlock_entity(); */
     verbose(REVERSE "Access unlocked.\n" RESET);
     verbose(REVERSE "Closing connection...\n" RESET);
     close(sock2);
@@ -380,7 +427,11 @@ static void *packet_treatment(void *args)
   return NULL;
 }
 
-
+void decrement_test_counter()
+{
+  if (--test_data->count == 0)
+    pthread_cond_signal(&mutex->test.c);
+}
 
 static void test_ring()
 {
@@ -388,6 +439,7 @@ static void test_ring()
   rlock_entity();
   test_data->nring = nring+1;
   test_data->count = test_data->nring;
+  int restart_mdiff = 0;
   char port_diff[5];
   debug("ring_test", GREEN "test beginning...");
   for (int i = 0; i < test_data->nring; i++) {
@@ -404,6 +456,7 @@ static void test_ring()
   while (test_data->count && err == 0) {
     err = pthread_cond_timedwait(&mutex->test.c, &mutex->test.m, &to);
   }
+  lock_mdiff();
   if (err != 0) {
     debug("test_ring", GREEN "end of timeout.");
     for (int i = 0; i < test_data->nring; i++) {
@@ -413,13 +466,39 @@ static void test_ring()
       }
       else {
         debug("test_ring", GREEN "ring %d: checking failed. Ring broken...", i);
-        continue;
+        sendto(_ent->socksend, "DOWN", 4, 0,
+            (struct sockaddr *) &_ent->mdiff[i],
+          (socklen_t)sizeof(struct sockaddr_in));
+        verbose(RED REVERSE "Ring %d broken, DOWN sent.\n" RESET, i);
+        rm_ring(i);
+        restart_mdiff = 1;
+        debug("test_ring", GREEN "DOWN Sent to ring %d", i);
       }
     }
   }
   else
     debug("test_ring", GREEN "all ring checked.");
+  if (restart_mdiff) {
+    if (nring == -1) {
+      debug("test_ring", "nring == -1");
+      verbose(REVERSE "Last ring quit.\n" RESET);
+      close_tcpserver();
+    }
+    else
+      restart_mdiffmanager();
+  }
+  /* if (nring == -1) { */
+  /*   verbose(REVERSE "Last ring quit.\n" RESET); */
+  /*   /1* close_threads(); *1/ */
+  /* } */
+  /* else { */
+  /*   debug("rm_ring", "Actual number of ring: %d", nring); */
+  /*   if (restart_mdiff) */
+  /*     restart_mdiffmanager(); */
+  /*   /1* restart_mdiffmanager_request(); *1/ */
+  /* } */
   pthread_mutex_unlock(&mutex->test.m);
+  unlock_mdiff();
 }
 
 
@@ -512,7 +591,7 @@ void sendpacket_all(const char *content)
 {
   rlock_entity();
   debug("sendpacket_all(char *content)", 
-      "Sending packet multiple ring (%d):\n---\n%s\n---\n...\n", nring, content);
+      "Sending packet multiple ring (%d):\n---\n%s\n---\n...\n", nring+1, content);
   for (int i = 0; i < nring + 1; ++i) {
     sendto(_ent->socksend, content, 512, 0,
         (struct sockaddr *)&_ent->receiver[i],
@@ -567,7 +646,9 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen,
 
 
 
-static int init_sockets(uint16_t udp_listen) {
+static int init_sockets()
+{
+  /* int r = 0; */
   if (_ent->socklisten == NEED_SOCKET) {
     // Socket creation
     verbose(REVERSE "Creating sockets for UDP communication...\n" RESET);
@@ -578,53 +659,15 @@ static int init_sockets(uint16_t udp_listen) {
       fprintf(stderr, "Binding error. Ring creation failed.\n");
       return 0;
     }
-    verbose(REVERSE "Binding done.\n" RESET);
+    verbose(REVERSE "Binding to port %d done.\n" RESET, ent->udp);
   }
   if (_ent->socksend == NEED_SOCKET) {
     _ent->socksend  = socket(PF_INET, SOCK_DGRAM, 0);
     verbose(REVERSE "Socket for udp sending created.\n" RESET);
-  }
-  return _ent->socklisten != -1 && _ent->socksend != -1;
-}
-
-
-
-static void actualize_receiver(int ring, char ip_next[16], uint16_t port_next, 
-    const struct sockaddr_in *receiver) {
-  verbose(REVERSE "Writing new entity...\n" RESET);
-  wlock_entity();
-
-  strcpy(ent->ip_next[ring], ip_next);
-  ent->port_next[ring] = port_next;
-  _ent->receiver[ring] = *receiver;
-
-  unlock_entity();
-  verbose(REVERSE "Entity written.\n" RESET);
-}
-
-
-static void add_ring(char ip_next[16], uint16_t port_next, char mdiff_ip[16],
-    uint16_t mdiff_port, const struct sockaddr_in *receiver, int mdiff_sock) {
-
-  verbose(REVERSE "Writing new entity...\n" RESET);
-  wlock_entity();
-
-  ++nring;
-
-  strcpy(ent->ip_next[nring], ip_next);
-  strcpy(ent->mdiff_ip[nring], mdiff_ip);
-
-  ent->port_next[nring]    = port_next;
-  ent->mdiff_port[nring]   = mdiff_port;
-  _ent->receiver[nring]    = *receiver;
-  _ent->sockmdiff[nring]   = mdiff_sock;
-  poll_mdiff[nring].fd     = mdiff_sock;
-  poll_mdiff[nring].events = POLLIN;
-
-  fcntl(mdiff_sock, F_SETFL, O_NONBLOCK);
-
-  unlock_entity();
-  verbose(REVERSE "Entity written.\n" RESET);
+    /* int ok=1; */
+    /* r=setsockopt(_ent->socksend,SOL_SOCKET,SO_BROADCAST,&ok,sizeof(ok)); */
+    }
+    return _ent->socklisten != -1 && _ent->socksend != -1; // && r == 0;
 }
 
 
@@ -671,7 +714,7 @@ int create_ring2(char *mdiff_ip, uint16_t mdiff_port)
     fprintf(stderr, "Maximum number of ring reached (%d).\n", NRING);
     return 0;
   }
-  if (!init_sockets(ent->udp)) {
+  if (!init_sockets()) {
     fprintf(stderr, "Socket error.\n");
     return 0;
   }
@@ -690,7 +733,8 @@ int create_ring2(char *mdiff_ip, uint16_t mdiff_port)
   // authorize multidiff on same machine
   verbose(REVERSE "Subscibing to multicast channel %s on port %d...\n" RESET, 
       mdiff_ip, mdiff_port);
-  if (!multicast_subscribe(sockmdiff, mdiff_port,
+  struct sockaddr_in mdiff_addr;
+  if (!multicast_subscribe(&mdiff_addr, sockmdiff, mdiff_port,
         mdiff_ip)) {
     fprintf(stderr, "Can't subscribe to channel ip %s on port %d.\n"
         "Ring creation failed.\n", mdiff_ip,
@@ -701,9 +745,8 @@ int create_ring2(char *mdiff_ip, uint16_t mdiff_port)
   wlock_entity();
   char mdiff_ipr[16];
   ipresize_noalloc(mdiff_ipr, mdiff_ip);
-  add_ring(ent->ip_self, ent->udp, mdiff_ipr, mdiff_port, &receiver, sockmdiff);
+  add_ring(ent->ip_self, ent->udp, mdiff_ipr, mdiff_port, &receiver, sockmdiff, &mdiff_addr);
 
-  init_threads();
   verbose(REVERSE "Ring created.\n" RESET);
   return 1;
 }
@@ -733,6 +776,7 @@ int join2(const char *host, const char *tcpport)
   verbose(REVERSE "Message received : \" RESET%s\".\n", msg);
   verbose(REVERSE "Parsing message...\n" RESET);
   welc_msg *welc = parse_welc(msg);
+  debug("insert", "welc message:\"%s\"", msg);
   free(msg);
   if (welc == NULL) {
     fprintf(stderr, "Protocol error: bad response.\nInsertion failed.\n");
@@ -749,7 +793,7 @@ int join2(const char *host, const char *tcpport)
   // ACKC message reception
   verbose(REVERSE "Waiting for ACKC confirmation message...\n" RESET);
   msg = receptLine(sock);
-  verbose(REVERSE "Message received: \" RESET%s\".\n", msg);
+  verbose(REVERSE "Message received:" RESET " \"%s\".\n", msg);
   if (strcmp(msg, "ACKC") != 0) {
     fprintf(stderr, "Protocol error: bad response.\nInsertion failed.\n");
     free(welc);
@@ -757,7 +801,7 @@ int join2(const char *host, const char *tcpport)
     return 0;
   }
 
-  if (!init_sockets(ent->udp)) {
+  if (!init_sockets()) {
     fprintf(stderr, "Socket error.\n");
     return 0;
   }
@@ -775,7 +819,8 @@ int join2(const char *host, const char *tcpport)
   ipnozeros(mdiff_ip, welc->ip_diff);
   verbose(REVERSE "Subscribing to channel %s...\n" RESET, mdiff_ip);
   int sockmdiff = socket(AF_INET, SOCK_DGRAM, 0);
-  if (!multicast_subscribe(sockmdiff, welc->port_diff,
+  struct sockaddr_in mdiff_addr;
+  if (!multicast_subscribe(&mdiff_addr, sockmdiff, welc->port_diff,
         mdiff_ip)) {
     fprintf(stderr, 
         "can't subscribe to multicast channel ip %s on port %d\n",
@@ -783,11 +828,10 @@ int join2(const char *host, const char *tcpport)
     return 0;
   }
   
-  add_ring(welc->ip, welc->port, welc->ip_diff, welc->port_diff, &receiver, sockmdiff);
+  add_ring(welc->ip, welc->port, welc->ip_diff, welc->port_diff, &receiver, sockmdiff, &mdiff_addr);
   verbose(REVERSE "Insertion done.\n" RESET);
   debug("insert", MAGENTA "modified entity:\n%s", entitytostr( nring ));
 
-  init_threads();
   return 1;
 }
 
@@ -834,10 +878,14 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
   msg = receptLine(sock);
   verbose(REVERSE "Message received: \"%s\".\n" RESET, msg);
   if (strncmp(msg, "ACKC ", 5) != 0 || strlen(msg) != 9) {
-    fprintf(stderr, "Protocol error: bad response from server.\n"
-        "Insertion failed.\n");
     free(welc);
     free(msg);
+    if (strcmp(msg, "MAX"))
+      fprintf(stderr, "Distant host has reached its maximum number of ring.\n"
+          "Duplication failed.\n");
+    else
+      fprintf(stderr, "Protocol error: bad response from server.\n"
+        "Insertion failed.\n");
     return 0;
   }
   if (!isport(&msg[5])) {
@@ -847,7 +895,7 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
   }
 
   // Preparing structure
-  if (!init_sockets(ent->udp)) {
+  if (!init_sockets()) {
     fprintf(stderr, "Socket error.\n");
     return 0;
   }
@@ -863,7 +911,8 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
   // multi diff
   verbose(REVERSE "Subscribing to channel %s...\n" RESET, mdiff_ip);
   int sockmdiff = socket(AF_INET, SOCK_DGRAM, 0);
-  if (!multicast_subscribe(sockmdiff, mdiff_port, mdiff_ip)) {
+  struct sockaddr_in mdiff_addr;
+  if (!multicast_subscribe(&mdiff_addr, sockmdiff, mdiff_port, mdiff_ip)) {
     fprintf(stderr, 
         "can't subscribe to multicast channel ip %s on port %d\n",
         mdiff_ip, welc->port_diff);
@@ -872,11 +921,10 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
   
   char mdiff_ipr[16];
   ipresize_noalloc(mdiff_ipr, mdiff_ip);
-  add_ring(welc->ip, welc->port, mdiff_ipr, mdiff_port, &receiver, sockmdiff);
+  add_ring(welc->ip, welc->port, mdiff_ipr, mdiff_port, &receiver, sockmdiff, &mdiff_addr);
   verbose(REVERSE "Dupplication done.\n" RESET);
   debug("duplicate_rqst", MAGENTA "modified entity:\n%s", entitytostr( nring ));
 
-  init_threads();
 
   return 1;
 }
@@ -887,7 +935,8 @@ void *ring_tester(void *args)
   unsigned interval = 20;
   while (1) {
     sleep(interval);
-    test_ring();
+    if (nring > -1)
+      test_ring();
   }
 }
 
@@ -895,28 +944,38 @@ void *ring_tester(void *args)
 void rm_ring(int ring)
 {
   wlock_entity();
-  debug(RED "rm_ring", RED "removing ring %d", ring);
-  if (ring < nring) {
-    _ent->receiver[ring] = _ent->receiver[nring];
-    strcpy(ent->ip_next[ring], ent->ip_next[nring]);
-    ent->port_next[ring] = ent->port_next[nring];
-    strcpy(ent->mdiff_ip[ring], ent->mdiff_ip[nring]);
-    ent->mdiff_port[ring] = ent->mdiff_port[nring];
+  if (nring > -1) {
+    debug(RED "rm_ring", RED "removing ring %d", ring);
+    close(_ent->sockmdiff[ring]);
+    if (ring < nring) {
+      _ent->receiver[ring]  = _ent->receiver[nring];
+      _ent->sockmdiff[ring] = _ent->sockmdiff[nring];
+      _ent->mdiff[ring]     = _ent->mdiff[nring];
+
+      ent->port_next[ring]  = ent->port_next[nring];
+      ent->mdiff_port[ring] = ent->mdiff_port[nring];
+      strcpy(ent->ip_next[ring], ent->ip_next[nring]);
+      strcpy(ent->mdiff_ip[ring], ent->mdiff_ip[nring]);
+
+      test_data->ring_check[ring] = test_data->ring_check[nring];
+    }
+    --test_data->nring;
+    decrement_test_counter();
+
+    verbose(REVERSE "Ring %d quit.\n" RESET, ring);
+    debug(RED "rm_ring", RED "Ring %d quit, test_data->nring: %d.\n", ring, test_data->nring);
+    --nring;
+    /* if (nring == -1) { */
+    /*   verbose(REVERSE "Last ring quit.\n" RESET); */
+    /*   close_threads(); */
+    /* } */
+    /* else { */
+    /*   debug("rm_ring", "Actual number of ring: %d", nring); */
+    /*   restart_mdiffmanager(); */
+    /*   /1* restart_mdiffmanager_request(); *1/ */
+    /* } */
   }
-  close(_ent->sockmdiff[ring]);
-  verbose(REVERSE "Ring %d quit.\n" RESET, ring);
-  debug(RED "rm_ring", RED "Ring %d quit.\n", ring);
   unlock_entity();
-  if (--nring == -1) {
-    verbose(REVERSE "Last ring quit.\n" RESET);
-    close_threads();
-  }
-  else {
-    debug("rm_ring", "Actual number of ring: %d", nring);
-    debug("rm_ring", "Sending SIGUSR1 signal to mdiff_manager...");
-    int r = pthread_kill(thread->mdiff_manager, SIGUSR1);
-    debug("rm_ring", "SIGUSR1 sent, kill retval: %d.", r);
-  }
 }
 
 
@@ -924,52 +983,77 @@ void rm_ring(int ring)
 
 void *mdiff_manager(void *args)
 {
-  sigset_t mask;
-	sigemptyset (&mask);
-	sigaddset (&mask, SIGUSR1);
-  /* pthread_sigmask(SIG_BLOCK, &mask, NULL); */
   char buff[513];
-  int ret;
 #ifdef DEBUG
-  int count = 0;
+  static int count = 0;
+  debug("mdiff_manager", "ppoll number %d, nring: %d...", ++count, nring);
 #endif
-  while (1) {
-    debug("mdiff_manager", "ppoll number %d...", ++count);
-    int ret = ppoll(poll_mdiff, nring+1, NULL, &mask);
-    if (ret > 0) {
-#ifdef DEBUG
-      int found = 0;
-#endif
-      for (int i = 0; i < nring; ++i) {
-        if (poll_mdiff[i].revents == POLLIN) {
-#ifdef DEBUG
-          found = 1;
-#endif
-          int rec1 = recv(poll_mdiff[i].fd, buff, 512, 0);
-          if (rec1 >= 0) {
-            buff[rec1] = 0;
-            debug("mdiff_manager", "message received: %s", buff);
-            if (strcmp(buff, "DOWN"))
-              rm_ring(i);
-          }
-#ifdef DEBUG
-          else {
-            debug("mdiff_manager", "poll_mdiff[%d].revents == POLLIN whereas recv returns %d",
-                i, rec1);
-          }
-#endif
-        }
-      }
-#ifdef DEBUG
-      if (!found) 
-        debug("mdiff_manager", "Is it SIGUSR1?");
-#endif
-    }
-#ifdef DEBUG
-    else {
-      debug("mdiff_manager", "pprol retval: %d", ret);
-    }
-#endif
+  for (int i = 0; i < NRING; ++i) {
+    poll_mdiff[i].events = POLLIN;
+    poll_mdiff[i].fd = _ent->sockmdiff[i];
   }
+  int broken[NRING] = {0};
+  int ret = poll(poll_mdiff, nring+1, -1);
+  lock_mdiff();
+  if (ret > 0) {
+    /* pthread_mutex_lock(&mutex->mdiff); */
+    /* mdiff_working = 1; */
+    debug(RED "mdiff_manager", RED "poll ret: %d" RESET, ret);
+    debug(RED "mdiff_manager", RED "after lock_mdiff, entering loop..." RESET);
+    for (int i = 0; i < nring + 1; ++i) {
+      debug("mdiff_manager", "testing sock %d: %d (POLLIN = %d)", i, 
+          poll_mdiff[i].revents, POLLIN);
+      if (poll_mdiff[i].revents == POLLIN) {
+        int rec1 = recv(poll_mdiff[i].fd, buff, 512, 0);
+        if (rec1 >= 0) {
+          buff[rec1] = 0;
+          debug(RED "diff_manager", "message received: %s, sock %d" RESET, buff, i);
+          if (strcmp(buff, "DOWN") == 0) {
+            debug(RED "mdiff_manager", RED "RING %d DOWN!" RESET, i);
+            verbose(RED REVERSE "Ring %d down.\n" RESET, i);
+            broken[i] = 1;
+          }
+          else {
+            debug("mdiff_manager", "strcmp(%s,DOWN) == %d, strlen(%s) = %d", buff, strcmp(buff, "DOWN"), buff, strlen(buff));
+          }
+        }
+#ifdef DEBUG
+        else {
+          debug("mdiff_manager", "poll_mdiff[%d].revents == POLLIN whereas recv returns %d",
+              i, rec1);
+        }
+#endif
+      }
+    }
+    for (int i = NRING - 1; i >= 0; --i) {
+      if (broken[i]) {
+        /* verbose(REVERSE RED "Ring %d down.\n", i); */
+        rm_ring(i);
+        debug(RED "mdiff_manager", RED "REMOVED RING %d" RESET, i);
+      }
+    }
+  }
+#ifdef DEBUG
+  else {
+    debug("mdiff_manager", "pprol retval: %d", ret);
+  }
+#endif
+
+  unlock_mdiff();
+  if (nring == -1) {
+    verbose(REVERSE "Last ring quit.\n" RESET);
+    close_tcpserver();
+    /* close_threads(); */
+  }
+  else {
+    debug("rm_ring", "Actual number of ring: %d", nring);
+    /* restart_mdiffmanager(); */
+    /* restart_mdiffmanager_request(); */
+  }
+  /* pthread_cond_signal(&mutex->mdiff_restart_cond); */
+  return NULL;
 }
+
+
+
 

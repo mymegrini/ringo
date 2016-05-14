@@ -139,8 +139,7 @@ static int action_test(const char *message, const char *content, int lookup_flag
             if (strncmp(content, ent->mdiff_ip[i], 15) == 0 &&
                     strncmp(&content[16], mdiff_port, 4) == 0) {
                 test_data->ring_check[i] = 1;
-                if (--test_data->count == 0)
-                    pthread_cond_signal(&mutex->test.c);
+                decrement_test_counter();
                 return 0;
             }
         }

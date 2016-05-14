@@ -1,6 +1,7 @@
 import java.util.*;
 import java.net.*;
 import java.io.*;
+import java.math.*;
 
 public class Udp_thread implements Runnable{
     Entity ent;
@@ -36,7 +37,6 @@ public class Udp_thread implements Runnable{
                     mess_recv_MEMB(tab,mess_recv);
                     mess_recv_GBYE(tab,mess_recv);
                     mess_recv_EYBG(tab);
-                    //if(mess_recv_EYBG(tab)) break;
                     mess_recv_TEST(tab,mess_recv);
                     mess_recv_DIFF(tab,mess_recv);
                     mess_recv_TRANS(tab,mess_recv);
@@ -139,16 +139,16 @@ public class Udp_thread implements Runnable{
                         long t=file.length();
                         fis =new FileInputStream(file);
                         String id_trans = Jring.message_id();
-                        int nb_mess =(int)(t/469);
+                        long nb_mess =(long)(t/469);
                         if(t%469!=0) nb_mess++;
-                        mess_send="APPL "+tab[1]+" TRANS### "+"ROK "+id_trans+" "+Entity.add_zero(tab[4],2)+" "+tab[5]+" "+nb_mess;
+                        mess_send="APPL "+tab[1]+" TRANS### "+"ROK "+id_trans+" "+Entity.add_zero(tab[4],2)+" "+tab[5]+" "+Entity.lend(nb_mess);
                         send_mess(ent,dso,mess_send);
-                        int i=0;
+                        long i=0;
                         int len=fis.read(data_fic);
                         while(len>=0){
                             mess_id=Jring.message_id();
                             mess_list.add(mess_id);
-                            mess_send="APPL "+mess_id+" TRANS### "+"SEN "+id_trans+" "+i+" "+Entity.add_zero(len,3)+" "+new String(data_fic);
+                            mess_send="APPL "+mess_id+" TRANS### "+"SEN "+id_trans+" "+Entity.lend(i)+" "+Entity.add_zero(len,3)+" "+new String(data_fic);
                             send_mess(ent,dso,mess_send);
                             i++;
                             data_fic=new byte[469];
@@ -173,17 +173,14 @@ public class Udp_thread implements Runnable{
                 else System.out.println("The file "+tab[5]+" is not present in the ring");
             }
             if(tab.length==8 && tab[3].equals("ROK")){
-                if(r){
-                    //FileOutputStream fos = new FileOutputStream(new File(tab[6]));
-                    trans_list.add(new Trans(tab[4],tab[6],tab[7]));
-                }
+                if(r) trans_list.add(new Trans(tab[4],tab[6],tab[7]));
                 else send_mess(ent,dso,mess_recv);
             }
             int i =  Trans.search(trans_list,tab[4]);
             if(tab.length>=8 && tab[3].equals("SEN")){
                 tab = mess_recv.split(" ",8);
                 if(i!=-1){
-                    if(trans_list.get(i).num_mess==Integer.parseInt(tab[5])){
+                    if(trans_list.get(i).num_mess==Entity.denl(tab[5])){
                         try{
                             data_fic=new byte[469];
                             data_fic = tab[7].getBytes();
