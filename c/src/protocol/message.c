@@ -100,8 +100,10 @@ static void messageid(char* hash) {
 
 static int action_whos(const char *message, const char *content, int lookup_flag) {
     // message already seen
-    if (lookup_flag)
+    if (lookup_flag) {
+      verbose(UNDERLINED "WHOS:" RESET " message already seen, nothing to do.\n");
         return 0;
+    }
     if (strlen(message) > 13) {
         debug("action_whos", "content should be empty: \"%s\" = %d",
               content, *content);
@@ -122,35 +124,6 @@ static int action_memb(const char* message, const char* content, int lookup_flag
     return 0;
 }
 
-/*static int action_test2(char *message, char *content, int lookup_flag) {*/
-    /*debug("action_test", RED "entering function...");*/
-    /*if (content[15] != ' ' || content[20] != 0) {*/
-        /*debug("action_test", RED "content not following the protocol."\*/
-                /*"content: \"%s\"", content);*/
-        /*return 1;*/
-    /*}*/
-    /*if (lookup_flag) {*/
-        /*char mdiff_port[5];*/
-        /*int fixed_nring = getnring();*/
-        /*for (int i = 0; i < fixed_nring + 1 && ring_check[i] != -1; ++i) {*/
-            /*itoa4(mdiff_port, ent->mdiff_port[i]);*/
-            /*// find ring associated with message and actualize the checking*/
-            /*if (strncmp(content, ent->mdiff_ip[i], 15) == 0 &&*/
-                    /*strncmp(&content[16], mdiff_port, 4) == 0 &&*/
-                    /*ring_check[i] != -1) {*/
-                /*//ring_check[i] = 1;*/
-                /*rc[i] = 1;*/
-                /*debug("action_test", */
-                        /*RED "correspondance found, ring_check[%d]:%d", i, ring_check[i]);*/
-                /*return 0;*/
-            /*}*/
-        /*}*/
-    /*}*/
-    /*else {*/
-        /*sendpacket_all(message);*/
-    /*}*/
-    /*return 0;*/
-/*}*/
 static int action_test(const char *message, const char *content, int lookup_flag) {
     debug("action_test", RED "entering function...");
     if (content[15] != ' ') {
@@ -205,13 +178,14 @@ int parsemsg(char *message) {
     idm[8] = 0;
     char *content = message+14;
 
-    verbose("Parsing message %s of type %s...\n", idm, type);
+    verbose("Parsing %s message %s...\n", type, idm);
     int lookup_flag = lookup(idm);
     debug("parsemsg", "message %s, lookup: %d", type, lookup_flag);
     // search action to do
     for (int i = 0; pmsg[i].type[0] != 0; i++)
         if (strcmp(type, pmsg[i].type) == 0) {
-            return (pmsg[i].action(message, content, lookup_flag));
+          verbose("Executing action %s.\n", type);
+          return (pmsg[i].action(message, content, lookup_flag));
         }
     // message not supported
     verbose("Message of type %s not supported.\n", type);

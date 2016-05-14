@@ -23,5 +23,6 @@ typedef struct info_t {
 } info_t;
 
 extern info_t * const info;
+extern volatile const int * const ring_number;
 
 #endif /* PROTOCOL_INTERFACE_H */

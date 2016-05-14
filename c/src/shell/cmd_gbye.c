@@ -5,6 +5,8 @@
 #include "../protocol/network.h"
 #include "../protocol/thread.h"
 
+#include <readline/readline.h>
+#include <getopt.h>
 
 static struct goodbye_data 
 {
@@ -13,6 +15,8 @@ static struct goodbye_data
   pthread_mutex_t mutex;
 } _data = { .wait = 0 };
 
+static pthread_t wait_gbye_t[NRING];
+static int waiting = 0;
 
 
 static struct goodbye_data *gbye_data = &_data;
@@ -170,17 +174,23 @@ static int compare( const void* a, const void* b);
 static void gbye_all_rings(void (*no_more_ring_action) (void))
 /* static void gbye_all_rings() */
 {
-    pthread_t wait_gbye_t;
+    /* pthread_t wait_gbye_t; */
+    /* pthread_t *wait_gbye_t = malloc((*ring_number+1)*sizeof(pthread_t)); */
+  if (!waiting) {
+    waiting = 1;
     for (int n = *ring_number; n >= 0; --n) {
       goodbye_args *args = malloc(sizeof(goodbye_args));
       args->ring = n;
       args->no_more_ring_action = no_more_ring_action;
-      pthread_create(&wait_gbye_t, NULL, gbye, args);
+      pthread_create(wait_gbye_t+n, NULL, gbye, args);
       /* int *arg = malloc(sizeof(int)); */
       /* int *arg = malloc(sizeof(int)); */
       /* *arg = n; */
       /* pthread_create(&wait_gbye_t, NULL, gbye, arg); */
     }
+    for (int n = *ring_number; n >= 0; --n)
+      pthread_join(wait_gbye_t[n], NULL);
+  }
 }
 
 
@@ -220,17 +230,77 @@ int cmd_gbye(int argc, char **argv)
 
 
 
-int cmd_exit(int argc, char **argv)
+////////////////////////////////////////////////////////////////////////////////
+// EXIT
+////////////////////////////////////////////////////////////////////////////////
+
+#define   OPT_HELP      'h'
+#define   OPTL_HELP     "help"
+#define   OPT_FORCE     'f'
+#define   OPTL_FORCE    "force"
+
+#define   OPT_STRING    "hf"
+
+static struct option longopts_exit[] = {
+  {OPTL_HELP,  no_argument,   0,   OPT_HELP},
+  {OPTL_FORCE, no_argument,   0,   OPT_FORCE},
+  {0,          0,             0,   0}
+};
+
+
+
+static void usage_exit(const char *argv0) {
+  printf("Usage:\t%s [-h --force]\n", argv0);
+}
+
+
+
+static void help_exit(const char *argv0) {
+  usage_exit(argv0);
+}
+
+void exit_properly() 
 {
   if (*ring_number >= 0)
-    gbye_all_rings(close_threads_and_exit);
+    gbye_all_rings(close_threads_and_shell);
   else {
-    msg_exit();
-    exit(0);
+    close_threads_and_shell();
   }
+}
+
+
+int cmd_exit(int argc, char **argv)
+{
+  char c;
+  int indexptr;
+  optind = 0;
+  while ((c = getopt_long(argc, argv, OPT_STRING,
+          longopts_exit, &indexptr)) != -1) {
+    switch (c) {
+      case OPT_HELP:
+        help_exit(argv[0]);
+        return 0;
+        break;
+      case OPT_FORCE:
+        close_threads();
+        for (int i = 0; i <= *ring_number; ++i)
+          pthread_cancel(wait_gbye_t[i]);
+        pthread_exit(NULL);
+        return 0;
+        break;
+      default:
+        usage_exit(argv[0]);
+        return 1;
+    }
+  }
+
+  exit_properly();
+
   return 0;
 }
 
+
+//// END OF EXIT
 
 
 static int compare( const void* a, const void* b)

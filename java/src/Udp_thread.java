@@ -7,19 +7,15 @@ public class Udp_thread implements Runnable{
     static ArrayList<String> mess_list;
     static ArrayList<Trans> trans_list;
     DatagramSocket dso;
-    DatagramSocket dso_diff;
+    MulticastSocket mso;
     
 
-    public Udp_thread(Entity e,ArrayList<String> list,DatagramSocket dso_d){
-        try{
-            ent=e;
-            mess_list=list;
-            trans_list=new ArrayList<Trans>();
-            dso =  new DatagramSocket(ent.udp);
-            dso_diff=dso_d;
-        }catch(SocketException f){
-            System.out.println(f);
-        }
+    public Udp_thread(Entity e,ArrayList<String> list,DatagramSocket dso_u,MulticastSocket mso_d){
+        ent=e;
+        mess_list=list;
+        trans_list=new ArrayList<Trans>();
+        dso =  dso_u;
+        mso=mso_d;
     }
     
     public void run(){
@@ -70,10 +66,9 @@ public class Udp_thread implements Runnable{
     
     public void mess_recv_MEMB(String[] tab,String mess_recv){
         if(tab.length==5 && tab[0].equals("MEMB")){
-            if(!mess_list.remove(tab[1]))  send_mess(ent,dso,mess_recv);
+            if(!mess_list.remove(tab[1])) send_mess(ent,dso,mess_recv);
         }
     }
-    
     public void mess_recv_GBYE(String[] tab,String mess_recv){
         if(tab.length==6 && tab[0].equals("GBYE")){
             String mess_send;
@@ -102,11 +97,16 @@ public class Udp_thread implements Runnable{
     }
 
     public void mess_recv_EYBG(String[] tab){
-        if(tab.length==2 && tab[0].equals("EYBG") && mess_list.remove(tab[1])){
-            dso_diff.close();
-            dso.close();
-            //System.exit(0);
-            System.out.println("Write quit to leave");
+        try{
+            if(tab.length==2 && tab[0].equals("EYBG") && mess_list.remove(tab[1])){
+                mso.leaveGroup(InetAddress.getByName(ent.mdiff_ip));
+                if(ent.port_next2!=-1) mso.leaveGroup(InetAddress.getByName(ent.mdiff_ip2));
+                dso.close();
+                System.exit(0);
+                //System.out.println("Write quit to leave");
+            }
+        }catch(Exception e){
+            System.out.println(e);
         }
     }
     
@@ -151,11 +151,13 @@ public class Udp_thread implements Runnable{
                             mess_send="APPL "+mess_id+" TRANS### "+"SEN "+id_trans+" "+i+" "+Entity.add_zero(len,3)+" "+new String(data_fic);
                             send_mess(ent,dso,mess_send);
                             i++;
+                            data_fic=new byte[469];
                             len=fis.read(data_fic);
                         }
                     }
                     catch(FileNotFoundException e){
-                        System.out.println("fichier n'est pas present ici");
+                        //System.out.println("fichier n'est pas present ici");
+                        send_mess(ent,dso,mess_recv);                        
                     }
                     catch(IOException e){
                         e.printStackTrace();
@@ -168,10 +170,13 @@ public class Udp_thread implements Runnable{
                         }
                     }
                 }
-                else System.out.println("The file is not present in the ring");
+                else System.out.println("The file "+tab[5]+" is not present in the ring");
             }
             if(tab.length==8 && tab[3].equals("ROK")){
-                if(r) trans_list.add(new Trans(tab[4],tab[6]));
+                if(r){
+                    //FileOutputStream fos = new FileOutputStream(new File(tab[6]));
+                    trans_list.add(new Trans(tab[4],tab[6],tab[7]));
+                }
                 else send_mess(ent,dso,mess_recv);
             }
             int i =  Trans.search(trans_list,tab[4]);
@@ -182,9 +187,13 @@ public class Udp_thread implements Runnable{
                         try{
                             data_fic=new byte[469];
                             data_fic = tab[7].getBytes();
-                            FileOutputStream fos=new FileOutputStream(new File(trans_list.get(i).file_name));
-                            fos.write(data_fic);
+                            trans_list.get(i).fos.write(data_fic);
                             trans_list.get(i).num_mess++;
+                            if(trans_list.get(i).num_mess==trans_list.get(i).nb_mess){
+                                System.out.println("Transfer Complete");
+                                trans_list.get(i).fos.close();
+                                trans_list.remove(i);
+                            }
                         }catch(IOException e){
                             e.printStackTrace();
                         }

@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 
+#include "../banner.h"
 
 
 
@@ -57,7 +58,6 @@ command cmd[] = {
   { "help", "Show this message.", cmd_help },
   { "info", "Display informations on current entity.", cmd_info},
   { "plug", "Add or remove plugins.", cmd_plugin},
-  { "download", "Download file.", cmd_trans},
   { "ring", "Create, duplicate and join rings.", cmd_ring},
   { "whos", "Getting to know each other...", cmd_whos },
   { NULL, NULL, NULL }
@@ -209,6 +209,7 @@ void initialize_readline ()
 
   /* Tell the completer that we want a crack first. */
   rl_attempted_completion_function = ringo_completion;
+  rl_catch_signals = 0;
 }
 
 /* Attempt to complete on the contents of TEXT.  START and END show the
@@ -259,7 +260,7 @@ char *command_generator (char *text, int state)
   }
 
   if (iter) {
-    while ((name = iterator_getname(iter)))
+    while (iter && (name = iterator_getname(iter)))
     {
       iterate(&iter);
 
@@ -275,10 +276,11 @@ char *command_generator (char *text, int state)
 //// END OF COMPLETION
 
 
+extern void exit_properly(void);
 
 static void signal_handler_exit(int signum)
 {
-  cmd_exit(0, NULL);
+  exit_properly();
 }
 
 
@@ -305,21 +307,26 @@ static void init_shell()
     homedir = getpwuid(getuid())->pw_dir;
 
   if (read_history(HISTORY_FILE) != 0) {
-    debug("init_shell", "cannot read history from %s", HISTORY_FILE);
     FILE *fp = fopen(HISTORY_FILE, "ab+");
     fclose(fp);
   }
+}
+
+static void welcome_message() {
+  printf("%s", banner[2]);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBAL
 ////////////////////////////////////////////////////////////////////////////////
 
-void run_shell() {
+void *run_shell(void *nothing) {
 
   init_shell();
   actualize_prompt();
   initialize_readline();
+
+  welcome_message();
 
   char *line = NULL;
   while(1) {
@@ -334,6 +341,7 @@ void run_shell() {
       exec_cmd(line);
     }
   }
+  return NULL;
 }
 
 

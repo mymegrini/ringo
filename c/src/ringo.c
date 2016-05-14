@@ -5,10 +5,12 @@
 #include "protocol/common.h"
 #include "protocol/protocol.h"
 #include "protocol/network.h"
+#include "protocol/thread.h"
 #include "shell/shell.h"
 #include "plugin_system/plugin_system.h"
 
 #include <pthread.h>
+#include <readline/readline.h>
 
 #include <getopt.h>
 
@@ -120,9 +122,15 @@ int main(int argc, char *argv[])
     if (do_free)
       free(plug_dir);
 
-    run_shell();
+    pthread_create(&thread->shell, NULL, run_shell, NULL);
+    pthread_join(thread->shell, NULL);
 
-    return EXIT_FAILURE;
+    rl_deprep_terminal();
+    printf("\n");
+    unload_all_plugins(&plugin_manager);
+    printf(RED "\"-_-\"\n");
+
+    exit(0);
 }
 
 
