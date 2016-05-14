@@ -245,9 +245,9 @@ renderSim(SDL_Renderer* renderer){
 
     #ifdef FRAME_RATE
     framerate();
-    #endif
-
+    #else
     SDL_Delay(10);
+    #endif
 
     return;
 }
