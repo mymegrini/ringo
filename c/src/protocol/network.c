@@ -9,6 +9,8 @@
 #include <netdb.h>
 #include <arpa/inet.h>
 
+#include <poll.h>
+
 
 ////////////////////////////////////////////////////////////////////////////////
 // LOCAL
@@ -126,16 +128,37 @@ char *getLocalIp() {
 char *receptLine(const int sock) {
   char *s = malloc(BUFSIZE);
   int size = BUFSIZE;
-  int lus = recv(sock, s, BUFSIZE, 0);
-  while (s[lus-1] != '\n') {
-    if (lus + BUFSIZE > size) {
-      size *= 2;
-      s = realloc(s, size);
+  struct pollfd p = { .fd = sock, .events = POLLIN };
+  int finished = 0;
+  int lus = 0;
+  while (!finished) {
+    if (poll(&p, 1, 1000) > 0 && p.revents == POLLIN) {
+      debug("receptline", "POLLIN");
+      lus += recv(sock, s + lus, BUFSIZE, 0);
+      if (s[lus-1] == '\n') {
+        s[lus-1] = 0;
+        return s;
+      }
+      else if (lus + BUFSIZE > size) {
+        size *= 2;
+        s = realloc(s, size);
+      }
+      /* while (s[lus-1] != '\n') { */
+      /*   if (lus + BUFSIZE > size) { */
+      /*     size *= 2; */
+      /*     s = realloc(s, size); */
+      /*   } */
+      /*   lus += recv(sock, &s[lus], BUFSIZE, 0); */
+      /* } */
+      /* s[lus-1] = 0; */
     }
-    lus += recv(sock, &s[lus], BUFSIZE, 0);
+    else {
+      debug("receptline", "NOT POLLIN");
+      free(s);
+      return NULL;
+    }
   }
-  s[lus-1] = 0;
-  return s;
+  return NULL;
 }
 
 

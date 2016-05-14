@@ -226,6 +226,10 @@ static void actualize_receiver(int ring, char ip_next[16], uint16_t port_next,
 
 
 
+#define if_receptLine(msg, sock) \
+  if ( (msg = receptLine(sock)) == NULL ) { \
+    verbose(REVERSE "Connection lost with client, timeout excedeed.\n"); return; }
+
 static void insert(int ring, char *n_msg, int sock2)
 {
   verbose(REVERSE "Insertion server: parsing NEWC message...\n" RESET);
@@ -373,6 +377,7 @@ static void insertionsrv()
       perror("Error accept.");
       continue;
     }
+    fcntl(sock2, F_SETFL, O_NONBLOCK);
     verbose(REVERSE "Insertion server: connection established.\n" RESET);
     verbose(REVERSE "Locking access to entity...\n" RESET);
     /* wlock_entity(); */
@@ -387,12 +392,17 @@ static void insertionsrv()
     free(msg);
     // NEWC message reception
     verbose(REVERSE "Insertion server: waiting for NEWC message...\n" RESET);
-    msg = receptLine(sock2);
+    /* msg = receptLine(sock2); */
+    if_receptLine(msg, sock2);
     verbose(REVERSE "Insertion server: received : \"%s\".\n" RESET, msg);
     if (strncmp(msg, "NEWC", 4) == 0)
       insert(nring, msg, sock2);
-    else if (strncmp(msg, "DUPL", 4) == 0)
-      duplicate(msg, sock2);
+    else if (strncmp(msg, "DUPL", 4) == 0) {
+      if (nring == NRING - 1)
+        send(sock2, "MAX\n", 4, 0);
+      else
+        duplicate(msg, sock2);
+    }
     else
       verbose(REVERSE "Message not supported: \"%s\".\n" RESET, msg);
     verbose(REVERSE "Unlocking access to entity...\n" RESET);
@@ -868,10 +878,14 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
   msg = receptLine(sock);
   verbose(REVERSE "Message received: \"%s\".\n" RESET, msg);
   if (strncmp(msg, "ACKC ", 5) != 0 || strlen(msg) != 9) {
-    fprintf(stderr, "Protocol error: bad response from server.\n"
-        "Insertion failed.\n");
     free(welc);
     free(msg);
+    if (strcmp(msg, "MAX"))
+      fprintf(stderr, "Distant host has reached its maximum number of ring.\n"
+          "Duplication failed.\n");
+    else
+      fprintf(stderr, "Protocol error: bad response from server.\n"
+        "Insertion failed.\n");
     return 0;
   }
   if (!isport(&msg[5])) {

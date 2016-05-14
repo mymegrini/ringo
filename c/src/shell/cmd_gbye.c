@@ -283,7 +283,7 @@ int cmd_exit(int argc, char **argv)
         return 0;
         break;
       case OPT_FORCE:
-        close_threads();
+        /* close_threads(); */
         if (waiting)
           for (int i = 0; i <= *ring_number; ++i)
             pthread_cancel(wait_gbye_t[i]);

@@ -10,9 +10,9 @@
 #include <sys/time.h>
 #include <signal.h>
 
-#ifndef NRING
-#define NRING 2
-#endif
+/* #ifndef NRING */
+/* #define NRING 2 */
+/* #endif */
 
 
 
