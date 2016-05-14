@@ -28,6 +28,7 @@ typedef struct entity {
       int socksend;
       struct sockaddr_in receiver[NRING];
       int sockmdiff[NRING];
+      struct sockaddr_in mdiff[NRING];
       int socktcp;
   } _entity;
 
@@ -64,6 +65,9 @@ void rm_ring(int ring);
 int create_ring2(char *mdiff_ip, uint16_t mdiff_port);
 int join2(const char *host, const char *tcpport);
 int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip, uint16_t mdiff_port);
+
+void decrement_test_counter();
+
 
 extern volatile const int * const ring_number;
 

@@ -15,6 +15,7 @@ static struct goodbye_data
   pthread_mutex_t mutex;
 } _data = { .wait = 0 };
 
+
 static pthread_t wait_gbye_t[NRING];
 static int waiting = 0;
 
@@ -283,8 +284,9 @@ int cmd_exit(int argc, char **argv)
         break;
       case OPT_FORCE:
         close_threads();
-        for (int i = 0; i <= *ring_number; ++i)
-          pthread_cancel(wait_gbye_t[i]);
+        if (waiting)
+          for (int i = 0; i <= *ring_number; ++i)
+            pthread_cancel(wait_gbye_t[i]);
         pthread_exit(NULL);
         return 0;
         break;

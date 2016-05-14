@@ -278,6 +278,8 @@ char *command_generator (char *text, int state)
 
 extern void exit_properly(void);
 
+
+
 static void signal_handler_exit(int signum)
 {
   exit_properly();
@@ -285,8 +287,10 @@ static void signal_handler_exit(int signum)
 
 
 
-static void signal_handler_empty(int signum)
+static void signal_handler_restart_mdiff(int signum)
 {
+  debug("SIGUSR1 handler", "calling restart_mdiffmanager");
+  restart_mdiffmanager();
   return ;
 }
 
@@ -301,7 +305,7 @@ static void init_shell()
   signal(SIGINT, signal_handler_exit);
   signal(SIGTERM, signal_handler_exit);
   signal(SIGQUIT, signal_handler_exit);
-  signal(SIGUSR1, signal_handler_empty);
+  signal(SIGUSR1, signal_handler_restart_mdiff);
 
   if ((homedir = getenv("HOME")) == NULL)
     homedir = getpwuid(getuid())->pw_dir;
