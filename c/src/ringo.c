@@ -112,9 +112,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    verbosity(verbm);
     get_info();
     init_entity(id, atoi(udp_listen), atoi(tcp_listen), mdiff_ip, mport);
-    verbosity(verbm);
     plugin_manager_init(&plugin_manager);
     init_mutex();
     

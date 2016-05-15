@@ -263,7 +263,10 @@ static void verbose_stdout(char *format, ...) {
 static void verbose_noverb(char *format, ...) {
 }
 
-void (*verbose)(char *format, ...);
+
+static int _verbose_mode = VERBM_NOVERB;
+static int _last_verbose_mode = VERBM_STDOUT;
+
 
 
 static void (*verbose_mode[])(char *, ...) = { 
@@ -272,11 +275,30 @@ static void (*verbose_mode[])(char *, ...) = {
     verbose_xterm
 };
 
+void (* volatile verbose)(char *format, ...) = verbose_noverb;
+
 void verbosity(int mode) {
-    if (mode == VERBM_XTERMO)
-        init_verbosexterm();
-    verbose = verbose_mode[mode];
+  if (mode == _verbose_mode)
+    return;
+
+  if (_verbose_mode == VERBM_XTERMO) {
+    kill(pid_xterm, SIGKILL);
+    close(fd_xterm);
+  }
+
+  if (mode == VERBM_XTERMO)
+    init_verbosexterm();
+  _last_verbose_mode = _verbose_mode;
+  _verbose_mode = mode;
+  verbose = verbose_mode[mode];
 }
+
+
+
+void toggle_verbose() {
+  verbosity(_last_verbose_mode);
+}
+
 
 /* int ltole(char *le, long l, int size) { */
 /*   for (int i = 0; i < size; ++i) */

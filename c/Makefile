@@ -20,8 +20,7 @@ export LIBREADLINE_AR      = $(foreach ar, libhistory.a libreadline.a, $(LIBREAD
 all: readline
 	$(MAKE) $(MFLAGS) -C src
 
-debug: CFLAGS += -D DEBUG -g
-debug: all 
+debug: readline
 	$(MAKE) $(MFLAGS) -C src debug
 
 # history: $(HISTORY_FILE)

@@ -45,6 +45,7 @@ extern int cmd_diff(int argc, char **argv);
 extern int cmd_plugin(int argc, char **argv);
 extern int cmd_ring(int argc, char **argv);
 extern int cmd_trans(int argc, char **argv);
+extern int cmd_verbosity(int argc, char **argv);
 
 
 
@@ -63,6 +64,7 @@ command cmd[] = {
   { "rinfo", "Informations on current entity.", cmd_rinfo},
   { "plug", "Add or remove plugins.", cmd_plugin},
   { "ring", "Create, duplicate and join rings.", cmd_ring},
+  { "verbosity", "Toggle verbose mode or switch verbosity", cmd_verbosity},
   { "whos", "Getting to know each other...", cmd_whos },
   { NULL, NULL, NULL }
 };
