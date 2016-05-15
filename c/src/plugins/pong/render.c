@@ -223,7 +223,7 @@ renderBall(SDL_Renderer* renderer, int x, int y){
  * This function renders the current state of the game
  */
 void
-renderSim(SDL_Renderer* renderer){
+simulate(SDL_Renderer* renderer){
 
     state s;
     getState(&s);

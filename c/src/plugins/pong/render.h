@@ -6,6 +6,6 @@
 void setIcon(SDL_Window* window);
 int loadTextures(SDL_Renderer* renderer);
 void destroyTextures();
-void renderSim(SDL_Renderer* renderer);
+void simulate(SDL_Renderer* renderer, int event);
 
 #endif

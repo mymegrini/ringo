@@ -4,6 +4,7 @@
 #include <math.h>
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <math.h>
 
 #define DEBUG_ENGINE
 
@@ -12,11 +13,11 @@
 #include "pong.h"
 
 typedef struct {
-    double time;
+    double t;
     double x;
     double y;
-    double velocity;
-    double direction;
+    double v;
+    double d;
 } ball;
 
 typedef struct {
@@ -27,6 +28,7 @@ typedef struct {
 } player;
 
 typedef struct {
+    double time;
     int self;
     int w;
     int h;
@@ -168,9 +170,11 @@ void createSession(const char* host, const char* guest, int self_index){
 
 	//initializing the engine
 	engine = malloc(sizeof(core));
+	engine->time = tick();
 	engine->self = self_index;
 	engine->w = FIELD_X;
 	engine->h = FIELD_Y;
+	//initializing players
 	strncpy(engine->player[0].id, host, ID_SIZE);
 	engine->player[0].id[ID_SIZE] = 0;
 	strncpy(engine->player[1].id, guest, ID_SIZE);
@@ -179,9 +183,13 @@ void createSession(const char* host, const char* guest, int self_index){
 	engine->player[1].score = 0;
 	engine->player[0].racket = -1;
 	engine->player[1].racket = -1;
+	//initializing ball
+	engine->ball.t = engine->time + 3;
 	engine->ball.x = ( engine->w - BALL_SIZE )/ 2;
 	engine->ball.y = ( engine->h - BALL_SIZE )/ 2;
-
+	engine->ball.v = BALL_V / 2;
+	engine->ball.d = M_PI;
+	
 	//seting up the pointers
 	self = engine->player[engine->self].id;
 	opponent = engine->player[1-engine->self].id;
@@ -264,18 +272,40 @@ void getState(state* s){
     return;
 }
 
+
+/**
+ * This function updates state
+ */
+void updateState(const update* u){
+
+    if (SDL_LockMutex(mutex))
+	printf("%s: %s\n", __func__, SDL_GetError());
+    else {
+
+	int opponent = 1 - engine->self;
+	if (engine->player[opponent]->time < u->racket_t){
+	    engine->player[opponent].racket = u->racket;
+	    engine->player[opponent]->time = u->racket_t;
+	}
+
+	//Freeing mutex
+	SDL_UnlockMutex(mutex);
+    }
+    return;
+}
+
+
 /**
  * This function updates the state of the game
  * returns 1 if modified, 0 if not
  */
-int simulate(int direction){
+void run(int direction){
 
-    int update = 1;
     int step = direction * 20;
 
     if (SDL_LockMutex(mutex)){
 	printf("%s: %s\n", __func__, SDL_GetError());
-	return 0;
+	return;
     } else {
 
 	double* r = &engine->player[engine->self].racket;
@@ -283,21 +313,17 @@ int simulate(int direction){
 	//get time intervall and store time
 	double dt = tick() - engine->player[engine->self].time;
 	if (dt<=0)
-	    return 0;
+	    return;
 	engine->player[engine->self].time += dt;
 
 	if(*r + step < 0)
 	    if(*r != 0)
 		*r = 0;
-	    else
-		update = 0;
 
 
 	else if(*r + step > engine->h - RACKET_Y)
 	    if(*r != engine->h - RACKET_Y)
 		*r = engine->h - RACKET_Y;
-	    else
-		update = 0;
 
 	else
 	    *r += step;
@@ -305,26 +331,7 @@ int simulate(int direction){
 	//Freeing mutex
 	SDL_UnlockMutex(mutex);
 
-	return update;
+	return;
     }
 
-}
-
-/**
- * This function updates state
- */
-void updateState(const state* s){
-
-    if (SDL_LockMutex(mutex))
-	printf("%s: %s\n", __func__, SDL_GetError());
-    else {
-
-	int opponent = 1 - engine->self;
-	engine->player[opponent].racket = s->racket[opponent];
-	//engine->score[opponent] = s.score[opponent];
-
-	//Freeing mutex
-	SDL_UnlockMutex(mutex);
-    }
-    return;
 }

@@ -174,6 +174,8 @@ void loginPong(){
  */
 void sendUpdate(){
 
+    static update u;
+    
     #ifdef DEBUG_NETCODE
     printf("Sending an update\n");
     #endif

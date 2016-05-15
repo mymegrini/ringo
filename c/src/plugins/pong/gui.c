@@ -104,34 +104,27 @@ handleEvents(){
     while(SDL_PollEvent(&evt)) {
 	switch(evt.type){
 	case SDL_QUIT :
-	    return 1; // nonzero value to break out of loop
+	    return QUIT; // nonzero value to break out of loop
 	case SDL_KEYUP :
 	    if(evt.key.keysym.sym == SDLK_ESCAPE)
-		return 1;
+		return QUIT;
 	}
     }
 
     if(engineState()){
 	const Uint8* state = SDL_GetKeyboardState(NULL);
-	if (state[SDL_SCANCODE_UP] && !state[SDL_SCANCODE_DOWN]){
-	    if (simulate(UP))
-		sendUpdate();
-	}
-	else if (state[SDL_SCANCODE_DOWN] && !state[SDL_SCANCODE_UP]){
-	    if (simulate(DOWN))
-		sendUpdate();
-	}
-	else if (simulate(STILL))
-	    sendUpdate();
-    }
-
-    return 0;
+	if (state[SDL_SCANCODE_UP] && !state[SDL_SCANCODE_DOWN])
+	    return UP;
+	else if (state[SDL_SCANCODE_DOWN] && !state[SDL_SCANCODE_UP])
+	    return DOWN;
+	else
+	    return STILL;
+    } else
+	return OFF;
 }
 
 int
 launchPong(int argc, char **argv) {
-
-    printf("launchPong: %d args\n", argc);
 
     launchWindow();
     if(window == NULL)
@@ -139,10 +132,15 @@ launchPong(int argc, char **argv) {
 
     loginPong();
 
-    //event loop
-    while(!handleEvents())
-	renderSim(renderer);
-
+    int e;
+    
+    //event loop    
+    while((e = handleEvents()) != QUIT){
+	simulate(renderer, e);
+	if (e != OFF)
+	    sendUpdate();
+    }
+    
     //quitting
     closeWindow();
     logoutPong();
