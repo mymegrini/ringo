@@ -5,7 +5,7 @@ LATE_DIRS = plugin_system shell plugins
 LIST = $(EARLY_DIRS) $(LATE_DIRS)
 
 export CFLAGS         = -Wall -O2 -std=gnu99 $(MACROFLAGS)#-D PLUG_DIR="\"$(CPLUGPATH)\"" -D _GNU_SOURCE #--pedantic -std = c11
-export LDFLAGS        = -pthread -ldl -lncurses -lm -Wl,-dynamic-list,plugin_system.list #-lreadline 
+export LDFLAGS        = -pthread -ldl -lncurses -lm -Wl,-dynamic-list,plugin_system.list -ltermcap #-lreadline 
 export ARFLAGS        = $(LIBREADLINE_AR)
 export MACROS         = PLUG_DIR="\"$(CPLUGPATH)\""  _GNU_SOURCE HISTORY_FILE=\"$(HISTORY_FILE)\"
 export PLUGIN_CFLAGS  = $(CFLAGS)
