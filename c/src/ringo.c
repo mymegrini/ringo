@@ -10,7 +10,8 @@
 #include "plugin_system/plugin_system.h"
 
 #include <pthread.h>
-#include <readline/readline.h>
+/* #include <readline/readline.h> */
+#include "../libreadline/include/readline/readline.h"
 
 #include <getopt.h>
 
@@ -33,7 +34,8 @@ void get_info();
 #define OPT_JOIN   'j'
 #define OPT_DUPL   'd'
 #define OPT_PLUG   'p'
-#define OPT_STRING "u:t:i:jdp::"
+#define OPT_VERB   'v'
+#define OPT_STRING "u:t:i:jdp::v::"
 
 
 
@@ -42,6 +44,7 @@ static struct option options[] = {
     { "tcp",    required_argument, 0, OPT_TCP },
     { "id",     required_argument, 0, OPT_ID },
     { "join",   no_argument, 0, OPT_JOIN },
+    { "verbose", optional_argument, 0, OPT_VERB },
     { "plugins", optional_argument, 0, OPT_PLUG },
     { 0,        0, 0, 0 }
 };
@@ -59,6 +62,7 @@ int main(int argc, char *argv[])
     char opt;
     char *plug_dir = plugin_directory;
     int do_free = 0;
+    int verbm = VERBM_NOVERB;
     while ((opt = getopt_long( argc, argv, OPT_STRING, options, 0 )) != -1   ) {
         switch(opt) {
             case OPT_UDP:
@@ -78,11 +82,29 @@ int main(int argc, char *argv[])
                 break;
             case OPT_PLUG:
                 if (optarg) {
+                  printf("OPT_PLUG-optarg:%s\n", optarg);
                   plug_dir = malloc(strlen(optarg)+1);
                   strcpy(plug_dir, optarg);
                   do_free = 1;
                 }
                 flag |= FLAG_PLUG;
+                break;
+            case OPT_VERB:
+                if (optarg) {
+                  if (strcmp(optarg, "xterm") == 0)
+                    verbm = VERBM_XTERMO;
+                  else if (strcmp(optarg, "stdout") == 0)
+                    verbm = VERBM_STDOUT;
+                  else if (strcmp(optarg, "none") == 0)
+                    verbm = VERBM_NOVERB;
+                  else {
+                    fprintf(stderr, "Verbosity option is one of xterm, stdout or none, default is none.\n");
+                    printf("optarg:%s\n", optarg);
+                    return EXIT_FAILURE;
+                  }
+                }
+                else
+                  verbm = VERBM_NOVERB;
                 break;
             default:
                 usage(argv[0]);
@@ -92,7 +114,7 @@ int main(int argc, char *argv[])
 
     get_info();
     init_entity(id, atoi(udp_listen), atoi(tcp_listen), mdiff_ip, mport);
-    verbosity(VERBM_XTERMO);
+    verbosity(verbm);
     plugin_manager_init(&plugin_manager);
     init_mutex();
     

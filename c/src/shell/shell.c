@@ -15,8 +15,10 @@
 #include <signal.h>
 
 #include <pthread.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+/* #include <readline/readline.h> */
+/* #include <readline/history.h> */
+#include "../../libreadline/include/readline/readline.h"
+#include "../../libreadline/include/readline/history.h"
 #include <wordexp.h>
 
 #include <stdio.h>

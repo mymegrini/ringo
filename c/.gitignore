@@ -2,3 +2,4 @@
 #*
 .*
 !.gitignore
+!readline-6.3.tar.gz
