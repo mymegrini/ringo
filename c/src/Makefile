@@ -24,7 +24,7 @@ debug: all
 
 
 $(CEXE)		: main $(LIST)
-	$(CC) -o $@ $(COBJPATH)/*.o $(LDFLAGS) $(ARFLAGS) #-rdynamic #-Wl,-dynamic-list,plugin_system.list
+	$(CC) -o $@ $(COBJPATH)/*.o $(ARFLAGS) $(LDFLAGS) #-rdynamic #-Wl,-dynamic-list,plugin_system.list
 
 
 main: $(OBJS)
