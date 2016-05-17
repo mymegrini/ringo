@@ -14,6 +14,6 @@ extern char *readline (const char *prompt);
 
 extern void (* volatile verbose)(char *format, ...);
 
-#include "list.h"
+#include "../list.h"
 
 #endif /* PLUGIN_TOOL_H */

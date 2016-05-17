@@ -1,5 +1,5 @@
 #include "../protocol/protocol.h"
-#include "../protocol/common.h"
+#include "../common.h"
 #include <getopt.h>
 #include <stdio.h>
 #include <inttypes.h>

@@ -19,6 +19,8 @@ int rm_free_data(list l, const char *name, void (*free_func)(void *));
 int rm(list l, const char *name);
 int rmn_free_data(list l, const char *name, unsigned int len, void (*free_func)(void *));
 int rmn(list l, const char *name, unsigned int len);
+void rm_all_if(list l, int (*predicate) (const char *, void *));
+void rm_all_if_free_data(list l, int (*predicate) (const char *, void *), void (*free_func) (void *));
 
 void iter(list l, void (*func)(char *, void *));
 
@@ -26,5 +28,7 @@ iterator get_iterator(list l);
 void iterate(iterator *i);
 char *iterator_getname(iterator i);
 void *iterator_getdata(iterator i);
+
+int list_size(list l);
 
 #endif /* LIST_H */

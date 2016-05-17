@@ -1,7 +1,7 @@
 #include "cmd_gbye.h"
 #include "../protocol/protocol.h"
 #include "../protocol/message.h"
-#include "../protocol/common.h"
+#include "../common.h"
 #include "../protocol/network.h"
 #include "../protocol/thread.h"
 

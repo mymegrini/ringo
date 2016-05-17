@@ -1,5 +1,5 @@
 #include "../plugin_system/plugin_system.h"
-#include "../protocol/common.h"
+#include "../common.h"
 
 #include <unistd.h>
 #include <getopt.h>

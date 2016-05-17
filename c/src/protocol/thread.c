@@ -1,6 +1,7 @@
 #include "thread.h"
 
-#include "common.h"
+#include "../common.h"
+#include "listmsg_manager.h"
 
 #include <unistd.h>
 #include <pthread.h>
@@ -66,7 +67,6 @@ static void close_messagemanager() {
 
 
 
-/* static void close_tcpserver() { */
 void close_tcpserver() {
   if (need_tcpserver) 
     return ;
@@ -107,7 +107,14 @@ static void close_mdiffmanager() {
 
 
 
-/* static void start_tcpserver() { */
+static void close_listmsg_manager() {
+  verbose(REVERSE "Closing garbage collector...\n" RESET);
+  pthread_cancel(thread->listmsg_manager);
+  verbose(REVERSE "Garbage collector closed.\n" RESET);
+}
+
+
+
 void start_tcpserver() {
   if (need_tcpserver) {
     need_tcpserver = 0;
@@ -143,6 +150,14 @@ static void start_ringtester() {
 
 
 
+static void start_listmsg_manager() {
+    verbose(REVERSE "Starting garbage collector for messages' list...\n" RESET);
+    pthread_create(&thread->listmsg_manager, NULL, listmsg_manager, NULL);
+    verbose(REVERSE "Garbage collector started.\n" RESET);
+}
+
+
+
 void rlock_entity() {
   pthread_rwlock_rdlock(&mutex->entity_rw);
 }
@@ -162,9 +177,7 @@ void wlock_entity() {
 
 
 void lock_mdiff() {
-  debug("lock_mdiff", "trying...");
   pthread_mutex_lock(&mutex->mdiff);
-  debug("lock_mdiff", "mdiff locked");
 }
 
 
@@ -186,6 +199,8 @@ void init_threads() {
     start_ringtester();
     // lauch insertion server thread
     start_tcpserver();
+    // Launch messages' list garbage collector
+    start_listmsg_manager();
 
     need_thread = 0;
   }
@@ -202,6 +217,7 @@ void close_threads()
     close_messagemanager();
     close_mdiffmanager();
     close_tcpserver();
+    close_listmsg_manager();
     need_thread = 1;
     verbose(REVERSE "Threads closed.\n" RESET);
   }
@@ -218,11 +234,9 @@ void close_threads_and_shell()
 
 
 static void *restart_mdiffmanager_request(void *args) {
-  debug("restart_mdiffmanager_request", "requesting...");
   /* lock_mdiff(); */
   /* while (mdiff_working) */
   /*   pthread_cond_wait(&mutex->mdiff_restart_cond, &mutex->mdiff); */
-  debug("restart_mdiffmanager_request", "killing mdiff_manager");
   /* pthread_kill(thread->mdiff_manager, SIGUSR1); */
   close_mdiffmanager();
   start_mdiffmanager();

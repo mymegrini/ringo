@@ -1,7 +1,7 @@
 #include "protocol.h"
 
-#include "common.h"
-#include "listmsg.h"
+#include "../common.h"
+/* #include "listmsg.h" */
 #include "network.h"
 #include "message.h"
 #include "thread.h"
@@ -611,7 +611,7 @@ void sendpacket_sockaddr(const char *content, const struct sockaddr_in *receiver
   sendto(_ent->socksend, content, 512, 0,
       (struct sockaddr *) receiver,
       (socklen_t)sizeof(struct sockaddr_in));
-  verbose(REVERSE "Packet sent:" RESET "\n%s\n", content);
+  verbose(UNDERLINED "Packet sent:" RESET "\n%s\n", content);
 }
 /**
  * Initialize entity with given attributes.

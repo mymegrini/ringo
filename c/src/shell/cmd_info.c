@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "../banner.h"
-#include "../protocol/common.h"
+#include "../common.h"
 
 
 

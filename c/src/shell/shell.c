@@ -1,10 +1,10 @@
 #include "shell.h"
 
-#include "../protocol/common.h"
+#include "../common.h"
 #include "../protocol/message.h"
 #include "../protocol/protocol.h"
 #include "../protocol/thread.h"
-#include "../plugin_system/list.h"
+#include "../list.h"
 #include "../plugin_system/plugin_system.h"
 
 #include <stdlib.h>

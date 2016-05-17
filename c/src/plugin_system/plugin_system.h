@@ -1,7 +1,7 @@
 #ifndef PLUGIN_SYSTEM_H
 #define PLUGIN_SYSTEM_H
 
-#include "list.h"
+#include "../list.h"
 #include "plugin_interface.h"
 
 typedef struct _PluginManager PluginManager;

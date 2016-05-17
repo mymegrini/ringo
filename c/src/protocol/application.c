@@ -1,5 +1,5 @@
 #include "application.h"
-#include "common.h"
+#include "../common.h"
 #include "network.h"
 #include "message.h"
 #include "protocol.h"

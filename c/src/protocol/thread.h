@@ -13,6 +13,7 @@ struct thread {
     pthread_t ring_tester;
     pthread_t mdiff_manager;
     pthread_t shell;
+    pthread_t listmsg_manager;
 };
 
 extern struct thread *thread;

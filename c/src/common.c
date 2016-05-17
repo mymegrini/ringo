@@ -8,6 +8,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <sys/time.h>
+#include <time.h>
 #include <signal.h>
 
 /* #ifndef NRING */
@@ -156,6 +157,37 @@ static void fifo_path(char *name) {
 
 static int fd_xterm = -1;
 static pid_t pid_xterm;
+static int fd_log = -1;
+static int log_offset = 0;
+
+
+
+int init_log(const char *logfile)
+{
+  int fd = open(logfile, O_WRONLY | O_CREAT | O_APPEND, S_IWUSR | S_IRUSR);
+  if (fd == -1)
+    return 0;
+  char str[] = "### LOG STARTING AT ";
+  /* char str_date[256]; */
+
+  time_t rawtime;
+  struct tm * timeinfo;
+  time ( &rawtime );
+  timeinfo = localtime ( &rawtime );
+  /* printf ( "Current local time and date: %s", asctime (timeinfo) ); */
+  /* /1* struct tm t; *1/ */
+  /* mktime(&t); */
+  /* strftime(str_date, sizeof(str_date), "%F\n", &t); */
+  char buff[280];
+  strcpy(buff, str);
+  /* strcat(buff, str_date); */
+  strcat(buff, asctime(timeinfo));
+  write(fd, buff, strlen(buff));
+  fd_log = fd;
+  log_offset = 3;
+  return 1;
+}
+
 
 
 static void init_verbosexterm() {
@@ -243,8 +275,12 @@ int init_outputxterm(pid_t *pid) {
     return -1;
 }
 
+static void verbose_noverb(char *format, ...) {
+}
+
+
+
 static void verbose_xterm(char *format, ...) {
-    /* dprintf(fd_xterm, BOLD UNDERLINED "verbose - " RESET); */
     va_list aptr;
     va_start(aptr, format);
     vdprintf(fd_xterm, format, aptr);
@@ -260,7 +296,34 @@ static void verbose_stdout(char *format, ...) {
     va_end(aptr);
 }
 
-static void verbose_noverb(char *format, ...) {
+static void verbose_noverb_and_log(char *format, ...) {
+    va_list aptr;
+    va_start(aptr, format);
+    vdprintf(fd_log, format, aptr);
+    va_end(aptr);
+}
+
+
+
+static void verbose_xterm_and_log(char *format, ...) {
+    va_list aptr;
+    va_start(aptr, format);
+    vdprintf(fd_log, format, aptr);
+    va_start(aptr, format);
+    vdprintf(fd_xterm, format, aptr);
+    va_end(aptr);
+}
+
+
+
+static void verbose_stdout_and_log(char *format, ...) {
+    printf(BOLD UNDERLINED "verbose - " RESET);
+    va_list aptr;
+    va_start(aptr, format);
+    vdprintf(fd_log, format, aptr);
+    va_start(aptr, format);
+    vprintf(format, aptr);
+    va_end(aptr);
 }
 
 
@@ -272,10 +335,17 @@ static int _last_verbose_mode = VERBM_STDOUT;
 static void (*verbose_mode[])(char *, ...) = { 
     verbose_noverb,
     verbose_stdout,
-    verbose_xterm
+    verbose_xterm,
+    verbose_noverb_and_log,
+    verbose_stdout_and_log,
+    verbose_xterm_and_log
 };
 
+
+
 void (* volatile verbose)(char *format, ...) = verbose_noverb;
+
+
 
 void verbosity(int mode) {
   if (mode == _verbose_mode)
@@ -290,7 +360,7 @@ void verbosity(int mode) {
     init_verbosexterm();
   _last_verbose_mode = _verbose_mode;
   _verbose_mode = mode;
-  verbose = verbose_mode[mode];
+  verbose = verbose_mode[log_offset + mode];
 }
 
 
@@ -300,24 +370,3 @@ void toggle_verbose() {
 }
 
 
-/* int ltole(char *le, long l, int size) { */
-/*   for (int i = 0; i < size; ++i) */
-/*   { */
-/*     le[i] = '0' + l % 10; */
-/*     l /= 10; */
-/*   } */
-/*   return l == 0; */
-/* } */
-
-
-
-/* long letol(const char *le) { */
-/*   long l = 0; */
-/*   long exp = 1; */
-/*   while (isdigit(*le)) { */
-/*     l += exp * (*le - '0'); */
-/*     exp *= 10; */
-/*     ++le; */
-/*   } */
-/*   return l; */
-/* } */
