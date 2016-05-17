@@ -339,17 +339,27 @@ void *run_shell(void *nothing) {
   welcome_message();
 
   char *line = NULL;
+  char *old_line = NULL;
+  line = readline(prompt);
+  old_line = strdup(line);
+  add_history(line);
+  append_history(1, HISTORY_FILE);
+
   while(1) {
+    if (line && *line) {
+      if (strcmp(line, old_line) != 0) {
+        add_history(line);
+        append_history(1, HISTORY_FILE);
+        free(old_line);
+        old_line = strdup(line);
+      }
+      exec_cmd(line);
+    }
     if (line) {
       free(line);
       line = NULL;
     }
     line = readline(prompt);
-    if (line && *line) {
-      add_history(line);
-      append_history(1, HISTORY_FILE);
-      exec_cmd(line);
-    }
   }
   return NULL;
 }
