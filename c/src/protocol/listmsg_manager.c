@@ -53,7 +53,7 @@ void *listmsg_manager(void *nothing)
     t_begin = t.tv_sec;
     sleep(LIST_MSG_MANAGER_SLEEP);
     int size = list_size(listmsg);
-    verbose(REVERSE "%d idm saved in the list.\n" RESET, size);
+    verbose(REVERSE "%d idm in the list.\n" RESET, size);
     if (size > LIST_MSG_MAXMSG) {
       verbose(REVERSE "Cleaning idm list...\n" RESET);
       pthread_rwlock_wrlock(&list_rwlock);

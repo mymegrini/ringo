@@ -72,10 +72,11 @@ int action_gbye(char *message, char *content, int lookup_flag)
       verbose("Replacing current structure...\n");
       // modifying entity
       verbose("Insertion server: modifying current entity...\n");
-      verbose("Insertion server: current entity :\n%s\n", entitytostr(i));
+      char buff[400];
+      verbose("Insertion server: current entity :\n%s\n", entitytostr(i, buff));
       ent->port_next[i] = port2;
       strcpy(ent->ip_next[i], ip_next);
-      verbose("Insertion server: modified entity :\n%s\n", entitytostr(i));
+      verbose("Insertion server: modified entity :\n%s\n", entitytostr(i, buff));
       sendmessage_sockaddr(&entity_leaving, "EYBG", "");
       return 0;
     }

@@ -45,7 +45,7 @@ extern entity * ent;
 extern _entity *_ent;
 extern entity _ent_;
 
-char *entitytostr(int ring);
+char *entitytostr(int ring, char *str);
 void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen, 
         char *mdiff_ip, uint16_t mdiff_port);
 void create_ring();
