@@ -71,7 +71,6 @@ extern int plugin_register(PluginManager *plug_manager, const char *name, Plugin
 
 void retransmit(const char *message);
 void send_message(const char *idapp, const char *format, ...);
-const char *get_message();
 
 //// END OF PROTOCOL COMMUNICATION
 

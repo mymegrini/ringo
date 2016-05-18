@@ -1,7 +1,7 @@
 #include "protocol.h"
 
 #include "../common.h"
-/* #include "listmsg.h" */
+#include "listmsg_manager.h"
 #include "network.h"
 #include "message.h"
 #include "thread.h"
@@ -1091,6 +1091,15 @@ void *plugin_message_manager (void *nothing)
 { 
   while (1) {
     const char *message = get_message();
+    char idm[9] = {0};
+    strncpy(idm, message + 5, 8);
+#ifdef DEBUG
+    int r =
+#endif
+      lookup(idm);
+#ifdef DEBUG
+    if (r==1) debug("makemessage", "Detected a hash collision: %s\n", idm);
+#endif
     sendpacket_all(message);
   }
   return NULL;

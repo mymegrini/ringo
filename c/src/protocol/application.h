@@ -20,7 +20,5 @@ typedef struct application {
 
 void sendappmessage_all(const char *type, const char *format, ...);
 
-void makeappmessage(char* idm, char* buff, const char* idapp,
-        const char* format, va_list aptr);
 
 #endif /* APPLICATION_H */

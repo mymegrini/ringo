@@ -40,8 +40,6 @@ int exec_plugin_command(PluginManager *plug_manager, int argc, char *argv[]);
 int exec_plugin_action(PluginManager *plug_manager, const char *idapp,
     const char *message, const char* content, int lookup_flag);
 
-void request_message(char *idm, const char *idapp, const char *format, va_list aptr);
-void retransmit(const char *message);
 const char *get_message();
 
 

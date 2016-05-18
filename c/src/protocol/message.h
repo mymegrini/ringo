@@ -10,6 +10,5 @@ void sendmessage(int ring, const char *type, const char *format, ...);
 void sendmessage_sockaddr(const struct sockaddr_in *receiver,
     const char *type, const char *format, ...);
 
-void messageid(char *idm);
 
 #endif /* MESSAGE_H */

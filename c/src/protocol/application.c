@@ -64,36 +64,6 @@ int parseappmsg(char *message, char *content, int lookup_flag) {
 }
 
 
-
-
-void makeappmessage(char* idm, char* buff, const char* idapp,
-        const char* format, va_list aptr)
-{
-    char content[490];
-
-    // creating message content
-    vsnprintf(content, 490, format, aptr);
-    
-    // creating new id
-    messageid(idm);
-
-    // adding id to list of known ids, and checking for collisions
-/* #ifdef DEBUG */
-/*     int r = */
-/* #endif */
-/*         lookup(id); */
-/* #ifdef DEBUG */
-/*     if (r==1) debug("makemessage", "Detected a hash collision: %s\n", id); */
-/* #endif */
-
-    // creating message
-    if (strlen(content))
-      snprintf(buff, 513, "APPL %s %s %s", idm, idapp, content);
-    else snprintf(buff, 513, "APPL %s %s", idm, idapp);
-
-    return;
-}
-
 void sendappmessage_all(const char *type, const char *format, ...)
 {
     char content[490];

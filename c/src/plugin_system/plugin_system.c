@@ -2,7 +2,6 @@
 #include "plugin_programmer_interface.h"
 /* #include "../common.h" */
 #include "../list.h"
-#include "../protocol/application.h"
 
 #include <dlfcn.h>
 #include <unistd.h> // temporary
@@ -304,33 +303,12 @@ int exec_plugin_action(PluginManager *plug_manager, const char *idapp,
 // MESSAGE REQUESTING
 ////////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
-
 void push_message(PluginManager *plug_manager, const char *message)
 { 
   pthread_mutex_lock(&plug_manager->request.mutex);
   insert(plug_manager->request.l, message, NULL);
   pthread_cond_signal(&plug_manager->request.can_pop_cond);
   pthread_mutex_unlock(&plug_manager->request.mutex);
-}
-
-
-
-void request_message(char *idm, const char *idapp, const char *format, va_list aptr)
-{
-  char buff[513];
-  makeappmessage(idm, buff, idapp, format, aptr);
-  push_message(&plugin_manager, buff);
-}
-
-
-
-void retransmit(const char *message)
-{
-  push_message(&plugin_manager, message);
 }
 
 

@@ -27,6 +27,70 @@
 
 extern void push_message(PluginManager *plug_manager, const char *message);
 
+
+static void messageid(char* hash) {
+
+    struct timeval time;
+    uint64_t h = 5381;
+    int i;
+    uint8_t c;
+
+    /* hash * 33 + c */
+    // hashing time
+    gettimeofday(&time, NULL);
+    h = h * 33 + (uint16_t)time.tv_sec;
+    h = h * 33 + (uint16_t)time.tv_usec;
+    // hashing ip and port
+    for(i=0; i<16; i++) h = h * 33 + ent->ip_self[i];  
+    h = h * 33 + ent->udp;
+    // hashing content
+    // while((c = *content++)) h = h * 33 + c;
+
+    // creating hash using alphanumerical characters
+    for(i=0; i<8; i++){
+        c = h % 62;
+        if (c<10) hash[i] = c+48;      //digits
+        else if (c<36) hash[i] = c-10+97; //lowercase letters
+        else if (c<62) hash[i] = c-36+65; //uppercase letters
+        else hash[i] = 0;
+    
+        h = h / 62;
+    }
+    hash[8] = 0;
+
+    /*debug("messageid", "Created message id : %s.\n", hash);*/
+}
+
+
+
+static void makeappmessage(char* idm, char* buff, const char* idapp,
+        const char* format, va_list aptr)
+{
+    char content[490];
+
+    // creating message content
+    vsnprintf(content, 490, format, aptr);
+    
+    // creating new id
+    messageid(idm);
+
+    // creating message
+    if (strlen(content))
+      snprintf(buff, 513, "APPL %s %s %s", idm, idapp, content);
+    else snprintf(buff, 513, "APPL %s %s", idm, idapp);
+
+    return;
+}
+
+
+
+void retransmit(const char *message)
+{
+  push_message(&plugin_manager, message);
+}
+
+
+
 void send_message(const char *idapp, const char *format, ...) 
 {
   char idm[9], buff[513];
@@ -34,13 +98,6 @@ void send_message(const char *idapp, const char *format, ...)
   va_start(aptr, format);
   makeappmessage(idm, buff, idapp, format, aptr);
   va_end(aptr);
-#ifdef DEBUG
-    int r =
-#endif
-      lookup(idm);
-#ifdef DEBUG
-    if (r==1) debug("makemessage", "Detected a hash collision: %s\n", idm);
-#endif
   push_message(&plugin_manager, buff);
 }
 
