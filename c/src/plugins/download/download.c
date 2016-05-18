@@ -1,12 +1,6 @@
-/* #include "../protocol/protocol.h" */
-/* #include "../protocol/application.h" */
-/* #include "../protocol/common.h" */
-/* #include "../protocol/network.h" */
 #include "../../common.h"
-#include "../../plugin_system/plugin_interface.h"
-#include "../../plugin_system/protocol_interface.h"
-#include "../../plugin_system/plugin_tool.h"
-#include "../../list.h"
+#include "../../plugin_system/plugin_programmer_interface.h"
+/* #include "../../list.h" */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -204,7 +198,7 @@ static int action_req(const char *message, const char *content, int lookup_flag)
       begin_transfert(fd, filename, filename_size, id_trans);
     }
     else {
-      sendpacket_all(message);
+      retransmit(message);
     }
 
     free(filename);

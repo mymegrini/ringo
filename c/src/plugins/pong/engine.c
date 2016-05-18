@@ -6,7 +6,7 @@
 
 //#define DEBUG_ENGINE
 
-#include "../../plugin_system/protocol_interface.h"
+#include "../../plugin_system/plugin_programmer_interface.h"
 #include "engine.h"
 #include "pong.h"
 

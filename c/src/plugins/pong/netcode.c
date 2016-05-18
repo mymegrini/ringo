@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include "../../plugin_system/protocol_interface.h"
+#include "../../plugin_system/plugin_programmer_interface.h"
 #include "pong.h"
 #include "engine.h"
 
