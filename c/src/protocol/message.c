@@ -7,7 +7,6 @@
 #include "thread.h"
 #include "network.h"
 
-#include <stdarg.h>
 #include <sys/time.h>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +64,7 @@ extern volatile struct test_data* test_data;
  * @param hash will contain message hash id
  * @return message idenfitificator, a char* of strlen 8
  */
-static void messageid(char* hash) {
+void messageid(char* hash) {
 
     struct timeval time;
     uint64_t h = 5381;
@@ -194,7 +193,7 @@ int parsemsg(char *message) {
     return -1;
 }
 
-static void makemessage(char* buff, const char* type,
+void makemessage(char* buff, const char* type,
         const char* format, va_list aptr) {
 
     char content[499];

@@ -1,6 +1,7 @@
 .PHONY	: all clean
 
-PLUGINS = chat download pong zyva
+# PLUGINS = chat download pong
+PLUGINS = chat
 
 
 all	:

@@ -66,7 +66,7 @@ int isip(const char *str);
 int isport(const char *str);
 void ipnozeros(char *nozeros, const char *ip);
 int init_outputxterm(pid_t *pid); 
-int init_xterm_communication(pid_t *pid, int *pipe);
+/* int init_xterm_communication(pid_t *pid, int *pipe); */
 int init_log(const char *logfile);
 
 #endif /* COMMON_H */

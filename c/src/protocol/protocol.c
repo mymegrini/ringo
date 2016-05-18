@@ -17,6 +17,8 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#include "../plugin_system/plugin_system.h"
+
 
 
 
@@ -230,7 +232,7 @@ static void actualize_receiver(int ring, char ip_next[16], uint16_t port_next,
   if ( (msg = receptLine(sock)) == NULL ) { \
     verbose(REVERSE "Connection lost with client, timeout excedeed.\n"); return; }
 
-static void insert(int ring, char *n_msg, int sock2)
+static void insert_receiver(int ring, char *n_msg, int sock2)
 {
   verbose(REVERSE "Insertion server: parsing NEWC message...\n" RESET);
   newc_msg *newc = parse_newc(n_msg);
@@ -398,7 +400,7 @@ static void insertionsrv()
     if_receptLine(msg, sock2);
     verbose(REVERSE "Insertion server: received : \"%s\".\n" RESET, msg);
     if (strncmp(msg, "NEWC", 4) == 0)
-      insert(nring, msg, sock2);
+      insert_receiver(nring, msg, sock2);
     else if (strncmp(msg, "DUPL", 4) == 0) {
       if (nring == NRING - 1)
         send(sock2, "MAX\n", 4, 0);
@@ -1083,6 +1085,16 @@ void *mdiff_manager(void *args)
   return NULL;
 }
 
+
+
+void *plugin_message_manager (void *nothing)
+{ 
+  while (1) {
+    const char *message = get_message();
+    sendpacket_all(message);
+  }
+  return NULL;
+}
 
 
 

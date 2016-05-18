@@ -31,4 +31,7 @@ void *iterator_getdata(iterator i);
 
 int list_size(list l);
 
+char *pop_name(list l);
+
+
 #endif /* LIST_H */

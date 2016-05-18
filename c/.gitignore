@@ -3,5 +3,6 @@
 .*
 libreadline
 readline-6.3
+cring.log
 !.gitignore
 !readline-6.3.tar.gz

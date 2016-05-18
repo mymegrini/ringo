@@ -2,7 +2,10 @@
 #define PLUGIN_SYSTEM_H
 
 #include "../list.h"
-#include "plugin_interface.h"
+#include <stdarg.h>
+#include <stdlib.h>
+#include "plugin_programmer_interface.h"
+#include "../common.h"
 
 typedef struct _PluginManager PluginManager;
 
@@ -12,19 +15,6 @@ extern char *plugin_directory;
 
 
 
-typedef struct RegisteredPlugin {
-  Plugin *plug;
-  void *lib;
-} RegisteredPlugin;
-
-
-
-struct _PluginManager
-{
-  list action;
-  list command;
-  list plugin;
-};
 
 
 typedef struct plug_action {
@@ -46,4 +36,20 @@ int load_all_plugins(PluginManager *plug_manager, const char *plug_dir);
 int unload_all_plugins(PluginManager *plug_manager);
 int plugin_extract_name(char **name, const char *plug);
 
+int exec_plugin_command(PluginManager *plug_manager, int argc, char *argv[]);
+int exec_plugin_action(PluginManager *plug_manager, const char *idapp,
+    const char *message, const char* content, int lookup_flag);
+
+void request_message(char *idm, const char *idapp, const char *format, va_list aptr);
+void retransmit(const char *message);
+const char *get_message();
+
+
+////////////////////////////////////////////////////////////////////////////////
+// TOOL
+////////////////////////////////////////////////////////////////////////////////
+list get_commandlist();
+void show_plugins();
+
+//// END OF TOOL
 #endif /* PLUGIN_SYSTEM_H */

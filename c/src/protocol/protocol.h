@@ -10,7 +10,9 @@
 
 
 
+#ifndef NRING
 #define NRING 2
+#endif
 
 typedef struct entity {
     char            id[9]; // 8th char max, 9th is 0
@@ -54,6 +56,7 @@ void *insertion_server(void *args);
 void *message_manager(void *args);
 void* ring_tester(void *args);
 void *mdiff_manager(void *args);
+void *plugin_message_manager (void *nothing);
 
 
 int join(const char *host, const char *tcpport);
