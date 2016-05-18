@@ -1,4 +1,4 @@
-CSRC		= $(wildcard *.c)
+CSRC		= $(filter-out PluginSystem.c,$(wildcard *.c))
 OBJS		=  $(CSRC:%.c=$(COBJPATH)/%.o)
 
 
