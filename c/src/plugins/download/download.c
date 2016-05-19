@@ -134,7 +134,7 @@ static long letol(const char *le)
 static int request_file(const char *filename)
 {
   request_data *r = malloc(sizeof(request_data));
-  r->nrequest = *ring_number+1;
+  r->nrequest = get_ring_number()+1;
   if (!insert_one(requested, filename, r)) {
     fprintf(stderr, "File %s already requested.\n", filename);
     return 0;

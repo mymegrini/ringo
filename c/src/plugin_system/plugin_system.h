@@ -43,6 +43,16 @@ int exec_plugin_action(PluginManager *plug_manager, const char *idapp,
 const char *get_message();
 
 
+#ifdef JAVA_PLUGIN_SYSTEM
+#include <jni.h>
+struct PluginManagerEnv {
+  JNIEnv *env;
+  jobject obj;
+};
+
+extern struct PluginManagerEnv env;
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 // TOOL
 ////////////////////////////////////////////////////////////////////////////////

@@ -245,7 +245,7 @@ static void send_chat(const char *mess)
     size /= 10;
   }
   char name[9];
-  padstr(name, info->id, 8);
+  padstr(name, get_id(), 8);
   send_message(IDAPP_CHAT, "%s %s %s", ssize, name, mess);
   print_chat("You", mess);
 }

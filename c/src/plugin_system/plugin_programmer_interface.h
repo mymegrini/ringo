@@ -91,8 +91,13 @@ typedef struct info_t {
     const uint16_t mdiff_port[NRING];
 } info_t;
 
-extern info_t * const info;
-extern volatile const int * const ring_number;
+
+/* void get_info(info_t *info); */
+/* int get_ring_number(); */
+const char *get_id();
+int get_ring_number();
+/* extern info_t * const info; */
+/* extern volatile const int * const ring_number; */
 
 //// END OF ACCESS TO RING DATA
 
@@ -102,13 +107,13 @@ extern volatile const int * const ring_number;
 ////////////////////////////////////////////////////////////////////////////////
 typedef struct xterm* xterm;
 
-extern int init_xterm_communication(xterm *x);
-extern int xterm_printf(xterm x, char *format, ...);
-extern int xterm_read(xterm x, char *buff, size_t count);
-extern ssize_t xterm_getline(xterm x, char **line, size_t *n);
-extern pid_t xterm_getpid(xterm x);
-extern int xterm_getoutput(xterm x);
-extern void xterm_close(xterm *x);
+int init_xterm_communication(xterm *x);
+int xterm_printf(xterm x, char *format, ...);
+int xterm_read(xterm x, char *buff, size_t count);
+ssize_t xterm_getline(xterm x, char **line, size_t *n);
+pid_t xterm_getpid(xterm x);
+int xterm_getoutput(xterm x);
+void xterm_close(xterm *x);
 
 //// END OF EXTERNAL TOOLS
 

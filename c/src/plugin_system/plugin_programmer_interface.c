@@ -3,8 +3,10 @@
 /* #include "plugin_system.h" */
 
 
+#ifndef JAVA_PLUGIN_INTERFACE
 #include "../protocol/application.h"
 #include "../protocol/protocol.h"
+#endif
 
 
 
@@ -102,8 +104,29 @@ void send_message(const char *idapp, const char *format, ...)
 }
 
 
+/* #ifdef JAVA_PLUGIN_INTERFACE */
+/* info_t * const info; */
+/* #else */
+/* info_t * const info = (info_t * const)&_ent_; */
+/* #endif */
+const char *get_id()
+{
+#ifdef JAVA_PLUGIN_SYSTEM
+#else
+  return (const char *)ent->id;
+#endif
+}
 
-info_t * const info = (info_t * const)&_ent_;
+
+
+int get_ring_number()
+{
+#ifdef JAVA_PLUGIN_SYSTEM
+#else
+  return *ring_number;
+#endif
+}
+
 
 
 struct xterm { 
