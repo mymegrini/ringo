@@ -67,8 +67,10 @@ void playerid(char* hash){
     h = h * 33 + (uint16_t)time.tv_sec;
     h = h * 33 + (uint16_t)time.tv_usec;
     // hashing ip and port
-    for(i=0; i<16; i++) h = h * 33 + info->ip_self[i];
-    h = h * 33 + info->udp;
+    /* for(i=0; i<16; i++) h = h * 33 + info->ip_self[i]; */
+    /* h = h * 33 + info->udp; */
+    for(i=0; i<16; i++) h = h * 33 + get_ip()[i];
+    h = h * 33 + get_udp();
 
     // creating hash using alphanumerical characters
     for(i=0; i<ID_SIZE; i++){

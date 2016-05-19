@@ -109,6 +109,16 @@ void send_message(const char *idapp, const char *format, ...)
 /* #else */
 /* info_t * const info = (info_t * const)&_ent_; */
 /* #endif */
+int get_ring_number()
+{
+#ifdef JAVA_PLUGIN_SYSTEM
+#else
+  return *ring_number;
+#endif
+}
+
+
+
 const char *get_id()
 {
 #ifdef JAVA_PLUGIN_SYSTEM
@@ -119,11 +129,21 @@ const char *get_id()
 
 
 
-int get_ring_number()
+const char *get_ip()
 {
 #ifdef JAVA_PLUGIN_SYSTEM
 #else
-  return *ring_number;
+  return (const char *)ent->ip_self;
+#endif
+}
+
+
+
+uint16_t get_udp()
+{
+#ifdef JAVA_PLUGIN_SYSTEM
+#else
+  return ent->udp;
 #endif
 }
 

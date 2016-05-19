@@ -94,8 +94,10 @@ typedef struct info_t {
 
 /* void get_info(info_t *info); */
 /* int get_ring_number(); */
-const char *get_id();
 int get_ring_number();
+const char *get_id();
+const char *get_ip();
+uint16_t get_udp();
 /* extern info_t * const info; */
 /* extern volatile const int * const ring_number; */
 
