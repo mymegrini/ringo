@@ -50,7 +50,7 @@ struct PluginManagerEnv {
   jobject obj;
 };
 
-extern struct PluginManagerEnv env;
+extern struct PluginManagerEnv jvm;
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////

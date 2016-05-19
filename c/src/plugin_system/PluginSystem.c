@@ -7,7 +7,7 @@
 struct PluginManagerEnv {
   JNIEnv *env;
   jobject obj;
-} env;
+} jvm;
 
 
 

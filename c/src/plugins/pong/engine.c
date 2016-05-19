@@ -69,7 +69,8 @@ void playerid(char* hash){
     // hashing ip and port
     /* for(i=0; i<16; i++) h = h * 33 + info->ip_self[i]; */
     /* h = h * 33 + info->udp; */
-    for(i=0; i<16; i++) h = h * 33 + get_ip()[i];
+    char ip[16];
+    for(i=0; i<16; i++) h = h * 33 + ip[i];
     h = h * 33 + get_udp();
 
     // creating hash using alphanumerical characters

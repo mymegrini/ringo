@@ -54,6 +54,9 @@ static int cmd_chat(int argc, char **argv);
 static int action_chat(const char *message, const char *content, int lookup_flag);
 static void close_plugin();
 
+char id[9];
+char padded_id[9];
+
 
 
 PluginCommand_t pcmd_chat = {
@@ -84,6 +87,8 @@ Plugin plug_chat = {
 
 int init_chat(PluginManager *p)
 {
+  get_id(id);
+  padstr(padded_id, id, 8);
   return plugin_register(p, "chat", &plug_chat);
 }
 
@@ -244,9 +249,7 @@ static void send_chat(const char *mess)
     ssize[2-i] = '0' + size % 10;
     size /= 10;
   }
-  char name[9];
-  padstr(name, get_id(), 8);
-  send_message(IDAPP_CHAT, "%s %s %s", ssize, name, mess);
+  send_message(IDAPP_CHAT, "%s %s %s", ssize, padded_id, mess);
   print_chat("You", mess);
 }
 

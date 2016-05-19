@@ -18,10 +18,10 @@ JNIEXPORT void JNICALL Java_PluginSystem_initPluginManager
 /*
  * Class:     PluginSystem
  * Method:    loadPlugin
- * Signature: (Ljava/lang/String;)I
+ * Signature: (Ljava/lang/String;Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_PluginSystem_loadPlugin
-  (JNIEnv *, jobject, jstring);
+  (JNIEnv *, jobject, jstring, jstring);
 
 /*
  * Class:     PluginSystem
@@ -34,10 +34,10 @@ JNIEXPORT jint JNICALL Java_PluginSystem_unloadPlugin
 /*
  * Class:     PluginSystem
  * Method:    loadAllPlugins
- * Signature: ()I
+ * Signature: (Ljava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_PluginSystem_loadAllPlugins
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jstring);
 
 /*
  * Class:     PluginSystem

@@ -109,9 +109,21 @@ void send_message(const char *idapp, const char *format, ...)
 /* #else */
 /* info_t * const info = (info_t * const)&_ent_; */
 /* #endif */
+
+#ifdef JAVA_PLUGIN_SYSTEM
+static jobject get_ent(jobject psys)
+{
+  jclass psysClass = (*jvm.env)->GetObjectClass(jvm.env, jvm.obj);
+  jfieldID fid = (*jvm.env)->GetFieldID(jvm.env, psysClass, "ent", "LEntity");
+  if (fid == NULL)
+    return NULL;
+  return (*jvm.env)->GetObjectField(jvm.env, jvm.obj, fid);
+}
+#endif
+
 int get_ring_number()
 {
-#ifdef JAVA_PLUGIN_SYSTEM
+#ifdef java_plugin_system
 #else
   return *ring_number;
 #endif
@@ -119,32 +131,65 @@ int get_ring_number()
 
 
 
-const char *get_id()
+char *get_id(char *id)
 {
 #ifdef JAVA_PLUGIN_SYSTEM
+  jobject ent = get_ent(jvm.obj);
+  if (!ent)
+    return -12;
+  jclass entclass = (*jvm.env)->getobjectclass(jvm.env, ent);
+  jfieldid fid = (*jvm.env)->getfieldid(jvm.env, entclass, "id", "Ljava/lang/String;");
+  if (fid == NULL)
+    return NULL;
+  jstring jid = (*jvm.env)->GetObjectField(jvm.env, ent, fid);
+  const char *cid = (*jvm.env)->GetStringUTFChars(jvm.env, jid, NULL);
+  strcpy(id, cid);
+  (*jvm.env)->ReleaseStringUTFChars(jvm.env, jid, cid);
 #else
-  return (const char *)ent->id;
+  strcpy(id, ent->id);
 #endif
+  return id;
 }
 
 
 
-const char *get_ip()
+char *get_ip(char *ip)
 {
 #ifdef JAVA_PLUGIN_SYSTEM
+  jobject ent = get_ent(jvm.obj);
+  if (!ent)
+    return -12;
+  jclass entclass = (*jvm.env)->getobjectclass(jvm.env, ent);
+  jfieldid fid = (*jvm.env)->getfieldid(jvm.env, entclass, "ip", "Ljava/lang/String;");
+  if (fid == NULL)
+    return NULL;
+  jstring jip = (*jvm.env)->GetObjectField(jvm.env, ent, fid);
+  const char *cip = (*jvm.env)->GetStringUTFChars(jvm.env, jid, NULL);
+  strcpy(ip, cid);
+  (*jvm.env)->ReleaseStringUTFChars(jvm.env, jid, cid);
 #else
-  return (const char *)ent->ip_self;
+  strcpy(ip, ent->ip_self);
 #endif
+  return ip;
 }
 
 
 
 uint16_t get_udp()
 {
+  uint16_t udp;
 #ifdef JAVA_PLUGIN_SYSTEM
+  jobject ent = get_ent(jvm.obj);
+  if (!ent)
+    return -12;
+  jclass entclass = (*jvm.env)->getobjectclass(jvm.env, ent);
+  jfieldid fid = (*jvm.env)->getfieldid(jvm.env, entclass, "udp", "I");
+  if (fid == NULL)
+    return NULL;
 #else
-  return ent->udp;
+  udp = ent->udp;
 #endif
+  return udp;
 }
 
 
@@ -158,8 +203,7 @@ struct xterm {
 
 
 static void fifo_path(char *name)
-{
-    strcpy(name, "/tmp/ringo_xterm");
+{ strcpy(name, "/tmp/ringo_xterm");
     struct timeval t;
     gettimeofday(&t, NULL);
     char istr[20];
