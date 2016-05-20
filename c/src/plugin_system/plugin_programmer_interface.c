@@ -2,8 +2,9 @@
 
 /* #include "plugin_system.h" */
 
-
-#ifndef JAVA_PLUGIN_INTERFACE
+#ifdef JAVA_PLUGIN_SYSTEM
+#include <jni.h>
+#else
 #include "../protocol/application.h"
 #include "../protocol/protocol.h"
 #endif
@@ -104,11 +105,6 @@ void send_message(const char *idapp, const char *format, ...)
 }
 
 
-/* #ifdef JAVA_PLUGIN_INTERFACE */
-/* info_t * const info; */
-/* #else */
-/* info_t * const info = (info_t * const)&_ent_; */
-/* #endif */
 
 #ifdef JAVA_PLUGIN_SYSTEM
 static jobject get_ent(jobject psys)
