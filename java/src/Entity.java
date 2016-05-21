@@ -4,24 +4,25 @@ import java.net.*;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Entity{
+  public String ip_next;
+  public String ip_next2;
+  public String mdiff_ip;
+  public String mdiff_ip2;
+  public int    mdiff_port;
+  public int    port_next2;
+  public int    port_next;
+  public int    mdiff_port2;
+  ////////////////////////////////////////////////////////////////////////////////
+  // Internal classes
+  ////////////////////////////////////////////////////////////////////////////////
 
   public static class NextEntity {
 
     public InetSocketAddress entity;
-    public String nextIp;
     public InetSocketAddress mdiff;
+    public String nextIp;
     public String mdiffIp;
-    public String ip_next;
-    public String ip_next2;
-    public String mdiff_ip;
-    public String mdiff_ip2;
-    public int    mdiff_port;
-    public int    port_next2;
-    public int    port_next;
-    public int    mdiff_port2;
-    ////////////////////////////////////////////////////////////////////////////////
-    // Internal classes
-    ////////////////////////////////////////////////////////////////////////////////
+    public MulticastSocket mdiffSock;
 
     public NextEntity(InetAddress entityAddr, int entityPort, InetAddress mdiffAddr, int mdiffPort) {
       this(new InetSocketAddress(entityAddr, entityPort),
@@ -33,11 +34,24 @@ public class Entity{
       mdiff   = mdiffAddr;
       nextIp  = Jring.ipProtocolFormat(entityAddr.getAddress().toString());
       mdiffIp = Jring.ipProtocolFormat(mdiffAddr.getAddress().toString());
+      try {
+        mdiffSock = new MulticastSocket(mdiffAddr.getPort());
+        mdiffSock.joinGroup(mdiffAddr.getAddress());
+      } catch (Exception e) {
+        System.out.println("Multicast Socket creation error.");
+        System.out.println(e);
+        e.printStackTrace();
+        System.exit(0);
+      }
     }
 
     public void setEntity(InetSocketAddress entityAddr) {
       entity = entityAddr;
       nextIp  = Jring.ipProtocolFormat(entityAddr.getAddress().toString());
+    }
+
+    public void closeMdiff() {
+
     }
   }
   ////////////////////////////////////////////////////////////////////////////////
@@ -45,6 +59,7 @@ public class Entity{
   ////////////////////////////////////////////////////////////////////////////////
 
   public String id;
+  public String paddedId;
   public String ip;
   public int    udp;
   public int    tcp;
@@ -65,6 +80,7 @@ public class Entity{
     jring      = _jring;
 
     id         = ide;
+    paddedId   = Jring.padString(id, 8);
     udp        = u;
     tcp        = t;
     ip         = Jring.ipProtocolFormat(InetAddress.getLocalHost().getHostAddress());

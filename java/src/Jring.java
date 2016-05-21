@@ -132,7 +132,22 @@ public class Jring
   }
 
 
+  public static int readInt(Scanner sc, String message, int defaultValue) {
+    int i;
+    System.out.print(message + " default " + defaultValue + ": ");
+    String input;
+    input = sc.nextLine();
+    try {
+        i = Integer.parseInt(input);
+        return i;
+    } catch (Exception e) {
+      return defaultValue;
+    }
+  }
+
+
   public static void main(String[] args){
+    // Entity initialization
     final int CREATE       = 0,
           JOIN             = 1,
           DUPLICATE        = 2;
@@ -182,13 +197,18 @@ public class Jring
     String mdiffAddr, host;
     int mdiffPort, port;
     boolean success = false;
+
+    // Executing the mode
     try {
       switch (mode) {
         case CREATE:
-          System.out.println("Enter network address: ");
+          System.out.println("Enter network address, default 225.0.0.1: ");
           input = sc.nextLine();
-          mdiffAddr = ipProtocolFormat(input);
-          mdiffPort = readInt(sc, "Enter network port: ");
+          if (input.length() == 0)
+            mdiffAddr = "225.0.0.1";
+          else
+            mdiffAddr = ipProtocolFormat(input);
+          mdiffPort = readInt(sc, "Enter network port", 6667);
           success = jring.createRing(mdiffAddr, mdiffPort);
           break;
         case JOIN:
@@ -198,10 +218,13 @@ public class Jring
           success = jring.insert(host, port);
           break;
         case DUPLICATE:
-          System.out.println("Enter network address: ");
+          System.out.println("Enter network address, default 225.0.0.1: ");
           input = sc.nextLine();
-          mdiffAddr = ipProtocolFormat(input);
-          mdiffPort = readInt(sc, "Enter network port: ");
+          if (input.length() == 0)
+            mdiffAddr = "227.0.0.1";
+          else
+            mdiffAddr = ipProtocolFormat(input);
+          mdiffPort = readInt(sc, "Enter network port", 6667);
           System.out.println("Enter hostname: ");
           host = sc.nextLine();
           port = readInt(sc, "Enter port: ");
@@ -220,8 +243,10 @@ public class Jring
       System.exit(0);
     }
 
+    // Threads initialization
     try {
       jring.messageManager = new MessageManager(jring);
+      jring.messageManager.startMessageAdmin();
     } catch (Exception e) {
       System.out.println("Error initializing message manager.");
       System.exit(0);

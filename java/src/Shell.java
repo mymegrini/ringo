@@ -17,6 +17,7 @@ public class Shell implements Runnable
 
     // Add commands
     command.add(exit);
+    command.add(whos);
   }
 
 
@@ -60,21 +61,31 @@ public class Shell implements Runnable
 
       p.waitFor();
     } catch (IOException e) {
-      e.printStackTrace();
+      System.out.println("Command " + args[0] + " not found.");
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
   }
 
-  public ShellCommand exit = new ShellCommand() {
+  private ShellCommand exit = new ShellCommand() {
     public String getCommand() { return "exit"; }
     public int execute(String[] args) { 
       // System.out.println("Running exit...");
       // jring.shell.interrupt(); 
       // System.out.println("Exit run.");
       System.exit(0);
-      return 0; }
+      return 0;
+    }
   };
+
+  private ShellCommand whos = new ShellCommand() {
+    public String getCommand() { return "whos"; }
+    public int execute(String[] args) { 
+      jring.messageManager.sendMessage("WHOS", "");
+      return 0;
+    }
+  };
+
 }
 //Shell .java 
 

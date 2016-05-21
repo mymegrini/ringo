@@ -1,5 +1,5 @@
 /** MessageManager .java
- */ 
+*/ 
 
 import java.util.*;
 import java.net.*;
@@ -18,9 +18,24 @@ public class MessageManager
     private DatagramSocket  listenSock;
     private ArrayList<MessageAction> action;
 
+    private MessageAction whos = new MessageAction() {
+      public String getType() { return "WHOS"; }
+      public int execute(String message, String content, boolean lookupFlag) {
+        if (lookupFlag) {
+          jring.verbose.println("Message " + message + " already seen, nothing to do.");
+        } else {
+          sendMessage("MEMB ", ent.paddedId + " " + ent.ip + " " + String.valueOf(ent.udp));
+        }
+        return 0;
+      }
+    };
+
     public MessageAdministrator(DatagramSocket _listenSock) { 
       listenSock = _listenSock;
       action = new ArrayList<>();
+
+      // Supported actions
+      action.add(whos);
     }
 
     public void run() {
@@ -29,23 +44,35 @@ public class MessageManager
       while (true) {
         try {
           listenSock.receive(received);
-          String message = new String(b, 0, received.getLength());
-          jring.verbose.println("Message received: " + message);
-          String parsed[] = parseMsg(message);
-          if (parsed == null)
-            continue;
-          String messageType = parsed[0], idm = parsed[1], content = parsed[2];
-          if (listAdmin.add(idm))
-            for (MessageAction a : action) {
-              if (messageType.equals(a.getType())) {
-                a.execute(message, content);
-                break;
+
+          Thread treatAction = new Thread(new Runnable() {
+            public void run() {
+              String message = new String(b, 0, received.getLength());
+              jring.verbose.println("Message received: " + message);
+              String parsed[] = parseMsg(message);
+              if (parsed == null)
+                return;
+              String messageType  = parsed[0], idm = parsed[1], content = parsed[2];
+              boolean lookupFlag  = listAdmin.add(idm);
+              boolean actionFound = false;
+              for (MessageAction a : action) {
+                if (messageType.equals(a.getType())) {
+                  a.execute(message, content, lookupFlag);
+                  actionFound = true;
+                  break;
+                }
               }
+              if (!actionFound)
+                jring.verbose.println("Message not supported: " + message);
             }
-          else
-            jring.verbose.println("Message not supported: " + message);
+          });
+
+          treatAction.start();
+
         } catch (Exception e) {
           jring.verbose.println("UDP RECEIVED EXCEPTION");
+          System.out.println(e);
+          e.printStackTrace();
         }
       }
     }
@@ -79,6 +106,7 @@ public class MessageManager
   private MessageAdministrator     messAdmin;
   private MessageListAdministrator listAdmin;
   private final Jring              jring;
+  private Thread                   messAdminT;
   ////////////////////////////////////////////////////////////////////////////////
   // Public
   ////////////////////////////////////////////////////////////////////////////////
@@ -92,14 +120,14 @@ public class MessageManager
 
 
   public void sendMessage(String message) {
-    byte[] b = Jring.padString(message, 512).getBytes();
+    message = jring.padString(message, 512);
     ent.sendPacketAll(message);
   }
 
 
   public void sendMessage(String type, String content) {
     String idm = messageId();
-    String message = jring.padString(type + " " + idm + " " + content, 512);
+    String message = type + " " + idm + " " + content;
     listAdmin.add(idm);
     sendMessage(message);
   }
@@ -107,6 +135,13 @@ public class MessageManager
 
   public void sendAppMessage(String idApp, String content) {
     sendMessage("APPL", idApp + " " + content);
+  }
+
+
+  public void startMessageAdmin() {
+    messAdminT = new Thread(messAdmin);
+    messAdminT.start();
+    jring.verbose.println("Message administrator started.");
   }
   ////////////////////////////////////////////////////////////////////////////////
   // Private
@@ -154,6 +189,6 @@ public class MessageManager
     return id;
   }
 
-}
-//MessageManager .java 
+  }
+  //MessageManager .java 
 
