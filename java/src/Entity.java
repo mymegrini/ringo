@@ -34,6 +34,8 @@ public class Entity{
       mdiff   = mdiffAddr;
       nextIp  = Jring.ipProtocolFormat(entityAddr.getAddress().toString());
       mdiffIp = Jring.ipProtocolFormat(mdiffAddr.getAddress().toString());
+      nextIp  = nextIp.substring(1, nextIp.length());
+      mdiffIp = mdiffIp.substring(1, mdiffIp.length());
       try {
         mdiffSock = new MulticastSocket(mdiffAddr.getPort());
         mdiffSock.joinGroup(mdiffAddr.getAddress());
@@ -111,7 +113,43 @@ public class Entity{
   }
 
 
-  private void sendPacket(NextEntity next, String message) {
+  public int findRing(String networkAddress, int port) {
+    readLock();
+    int i;
+    for (i = 0; i < nextEntity.size(); i++)
+      if (networkAddress.equals(nextEntity.get(i).mdiffIp) && port == nextEntity.get(i).mdiff.getPort())
+        break;
+    readUnlock();
+    return (i == nextEntity.size())? -1: i;
+  }
+
+
+  public int ringNumber() {
+    return nextEntity.size();
+  }
+
+
+  public void writeLock() {
+    rwlock.writeLock().lock();
+  }
+
+
+  public void writeUnlock() {
+    rwlock.writeLock().unlock();
+  }
+
+
+  public void readLock() {
+    rwlock.readLock().lock();
+  }
+
+
+  public void readUnlock() {
+    rwlock.readLock().unlock();
+  }
+
+
+  public void sendPacket(NextEntity next, String message) {
     byte[] b = message.getBytes();
     DatagramPacket p = new DatagramPacket(b, 0, 512, next.entity);
     try {

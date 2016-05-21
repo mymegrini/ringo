@@ -64,7 +64,7 @@ extern volatile struct test_data* test_data;
  * @param hash will contain message hash id
  * @return message idenfitificator, a char* of strlen 8
  */
-static void messageid(char* hash) {
+void messageid(char* hash) {
 
     struct timeval time;
     uint64_t h = 5381;

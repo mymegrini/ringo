@@ -30,6 +30,7 @@ public class Jring
 
   public Thread shell;
   public MessageManager messageManager;
+  public RingTester ringTester;
   ////////////////////////////////////////////////////////////////////////////////
   // Constructors
   ////////////////////////////////////////////////////////////////////////////////
@@ -251,6 +252,11 @@ public class Jring
       System.out.println("Error initializing message manager.");
       System.exit(0);
     }
+
+    jring.ringTester = new RingTester(jring);
+    Thread ringTesterT = new Thread(jring.ringTester);
+    ringTesterT.start();
+
     jring.shell = new Thread(new Shell(jring, name));
     jring.shell.start();
     try {
@@ -264,6 +270,7 @@ public class Jring
   public boolean createRing(String mdiffaddr, int mdiffport) throws Exception {
     InetSocketAddress next  = new InetSocketAddress(InetAddress.getLocalHost(), ent.udp);
     InetSocketAddress mdiff = new InetSocketAddress(InetAddress.getByName(mdiffaddr), mdiffport);
+    System.out.println("PORT; " + mdiff.getPort());
 
     ent.addNextEntity(next, mdiff);
     System.out.println("Ring created.");

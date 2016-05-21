@@ -35,6 +35,7 @@ typedef struct entity {
   } _entity;
 
   struct test_data {
+    char idm[5];
     int count;
     int nring;
     char ring_check[NRING];

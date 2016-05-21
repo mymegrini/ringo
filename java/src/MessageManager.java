@@ -119,6 +119,18 @@ public class MessageManager
   }
 
 
+  public void sendMessage(Entity.NextEntity next, String message) {
+    message = jring.padString(message, 512);
+    ent.sendPacket(next, " " + messageId() + " " + message);
+  }
+
+
+  public void sendMessage(Entity.NextEntity next, String type, String content) {
+    String message = jring.padString(type + " " + content, 512);
+    sendMessage(next, message);
+  }
+
+
   public void sendMessage(String message) {
     message = jring.padString(message, 512);
     ent.sendPacketAll(message);
