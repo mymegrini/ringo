@@ -109,8 +109,10 @@ static welc_msg *parse_welc(const char *w_msg)
 
 static newc_msg *parse_newc(const char *n_msg)
 {
-  if (n_msg[4] != ' ' || n_msg[20] != ' ' || n_msg[25] != 0)
+  if (n_msg[4] != ' ' || n_msg[20] != ' ' || n_msg[25] != 0) {
+    debug("parse_newc", "n_msg (%d): %s\n", (int)strlen(n_msg), n_msg);
     return NULL;
+  }
   newc_msg *newc = malloc(sizeof(newc_msg));
   char type[5];
   char port[5];
@@ -237,7 +239,7 @@ static void insert_receiver(int ring, char *n_msg, int sock2)
   verbose(REVERSE "Insertion server: parsing NEWC message...\n" RESET);
   newc_msg *newc = parse_newc(n_msg);
   if (newc == NULL) {
-    fprintf(stderr, "Protocol error: bad response from client->\nInsertion failed.\n");
+    verbose(REVERSE "Bad response from client: \"%s\".\n", n_msg);
     free(newc);
     return;
   }
