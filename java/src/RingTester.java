@@ -77,9 +77,12 @@ public class RingTester implements Runnable
         ent.writeLock();
         for (int i = 0; i < checked.size(); i++)
           if (checked.get(i)) {
-            jring.verbose.println("Ring " + i + " broken.");
+            Entity.NextEntity next;
+            ent.sendToRing(i, "DOWN");
+            ent.getNextEntity(i).mdiffSock.close();
             ent.getNextEntity().remove(i);
             allClean = false;
+            jring.verbose.println("Ring " + i + " broken.");
           }
         ent.writeUnlock();
         if (allClean) {

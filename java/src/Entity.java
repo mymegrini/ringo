@@ -103,6 +103,7 @@ public class Entity{
 
   public ArrayList<NextEntity> getNextEntity() { return nextEntity; }
 
+  public NextEntity getNextEntity(int i) { return nextEntity.get(i); }
 
   public boolean isOnRing() { 
     boolean val;
@@ -168,6 +169,17 @@ public class Entity{
     rwlock.readLock().unlock();
   }
 
+
+  public void sendToRing(int i, String message) {
+    DatagramPacket p = new DatagramPacket(message.getBytes(), message.length(), nextEntity.get(i).mdiff);
+    try {
+      sendSock.send(p);
+    } catch (Exception e) {
+      NextEntity next = nextEntity.get(i);
+      jring.verbose.println("Error sending packet " + message + " to mdiff " + 
+          next.entity.getAddress() + " port " + next.entity.getPort());
+    }
+  }
 
 
   public void insertNextEntity(NextEntity next) {
