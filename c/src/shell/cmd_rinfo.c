@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "../protocol/protocol.h"
 #include "../protocol/message.h"
-#include "../protocol/common.h"
+#include "../common.h"
 
 #define   ORING    'r'
 #define   OLRING   "ring"

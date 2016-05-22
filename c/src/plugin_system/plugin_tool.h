@@ -12,8 +12,8 @@ extern void itoa(char *s, int size, int i);
 
 extern char *readline (const char *prompt);
 
-extern void (*verbose)(char *format, ...);
+extern void (* volatile verbose)(char *format, ...);
 
-#include "list.h"
+#include "../list.h"
 
 #endif /* PLUGIN_TOOL_H */

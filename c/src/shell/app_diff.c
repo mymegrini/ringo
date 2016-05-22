@@ -1,6 +1,6 @@
 #include "../protocol/protocol.h"
 #include "../protocol/message.h"
-#include "../protocol/common.h"
+#include "../common.h"
 #include "../protocol/network.h"
 #include "../protocol/thread.h"
 #include "../protocol/application.h"
@@ -46,7 +46,7 @@ static void send_diff(char *mess) {
   unsigned len = strlen(mess);
   unsigned size = MSIZE < len ? MSIZE : len;
   char ssize[4];
-  itoa(ssize, 4, size);
+  itoa(ssize, 3, size);
   sendappmessage_all(IDAPP_DIFF, "%s %s", ssize, mess);
 }
 

@@ -1,7 +1,7 @@
 #include "plugin_system.h"
 #include "plugin_interface.h"
-#include "../protocol/common.h"
-#include "list.h"
+#include "../common.h"
+#include "../list.h"
 
 #include <string.h>
 #include <stdlib.h>

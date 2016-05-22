@@ -1,10 +1,10 @@
 #include "shell.h"
 
-#include "../protocol/common.h"
+#include "../common.h"
 #include "../protocol/message.h"
 #include "../protocol/protocol.h"
 #include "../protocol/thread.h"
-#include "../plugin_system/list.h"
+#include "../list.h"
 #include "../plugin_system/plugin_system.h"
 
 #include <stdlib.h>
@@ -15,8 +15,10 @@
 #include <signal.h>
 
 #include <pthread.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+/* #include <readline/readline.h> */
+/* #include <readline/history.h> */
+#include "../../libreadline/include/readline/readline.h"
+#include "../../libreadline/include/readline/history.h"
 #include <wordexp.h>
 
 #include <stdio.h>
@@ -43,6 +45,7 @@ extern int cmd_diff(int argc, char **argv);
 extern int cmd_plugin(int argc, char **argv);
 extern int cmd_ring(int argc, char **argv);
 extern int cmd_trans(int argc, char **argv);
+extern int cmd_verbosity(int argc, char **argv);
 
 
 
@@ -61,6 +64,7 @@ command cmd[] = {
   { "rinfo", "Informations on current entity.", cmd_rinfo},
   { "plug", "Add or remove plugins.", cmd_plugin},
   { "ring", "Create, duplicate and join rings.", cmd_ring},
+  { "verbosity", "Toggle verbose mode or switch verbosity", cmd_verbosity},
   { "whos", "Getting to know each other...", cmd_whos },
   { NULL, NULL, NULL }
 };
@@ -335,17 +339,27 @@ void *run_shell(void *nothing) {
   welcome_message();
 
   char *line = NULL;
+  char *old_line = NULL;
+  line = readline(prompt);
+  old_line = strdup(line);
+  add_history(line);
+  append_history(1, HISTORY_FILE);
+
   while(1) {
+    if (line && *line) {
+      if (strcmp(line, old_line) != 0) {
+        add_history(line);
+        append_history(1, HISTORY_FILE);
+        free(old_line);
+        old_line = strdup(line);
+      }
+      exec_cmd(line);
+    }
     if (line) {
       free(line);
       line = NULL;
     }
     line = readline(prompt);
-    if (line && *line) {
-      add_history(line);
-      append_history(1, HISTORY_FILE);
-      exec_cmd(line);
-    }
   }
   return NULL;
 }

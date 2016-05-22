@@ -1,8 +1,9 @@
 #include "message.h"
-#include "common.h"
+#include "../common.h"
 #include "protocol.h"
 #include "stdint.h"
-#include "listmsg.h"
+/* #include "listmsg.h" */
+#include "listmsg_manager.h"
 #include "thread.h"
 #include "network.h"
 

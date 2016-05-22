@@ -2,11 +2,11 @@
 /* #include "../protocol/application.h" */
 /* #include "../protocol/common.h" */
 /* #include "../protocol/network.h" */
-#include "../../protocol/common.h"
+#include "../../common.h"
 #include "../../plugin_system/plugin_interface.h"
 #include "../../plugin_system/protocol_interface.h"
 #include "../../plugin_system/plugin_tool.h"
-#include "../../plugin_system/list.h"
+#include "../../list.h"
 
 #include <stdio.h>
 #include <unistd.h>

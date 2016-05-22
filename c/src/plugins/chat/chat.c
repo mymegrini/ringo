@@ -1,4 +1,4 @@
-#include "../../protocol/common.h"
+#include "../../common.h"
 #include "../../plugin_system/plugin_interface.h"
 #include "../../plugin_system/protocol_interface.h"
 #include "../../plugin_system/plugin_tool.h"
@@ -153,7 +153,7 @@ static struct option longopts[] = {
 
 int cmd_chat(int argc, char **argv)
 {
-  char message[481];
+  char message[481] = "";
   if (argc == 1) {
     getmessage(message);
     send_chat(message);
@@ -162,6 +162,7 @@ int cmd_chat(int argc, char **argv)
   int c, indexptr;
   short flag = 0;
   optind = 0;
+  int optionmess = 0;
   while ((c = getopt_long(argc, argv, OPT_STRING,
           longopts, &indexptr)) != -1) {
     switch (c) {
@@ -172,6 +173,7 @@ int cmd_chat(int argc, char **argv)
       case OPT_MESS:
         flag |= FLAG_MESS;
         strncpy(message, optarg, 481);
+        optionmess = 1;
         break;
       case OPT_STDOUT:
         flag &= ~FLAG_TERMOUT;
@@ -186,6 +188,22 @@ int cmd_chat(int argc, char **argv)
         return 1;
         break;
     }
+  }
+
+  if (!optionmess && optind != -1) {
+    flag |= FLAG_MESS;
+    int len = 0;
+    for (int i = optind; i < argc - 1; ++i) {
+      int slen = 1 + strlen(argv[optind]);
+      if (len + slen >  MSIZE)
+        break;
+      len += slen;
+      strcat(message, argv[i]);
+      message[len-1] = ' ';
+    }
+    int slen = strlen(argv[argc-1]);
+    if (len + slen <= MSIZE)
+      strcat(message, argv[argc-1]);
   }
 
   if (flag & FLAG_STDOUT)

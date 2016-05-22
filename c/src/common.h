@@ -41,16 +41,13 @@
 
 #define NEED_SOCKET -1
 
-/*
- *#define verbose(format, ...) printf(BOLD "verbose" RESET " - " \
- *       format, ##__VA_ARGS__)
- */
-extern void (*verbose)(char *format, ...);
 
 #define VERBM_NOVERB 0
 #define VERBM_STDOUT 1
 #define VERBM_XTERMO 2
 
+extern void (* volatile verbose)(char *format, ...);
+void toggle_verbose();
 void verbosity(int mode);
 
 #define BUFSIZE 100
@@ -70,6 +67,6 @@ int isport(const char *str);
 void ipnozeros(char *nozeros, const char *ip);
 int init_outputxterm(pid_t *pid); 
 int init_xterm_communication(pid_t *pid, int *pipe);
-/* int ltole(char *le, long l, int size); */
-/* long letol(const char *le); */
+int init_log(const char *logfile);
+
 #endif /* COMMON_H */

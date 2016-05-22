@@ -24,6 +24,7 @@
   rm;
   rmn_free_data;
   rmn;
+  readline;
 
   iter;
 
