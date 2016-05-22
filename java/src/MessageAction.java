@@ -3,8 +3,8 @@
 
 public interface MessageAction
 {
-  public abstract int execute(String message, String content, boolean lookupFlag);
+  public int executeAction(String message, String content, boolean lookupFlag);
 
-  public abstract String getType();
+  public String getAction();
 }
 //MessageAction .java 

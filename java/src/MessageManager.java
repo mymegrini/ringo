@@ -19,16 +19,32 @@ public class MessageManager
     private ArrayList<MessageAction> action;
 
     private MessageAction whos = new MessageAction() {
-      public String getType() { return "WHOS"; }
-      public int execute(String message, String content, boolean lookupFlag) {
+      public String getAction() { return "WHOS"; }
+      public int executeAction(String message, String content, boolean lookupFlag) {
         if (lookupFlag) {
-          jring.verbose.println("Message " + message + " already seen, nothing to do.");
+          jring.verbose.println("Message \"" + message.substring(0, 13) + "\" already seen, nothing to do.");
         } else {
-          sendMessage("MEMB ", ent.paddedId + " " + ent.ip + " " + String.valueOf(ent.udp));
+          sendMessage(message);
+          sendMessage("MEMB", ent.paddedId + " " + ent.ip + " " + String.valueOf(ent.udp));
         }
         return 0;
       }
     };
+
+
+    private MessageAction memb = new MessageAction() {
+      public String getAction() { return "MEMB"; }
+      public int executeAction(String message, String content, boolean lookupFlag) {
+        if (lookupFlag) {
+          jring.verbose.println("Message " + message + " already seen, nothing to do.");
+        } else {
+          jring.verbose.println("MEMB: " + content);
+          sendMessage("MEMB", ent.paddedId + " " + ent.ip + " " + String.valueOf(ent.udp));
+        }
+        return 0;
+      }
+    };
+
 
     public MessageAdministrator(DatagramSocket _listenSock) { 
       listenSock = _listenSock;
@@ -36,6 +52,40 @@ public class MessageManager
 
       // Supported actions
       action.add(whos);
+      action.add(new ApplicationAction(jring));
+    }
+
+
+    public class MessageTreater implements Runnable {
+      private String message;
+      public MessageTreater(byte[] b) {
+        message = new String(b, 0, b.length);
+      }
+      public void run() {
+        jring.verbose.println("Message received: \"" + message + "\"");
+        if (message.length() != 512) {
+          jring.verbose.println("Message \"" + message + "`\" not following the protocol (size: " + message.length() + ")");
+          return;
+        }
+        String parsed[] = parseMsg(message);
+        if (parsed == null) {
+          jring.verbose.println("Message \"" + message + "`\" not following the protocol format.");
+          return;
+        }
+        String messageType  = parsed[0], idm = parsed[1], content = parsed[2];
+        boolean lookupFlag  = !listAdmin.add(idm);
+        boolean actionFound = false;
+        for (MessageAction a : action) {
+          if (messageType.equals(a.getAction())) {
+            a.executeAction(message, content, lookupFlag);
+            actionFound = true;
+            break;
+          }
+        }
+        if (!actionFound)
+          jring.verbose.println("Message not supported: " + message);
+      }
+
     }
 
     public void run() {
@@ -44,31 +94,8 @@ public class MessageManager
       while (true) {
         try {
           listenSock.receive(received);
-
-          Thread treatAction = new Thread(new Runnable() {
-            public void run() {
-              String message = new String(b, 0, received.getLength());
-              jring.verbose.println("Message received: " + message);
-              String parsed[] = parseMsg(message);
-              if (parsed == null)
-                return;
-              String messageType  = parsed[0], idm = parsed[1], content = parsed[2];
-              boolean lookupFlag  = listAdmin.add(idm);
-              boolean actionFound = false;
-              for (MessageAction a : action) {
-                if (messageType.equals(a.getType())) {
-                  a.execute(message, content, lookupFlag);
-                  actionFound = true;
-                  break;
-                }
-              }
-              if (!actionFound)
-                jring.verbose.println("Message not supported: " + message);
-            }
-          });
-
+          Thread treatAction = new Thread(new MessageTreater(b));
           treatAction.start();
-
         } catch (Exception e) {
           jring.verbose.println("UDP RECEIVED EXCEPTION");
           System.out.println(e);
@@ -92,7 +119,7 @@ public class MessageManager
 
 
     public synchronized boolean add(String idm) {
-      if (savedMessage.indexOf(idm) == -1)
+      if (savedMessage.indexOf(idm) != -1)
         return false;
       return savedMessage.add(idm);
     }
@@ -121,13 +148,16 @@ public class MessageManager
 
   public void sendMessage(Entity.NextEntity next, String message) {
     message = jring.padString(message, 512);
-    ent.sendPacket(next, " " + messageId() + " " + message);
   }
 
 
   public void sendMessage(Entity.NextEntity next, String type, String content) {
     String message = jring.padString(type + " " + content, 512);
-    sendMessage(next, message);
+    String idm = messageId();
+    if (listAdmin.add(idm))
+      sendMessage(next, type + " " + idm + " " + message);
+    else
+      jring.verbose.println("Detectede a hash collision : " + idm);
   }
 
 
@@ -171,7 +201,7 @@ public class MessageManager
     String[] parsed = new String[3];
     parsed[0] = message.substring(0, 4);
     parsed[1] = message.substring(5, 13);
-    parsed[2] = message.substring(13,message.length());
+    parsed[2] = message.substring(14,message.length());
     return parsed;
   }
 

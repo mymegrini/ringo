@@ -11,13 +11,14 @@ public class Shell implements Runnable
   private Jring jring;
 
   public Shell (Jring _jring, String promptInfo){
-    command = new ArrayList<>();
     jring = _jring;
     prompt = "[" + promptInfo + "] > ";
 
     // Add commands
+    command = new ArrayList<>();
     command.add(exit);
     command.add(whos);
+    command.add(new RdiffCommand(jring));
   }
 
 
@@ -36,7 +37,7 @@ public class Shell implements Runnable
     String[] args = commandLine.split(" ");
     for (ShellCommand cmd: command) {
       if (args[0].equals(cmd.getCommand())) {
-        cmd.execute(args);
+        cmd.executeCommand(args);
         return;
       }
     }
@@ -69,7 +70,7 @@ public class Shell implements Runnable
 
   private ShellCommand exit = new ShellCommand() {
     public String getCommand() { return "exit"; }
-    public int execute(String[] args) { 
+    public int executeCommand(String[] args) { 
       // System.out.println("Running exit...");
       // jring.shell.interrupt(); 
       // System.out.println("Exit run.");
@@ -80,7 +81,7 @@ public class Shell implements Runnable
 
   private ShellCommand whos = new ShellCommand() {
     public String getCommand() { return "whos"; }
-    public int execute(String[] args) { 
+    public int executeCommand(String[] args) { 
       jring.messageManager.sendMessage("WHOS", "");
       return 0;
     }

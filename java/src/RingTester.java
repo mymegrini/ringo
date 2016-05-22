@@ -9,8 +9,8 @@ public class RingTester implements Runnable
   ////////////////////////////////////////////////////////////////////////////////
 
   public class ActionTest implements MessageAction {
-    public String getType() { return "TEST"; }
-    public int execute(String message, String content, boolean lookupFlag) {
+    public String getAction() { return "TEST"; }
+    public int executeAction(String message, String content, boolean lookupFlag) {
       try {
         if (content.charAt(15) == ' ') {
           int port = Integer.parseInt(content.substring(16, content.length()));

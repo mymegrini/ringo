@@ -154,6 +154,7 @@ public class Entity{
     byte[] b = message.getBytes();
     DatagramPacket p = new DatagramPacket(b, 0, 512, next.entity);
     try {
+      jring.verbose.println("Sending packet \"" + message + "\" to " + next.nextIp);
       sendSock.send(p);
     } catch (Exception e) {
       jring.verbose.println("Error sending packet " + message + " to " + 
