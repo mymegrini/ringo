@@ -182,7 +182,8 @@ int init_log(const char *logfile)
   strcpy(buff, str);
   /* strcat(buff, str_date); */
   strcat(buff, asctime(timeinfo));
-  write(fd, buff, strlen(buff));
+  if (write(fd, buff, strlen(buff)) == -1)
+      perror("init_log");
   fd_log = fd;
   log_offset = 3;
   return 1;

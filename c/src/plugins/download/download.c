@@ -269,7 +269,8 @@ static int action_sen(const char *message, const char *content, int lookup_flag)
       int size = atoi(size_content);
       /* fwrite(fcontent, size, 1, t->f); */
       /* fflush(t->f); */
-      write(t->fd, fcontent, size);
+      if (write(t->fd, fcontent, size) == -1)
+	  perror("plugin/download/ action_sen");
       if (++t->nextnum == t->nummess) {
         char *filename = strdup(t->filename);
         free_transfert_data(t);
