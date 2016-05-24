@@ -8,7 +8,7 @@
 
 #define DEBUG_ENGINE
 
-#include "../../plugin_system/protocol_interface.h"
+#include "../../plugin_system/plugin_programmer_interface.h"
 #include "engine.h"
 #include "pong.h"
 
@@ -80,8 +80,11 @@ void playerid(char* hash){
     h = h * 33 + (uint16_t)time.tv_sec;
     h = h * 33 + (uint16_t)time.tv_nsec;
     // hashing ip and port
-    for(i=0; i<16; i++) h = h * 33 + info->ip_self[i];
-    h = h * 33 + info->udp;
+    /* for(i=0; i<16; i++) h = h * 33 + info->ip_self[i]; */
+    /* h = h * 33 + info->udp; */
+    char ip[16];
+    for(i=0; i<16; i++) h = h * 33 + ip[i];
+    h = h * 33 + get_udp();
 
     // creating hash using alphanumerical characters
     for(i=0; i<ID_SIZE; i++){

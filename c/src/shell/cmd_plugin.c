@@ -13,7 +13,6 @@
 
 static void usage(char *argv0);
 static void help(char *argv0);
-static void show_plugins(PluginManager *p);
 static void list_available(char *plug_dir);
 
 #define   OPT_HELP      'h'
@@ -86,7 +85,7 @@ int cmd_plugin(int argc, char **argv)
     }
   }
   if (flag == 0) {
-    show_plugins(&plugin_manager);
+    show_plugins();
     return 0;
   }
 
@@ -120,50 +119,6 @@ static void usage(char *argv0)
 static void help(char *argv0)
 {
   usage(argv0);
-}
-
-
-
-static void print_action(PluginAction_t *action)
-{
-  printf(BOLD "%s:\t" RESET "%s\n", action->name, action->desc);
-}
-
-
-
-static void print_command(PluginCommand_t *command)
-{
-  printf(BOLD "%s:\t" RESET "%s\n", command->name, command->desc);
-}
-
-
-
-static void print_registeredplugin(char *name, void *data)
-{
-  RegisteredPlugin *plug_reg = (RegisteredPlugin *)data;
-  Plugin           *p        = plug_reg->plug;
-
-  printf(BOLD UNDERLINED "%s" RESET "\n", name);
-  printf(UNDERLINED "commands:" RESET "\n");
-  if (p->size_command)
-    for (int i = 0; i < p->size_command; ++i)
-      print_command(p->command+i);
-  else
-    printf("No command\n");
-  printf(UNDERLINED "actions:" RESET "\n");
-  if (p->size_action)
-    for (int i = 0; i < p->size_action; ++i)
-      print_action(p->action+i);
-  else
-    printf("No action.\n");
-}
-
-
-
-static void show_plugins(PluginManager *p)
-{
-  printf(UNDERLINED BOLD "Plugins:" RESET "\n");
-  iter(p->plugin, print_registeredplugin);
 }
 
 

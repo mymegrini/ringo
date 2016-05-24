@@ -1,15 +1,13 @@
 #include "plugin_system.h"
-#include "plugin_interface.h"
-#include "../common.h"
+#include "plugin_programmer_interface.h"
+/* #include "../common.h" */
 #include "../list.h"
 
-#include <string.h>
-#include <stdlib.h>
 #include <dlfcn.h>
 #include <unistd.h> // temporary
 
 
-
+#include <pthread.h>
 
 
 
@@ -21,6 +19,31 @@ char default_plugin_directory[] = PLUG_DIR;
 char *plugin_directory          = default_plugin_directory;
 
 
+struct request {
+  list l;
+  pthread_mutex_t mutex;
+  pthread_cond_t  can_pop_cond;
+};
+
+
+
+typedef struct RegisteredPlugin {
+  Plugin *plug;
+  void *lib;
+} RegisteredPlugin;
+
+
+
+struct _PluginManager
+{
+  list action;
+  list command;
+  list plugin;
+  struct request request;
+};
+
+
+
 struct _PluginManager plugin_manager;
 
 
@@ -30,9 +53,13 @@ struct _PluginManager plugin_manager;
 
 void plugin_manager_init(PluginManager *p) 
 {
-  p->action = new_list();
-  p->command = new_list();
-  p->plugin = new_list();
+  p->action    = new_list();
+  p->command   = new_list();
+  p->plugin    = new_list();
+  p->request.l = new_list();
+
+  pthread_cond_init(&p->request.can_pop_cond, 0);
+  pthread_mutex_init(&p->request.mutex, 0);
 }
 
 
@@ -52,11 +79,6 @@ static char* plugin_name_init(const char *plugname)
   strcat(init, plugname);
   return init;
 }
-
-
-
-
-
 
 
 int plugin_register(PluginManager *plug_manager, const char *name, Plugin *plug) 
@@ -248,3 +270,128 @@ int unload_all_plugins(PluginManager *plug_manager)
   return r;
 }
 
+
+
+int exec_plugin_command(PluginManager *plug_manager, int argc, char *argv[])
+{
+  plug_command *pc;
+  if (find((void **)&pc, plug_manager->command, argv[0])) {
+    return (pc->command)(argc, argv);
+  }
+  return -1;
+
+}
+
+
+
+int exec_plugin_action(PluginManager *plug_manager, const char *idapp,
+    const char *message, const char* content, int lookup_flag)
+{
+  plug_action *pa;
+  if (find((void **)&pa, plug_manager->action, idapp)) {
+    return pa->action(message, content, lookup_flag);
+  }
+  return -1;
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// MESSAGE REQUESTING
+////////////////////////////////////////////////////////////////////////////////
+
+void push_message(PluginManager *plug_manager, const char *message)
+{ 
+  pthread_mutex_lock(&plug_manager->request.mutex);
+  insert(plug_manager->request.l, message, NULL);
+  pthread_cond_signal(&plug_manager->request.can_pop_cond);
+  pthread_mutex_unlock(&plug_manager->request.mutex);
+}
+
+
+
+static char *pop_message(PluginManager *plug_manager)
+{
+  char *msg = NULL;
+  pthread_mutex_lock(&plug_manager->request.mutex);
+  while ((msg = pop_name(plug_manager->request.l)) == NULL)
+    pthread_cond_wait(&plug_manager->request.can_pop_cond,
+        &plug_manager->request.mutex);
+  pthread_mutex_unlock(&plug_manager->request.mutex);
+  return msg;
+}
+
+
+
+const char *get_message()
+{
+  return pop_message(&plugin_manager);
+}
+
+
+//// END OF MESSAGE REQUESTING
+
+////////////////////////////////////////////////////////////////////////////////
+// TOOL
+////////////////////////////////////////////////////////////////////////////////
+
+
+static void print_action(PluginAction_t *action)
+{
+  printf(BOLD "%s:\t" RESET "%s\n", action->name, action->desc);
+}
+
+
+
+static void print_command(PluginCommand_t *command)
+{
+  printf(BOLD "%s:\t" RESET "%s\n", command->name, command->desc);
+}
+
+
+
+static void print_registeredplugin(char *name, void *data)
+{
+  RegisteredPlugin *plug_reg = (RegisteredPlugin *)data;
+  Plugin           *p        = plug_reg->plug;
+
+  printf(BOLD UNDERLINED "%s" RESET "\n", name);
+  printf(UNDERLINED "commands:" RESET "\n");
+  if (p->size_command)
+    for (int i = 0; i < p->size_command; ++i)
+      print_command(p->command+i);
+  else
+    printf("No command\n");
+  printf(UNDERLINED "actions:" RESET "\n");
+  if (p->size_action)
+    for (int i = 0; i < p->size_action; ++i)
+      print_action(p->action+i);
+  else
+    printf("No action.\n");
+}
+
+
+
+static void display_plugins(PluginManager *p)
+{
+  printf(UNDERLINED BOLD "Plugins:" RESET "\n");
+  iter(p->plugin, print_registeredplugin);
+}
+
+
+
+void show_plugins()
+{
+  display_plugins(&plugin_manager);
+}
+
+
+
+list get_commandlist()
+{
+  return plugin_manager.command;
+}
+
+
+
+//// END OF TOOL

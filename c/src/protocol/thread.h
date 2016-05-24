@@ -14,6 +14,7 @@ struct thread {
     pthread_t mdiff_manager;
     pthread_t shell;
     pthread_t listmsg_manager;
+    pthread_t plugin_message_manager;
 };
 
 extern struct thread *thread;

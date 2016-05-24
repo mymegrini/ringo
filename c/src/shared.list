@@ -1,0 +1,28 @@
+{
+  ring_number;
+  ent;
+
+  verbose;
+  new_list;
+
+
+  plugin_register;
+
+  retransmit;
+  send_message;
+  get_message;
+
+  get_ring_number;
+  get_id;
+  get_ip;
+  get_udp;
+
+  get_commandlist;
+  init_xterm_communication;
+  xterm_printf;
+  xterm_read;
+  xterm_getline;
+  xterm_getpid;
+  xterm_getoutput;
+  xterm_close;
+};

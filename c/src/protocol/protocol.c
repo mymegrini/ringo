@@ -1,7 +1,7 @@
 #include "protocol.h"
 
 #include "../common.h"
-/* #include "listmsg.h" */
+#include "listmsg_manager.h"
 #include "network.h"
 #include "message.h"
 #include "thread.h"
@@ -16,6 +16,8 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <signal.h>
+
+#include "../plugin_system/plugin_system.h"
 
 
 
@@ -107,8 +109,10 @@ static welc_msg *parse_welc(const char *w_msg)
 
 static newc_msg *parse_newc(const char *n_msg)
 {
-  if (n_msg[4] != ' ' || n_msg[20] != ' ' || n_msg[25] != 0)
+  if (n_msg[4] != ' ' || n_msg[20] != ' ' || n_msg[25] != 0) {
+    debug("parse_newc", "n_msg (%d): %s\n", (int)strlen(n_msg), n_msg);
     return NULL;
+  }
   newc_msg *newc = malloc(sizeof(newc_msg));
   char type[5];
   char port[5];
@@ -230,12 +234,12 @@ static void actualize_receiver(int ring, char ip_next[16], uint16_t port_next,
   if ( (msg = receptLine(sock)) == NULL ) { \
     verbose(REVERSE "Connection lost with client, timeout excedeed.\n"); return; }
 
-static void insert(int ring, char *n_msg, int sock2)
+static void insert_receiver(int ring, char *n_msg, int sock2)
 {
   verbose(REVERSE "Insertion server: parsing NEWC message...\n" RESET);
   newc_msg *newc = parse_newc(n_msg);
   if (newc == NULL) {
-    fprintf(stderr, "Protocol error: bad response from client->\nInsertion failed.\n");
+    verbose(REVERSE "Bad response from client: \"%s\".\n", n_msg);
     free(newc);
     return;
   }
@@ -267,16 +271,18 @@ static void insert(int ring, char *n_msg, int sock2)
   verbose(REVERSE "Insertion server: message ACKC sent.\n" RESET);
   // modifying entity
   verbose(REVERSE "Insertion server: modifying current entity...\n" RESET);
-  verbose(REVERSE "Insertion server: current entity :\n%s\n" RESET, entitytostr(ring));
-  /* actualize_receiver(ring, newc->ip, newc->port, &receiver); */
+
+  char buff[400];
+  verbose(REVERSE "Insertion server: current entity : " RESET "\n%s\n", entitytostr(ring, buff));
+  actualize_receiver(ring, newc->ip, newc->port, &receiver);
   strcpy(ent->ip_next[ring], newc->ip);
-  ent->port_next[ring] = newc->port;
-  /* verbose(REVERSE "Insertion server: modified entity :\n%s\n" RESET, entitytostr(ring)); */
+  /* ent->port_next[ring] = newc->port; */
+  verbose(REVERSE "Insertion server: modified entity :" RESET "\n%s\n", entitytostr(ring, buff));
   free(newc);
-  _ent->receiver[ring] = receiver;
-  verbose(REVERSE "Actualizing receviver...\n" RESET);
+  /* _ent->receiver[ring] = receiver; */
+  /* verbose(REVERSE "Actualizing receviver...\n" RESET); */
   verbose(REVERSE "Current structure replaced.\n" RESET);
-  debug("insert", MAGENTA "modified entity:\n%s", entitytostr(ring));
+  debug("insert", MAGENTA "modified entity:\n%s", entitytostr(ring, buff));
 }
 
 
@@ -396,7 +402,7 @@ static void insertionsrv()
     if_receptLine(msg, sock2);
     verbose(REVERSE "Insertion server: received : \"%s\".\n" RESET, msg);
     if (strncmp(msg, "NEWC", 4) == 0)
-      insert(nring, msg, sock2);
+      insert_receiver(nring, msg, sock2);
     else if (strncmp(msg, "DUPL", 4) == 0) {
       if (nring == NRING - 1)
         send(sock2, "MAX\n", 4, 0);
@@ -511,9 +517,9 @@ static void test_ring()
  *
  * @return the string representing current entity
  */
-char *entitytostr(int ring)
+char *entitytostr(int ring, char *str)
 {
-  char *str = (char *)malloc(400);
+  /* char *str = (char *)malloc(400); */
   char *id = malloc(50), *udp = malloc(50), *tcp = malloc(50),
        *ip = malloc(50), *np = malloc(50), *mdip = malloc(50), 
        *mdp = malloc(50), ip_self[ 50 ];
@@ -529,6 +535,24 @@ char *entitytostr(int ring)
   free(id);free(udp);free(tcp);free(ip);free(np);free(mdip);free(mdp);
   return str;
 }
+/* char *entitytostr(int ring) */
+/* { */
+/*   char *str = (char *)malloc(400); */
+/*   char *id = malloc(50), *udp = malloc(50), *tcp = malloc(50), */
+/*        *ip = malloc(50), *np = malloc(50), *mdip = malloc(50), */ 
+/*        *mdp = malloc(50), ip_self[ 50 ]; */
+/*   sprintf(ip_self, "%30s - %s", "\x1b[4mself ip\x1b[0m", ent->ip_self); */
+/*   sprintf(id, "%30s - %s", "\x1b[4mid\x1b[0m", ent->id); */
+/*   sprintf(udp, "%30s - %d", "\x1b[4mudp listening port\x1b[0m", ent->udp); */
+/*   sprintf(tcp, "%30s - %d", "\x1b[4mtcp listening port\x1b[0m", ent->tcp); */
+/*   sprintf(ip, "%30s - %s", "\x1b[4mip of next entity\x1b[0m", ent->ip_next[ring]); */
+/*   sprintf(np, "%30s - %d", "\x1b[4mport of next entity\x1b[0m", ent->port_next[ring]); */
+/*   sprintf(mdip, "%30s - %s", "\x1b[4mmultidiff ip\x1b[0m", ent->mdiff_ip[ring]); */
+/*   sprintf(mdp, "%30s - %d", "\x1b[4mmultidiff port\x1b[0m", ent->mdiff_port[ring]); */
+/*   sprintf(str, "%s\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n", ip_self, id, udp, tcp, ip, np, mdip, mdp); */
+/*   free(id);free(udp);free(tcp);free(ip);free(np);free(mdip);free(mdp); */
+/*   return str; */
+/* } */
 
 
 
@@ -641,7 +665,10 @@ void init_entity(char *id, uint16_t udp_listen, uint16_t tcp_listen,
     ent->mdiff_port[0] = mdiff_port;
   }
 
-  debug("init_entity", "%s\n", entitytostr(0));
+#ifdef DEBUG
+  char buff[400];
+  debug("init_entity", "%s\n", entitytostr(0, buff));
+#endif
 }
 
 
@@ -830,7 +857,10 @@ int join2(const char *host, const char *tcpport)
   
   add_ring(welc->ip, welc->port, welc->ip_diff, welc->port_diff, &receiver, sockmdiff, &mdiff_addr);
   verbose(REVERSE "Insertion done.\n" RESET);
-  debug("insert", MAGENTA "modified entity:\n%s", entitytostr( nring ));
+#ifdef DEBUG
+  char buff[400];
+  debug("insert", MAGENTA "modified entity:\n%s", entitytostr( nring, buff ));
+#endif
 
   return 1;
 }
@@ -923,7 +953,10 @@ int duplicate_rqst2(const char *host, const char *tcpport, const char *mdiff_ip,
   ipresize_noalloc(mdiff_ipr, mdiff_ip);
   add_ring(welc->ip, welc->port, mdiff_ipr, mdiff_port, &receiver, sockmdiff, &mdiff_addr);
   verbose(REVERSE "Dupplication done.\n" RESET);
-  debug("duplicate_rqst", MAGENTA "modified entity:\n%s", entitytostr( nring ));
+#ifdef DEBUG
+  char buff[400];
+  debug("duplicate_rqst", MAGENTA "modified entity:\n%s", entitytostr( nring, buff ));
+#endif
 
 
   return 1;
@@ -1014,7 +1047,7 @@ void *mdiff_manager(void *args)
             broken[i] = 1;
           }
           else {
-            debug("mdiff_manager", "strcmp(%s,DOWN) == %d, strlen(%s) = %d", buff, strcmp(buff, "DOWN"), buff, strlen(buff));
+            debug("mdiff_manager", "strcmp(%s,DOWN) == %d, strlen(%s) = %d", buff, strcmp(buff, "DOWN"), buff, (int)strlen(buff));
           }
         }
 #ifdef DEBUG
@@ -1054,6 +1087,25 @@ void *mdiff_manager(void *args)
   return NULL;
 }
 
+
+
+void *plugin_message_manager (void *nothing)
+{ 
+  while (1) {
+    const char *message = get_message();
+    char idm[9] = {0};
+    strncpy(idm, message + 5, 8);
+#ifdef DEBUG
+    int r =
+#endif
+      lookup(idm);
+#ifdef DEBUG
+    if (r==1) debug("makemessage", "Detected a hash collision: %s\n", idm);
+#endif
+    sendpacket_all(message);
+  }
+  return NULL;
+}
 
 
 

@@ -115,6 +115,22 @@ static void close_listmsg_manager() {
 
 
 
+static void close_plugin_message_manager() {
+    verbose(REVERSE "Closing plugin message manager...\n" RESET);
+    pthread_cancel(thread->plugin_message_manager);
+    verbose(REVERSE "Plugin message manager closed.\n" RESET);
+}
+
+
+
+static void start_plugin_message_manager() {
+    verbose(REVERSE "Starting plugin message manager...\n" RESET);
+    pthread_create(&thread->plugin_message_manager, NULL, plugin_message_manager, NULL);
+    verbose(REVERSE "Plugin message manager started.\n" RESET);
+}
+
+
+
 void start_tcpserver() {
   if (need_tcpserver) {
     need_tcpserver = 0;
@@ -201,6 +217,8 @@ void init_threads() {
     start_tcpserver();
     // Launch messages' list garbage collector
     start_listmsg_manager();
+    // Launch plugin message manager
+    start_plugin_message_manager();
 
     need_thread = 0;
   }
@@ -218,6 +236,7 @@ void close_threads()
     close_mdiffmanager();
     close_tcpserver();
     close_listmsg_manager();
+    close_plugin_message_manager();
     need_thread = 1;
     verbose(REVERSE "Threads closed.\n" RESET);
   }
