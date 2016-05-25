@@ -182,11 +182,13 @@ static void
 renderRackets(SDL_Renderer* renderer, int y1, int y2){
 
     if(y1>-1){
-	SDL_Rect racket1 = { X(-RACKET_X), Y(y1), RACKET_X, RACKET_Y };
+	SDL_Rect racket1 = { X(-RACKET_X), Y(y1 - RACKET_Y / 2),
+			     RACKET_X, RACKET_Y };
 	SDL_RenderDrawRect(renderer, &racket1);
     }
     if(y2>-1){
-	SDL_Rect racket2 = { X(FIELD_X), Y(y2), RACKET_X, RACKET_Y };
+	SDL_Rect racket2 = { X(FIELD_W), Y(y2 - RACKET_Y / 2),
+			     RACKET_X, RACKET_Y };
 	SDL_RenderDrawRect(renderer, &racket2);
     }
     return;
@@ -197,6 +199,20 @@ renderRackets(SDL_Renderer* renderer, int y1, int y2){
  */
 static void
 renderScore(SDL_Renderer* renderer, int s1, int s2){
+
+    if (s1 > 9 || s2 > 9 || s1 < 0 || s2 < 0){
+	s1 = 9;
+	s2 = 9;
+    }
+    if (s1 == 9 || s2 == 9){
+	SDL_Texture* result1 = (s1 == 9 ? trophyTexture : skullTexture);
+	SDL_Texture* result2 = (s2 == 9 ? trophyTexture : skullTexture);
+	SDL_Rect center1 = { RESULT1_X, RESULT1_Y, RESULT_W, RESULT_H };
+	SDL_Rect center2 = { RESULT2_X, RESULT2_Y, RESULT_W, RESULT_H };
+
+	SDL_RenderCopy(renderer, result1, NULL, &center1);
+	SDL_RenderCopy(renderer, result2, NULL, &center2);
+    }
 
     SDL_Rect digit1 = { WINDOW_WIDTH / 2 - 2 * DIGIT_X, Y(0), DIGIT_X, DIGIT_Y};
     SDL_RenderCopy(renderer, digitTexture[s1], NULL, &digit1);
@@ -213,7 +229,8 @@ renderScore(SDL_Renderer* renderer, int s1, int s2){
 static void
 renderBall(SDL_Renderer* renderer, int x, int y){
 
-    SDL_Rect ball = { x, Y(y), BALL_SIZE, BALL_SIZE };
+    SDL_Rect ball = { X(x - BALL_SIZE / 2), Y(y - BALL_SIZE / 2),
+		      BALL_SIZE, BALL_SIZE };
     SDL_RenderFillRect(renderer, &ball);
     return;
 }
@@ -223,20 +240,27 @@ renderBall(SDL_Renderer* renderer, int x, int y){
  * This function renders the current state of the game
  */
 void
-simulate(SDL_Renderer* renderer){
+simulate(SDL_Renderer* renderer, int event){
+
 
     state s;
+    //updating and running engine
+    if(event != OFF)
+	run(event);
     getState(&s);
 
     if(s.available){
 
 	if (fieldTexture == NULL)
-	loadTextures(renderer);
+	    loadTextures(renderer);
 
+	//rendering result
 	SDL_RenderCopy(renderer, fieldTexture, NULL, NULL);
 	renderScore(renderer, s.score[0], s.score[1]);
-	renderRackets(renderer, s.racket[0], s.racket[1]);
-	renderBall(renderer, s.ball[0], s.ball[1]);
+	if(s.racket != NULL)
+	    renderRackets(renderer, s.racket[0], s.racket[1]);
+	if(s.ball != NULL)
+	    renderBall(renderer, s.ball[0], s.ball[1]);
     }
     else
 	renderLogo(renderer);
