@@ -11,9 +11,9 @@ typedef struct {
 } state;
 
 typedef struct {
-    int score;
-    int racket;
-    double racket_t;
+    int score;         /**< opponent's score >*/
+    int racket;        /**< player's racket position >*/
+    double racket_t;   /**< player's racket position time >*/
     int ball_x;
     int ball_y;
     double ball_v;
@@ -29,7 +29,8 @@ void initEngine();
 void quitEngine();
 int engineState();
 void playerid(char* id);
-void createSession(const char* host, const char* opponent, int self);
+void createSession(const char* host, const char* opponent,
+		   int self, double* time);
 void destroySession();
 void getState(state* s);
 void getUpdate(update* u);
