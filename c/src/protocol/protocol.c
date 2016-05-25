@@ -600,7 +600,7 @@ void sendpacket(const char *content, int ring)
       "Sending packet solo ring:\n---\n%s\n---\n...\n"
       "To ip %s on port %d.", content, inet_ntoa(_ent->receiver[ring].sin_addr),
       ntohs(_ent->receiver[ring].sin_port));
-  sendto(_ent->socksend, content, 512, 0,
+  sendto(_ent->socksend, content, strlen(content), 0,
       (struct sockaddr *) &_ent->receiver[ring],
       (socklen_t)sizeof(struct sockaddr_in));
   verbose(UNDERLINED "Packet sent:" RESET "\n%s\n", content);
@@ -613,7 +613,7 @@ void sendpacket_all(const char *content)
   debug("sendpacket_all(char *content)", 
       "Sending packet multiple ring (%d):\n---\n%s\n---\n...\n", nring+1, content);
   for (int i = 0; i < nring + 1; ++i) {
-    sendto(_ent->socksend, content, 512, 0,
+    sendto(_ent->socksend, content, strlen(content), 0,
         (struct sockaddr *)&_ent->receiver[i],
         (socklen_t)sizeof(struct sockaddr_in));
   }
@@ -628,11 +628,13 @@ void sendpacket_sockaddr(const char *content, const struct sockaddr_in *receiver
       BLUE "Sending packet solo:\n---\n%s\n---\n...\n"
       "To ip %s on port %d.", content, inet_ntoa(receiver->sin_addr),
       ntohs(receiver->sin_port));
-  sendto(_ent->socksend, content, 512, 0,
+  sendto(_ent->socksend, content, strlen(content), 0,
       (struct sockaddr *) receiver,
       (socklen_t)sizeof(struct sockaddr_in));
   verbose(UNDERLINED "Packet sent:" RESET "\n%s\n", content);
 }
+
+
 /**
  * Initialize entity with given attributes.
  * ip_next and port_next are set to ip_self and udp_listen.
