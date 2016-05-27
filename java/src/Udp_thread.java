@@ -98,15 +98,18 @@ public class Udp_thread implements Runnable{
 
     public void mess_recv_EYBG(String[] tab){
         try{
-            if(tab.length==2 && tab[0].equals("EYBG") && mess_list.remove(tab[1])){
+            if(tab.length==2 && tab[0].equals("EYBG") && mess_list.remove(tab[1]) && !mess_list.remove(tab[1])){
                 mso.leaveGroup(InetAddress.getByName(ent.mdiff_ip));
-                if(ent.port_next2!=-1) mso.leaveGroup(InetAddress.getByName(ent.mdiff_ip2));
+                if(ent.port_next2!=-1){ 
+                    if(!ent.mdiff_ip.equals(ent.mdiff_ip2)) mso.leaveGroup(InetAddress.getByName(ent.mdiff_ip2));
+                    //ent.port_next2=-1;
+                }
                 dso.close();
                 System.exit(0);
-                //System.out.println("Write quit to leave");
             }
         }catch(Exception e){
             System.out.println(e);
+            e.printStackTrace();
         }
     }
     
@@ -215,6 +218,7 @@ public class Udp_thread implements Runnable{
             dso.send(packet_send);
             if(ent.port_next2!=-1){
                 String[] tab = mess.split(" ");
+                if(tab[0].equals("EYBG") || tab[0].equals("GBYE")) mess_list.add(tab[1]);
                 if(!tab[0].equals("TEST")) mess_list.add(tab[1]);
                 packet_send =new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next2,ent.port_next2));
                 dso.send(packet_send);

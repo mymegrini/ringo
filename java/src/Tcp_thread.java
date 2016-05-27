@@ -54,7 +54,7 @@ public class Tcp_thread implements Runnable{
                 socket.close();
             }
         }catch(Exception e){
-            System.out.println("Fin du tcp");
+            System.out.println("End of the thread tcp");
             //System.out.println(e);
             //e.printStackTrace();
         }

@@ -57,7 +57,7 @@ public class Diff_thread implements Runnable{
                     break;
                 }
             }
-            System.out.println("End of the diffusion "+ip+" "+port);
+            System.out.println("End of the thread diffusion "+ip+" "+port);
         }
         catch(Exception e){
             System.out.println(e);

@@ -162,12 +162,12 @@ public class Jring{
                         mess_recognize=true;
                         tcp_mode.server.close();
                         mess_send="GBYE "+m_id+" "+ent.ip+" "+Entity.add_zero(ent.udp,4)+" "+ent.ip_next+" "+Entity.add_zero(ent.port_next,4);
-                        if(ent.port_next2!=-1){
+                        /*if(ent.port_next2!=-1){
                             mess_list.add(m_id);
                             Udp_thread.send_mess(ent,dso,mess_send);
                             m_id=message_id();
                             mess_send="GBYE "+m_id+" "+ent.ip+" "+Entity.add_zero(ent.udp,4)+" "+ent.ip_next2+" "+Entity.add_zero(ent.port_next2,4);
-                        }
+                        }*/
                     }
                     if(mess_send.equals("test")){
                         mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+Entity.add_zero(ent.mdiff_port,4);
@@ -296,7 +296,7 @@ public class Jring{
                 String[] tab = mess_recv.split(" ");
                 try{
                     if(tab.length==2){
-                        ent.ip_next=adress;
+                        ent.ip_next=Entity.ip_form(adress);
                         ent.port_next=Integer.parseInt(tab[1]);
                         ent.mdiff_ip=Entity.ip_form(ip_mdiff2);
                         ent.mdiff_port=port_mdiff2;
