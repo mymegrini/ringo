@@ -5,8 +5,8 @@ DOBJS		= $(CPLUGPATH)/pong.so
 OBJS		= $(CSRC:%.c=$(CPLUGPATH)/%.o)
 HSDL		= `pkg-config --cflags sdl2`
 LIBSDL		= `pkg-config --libs sdl2`
-PLUGIN          = ../../plugin_system/plugin_interface.h
-PROTOCOL        = ../../plugin_system/protocol_interface.h
+PLUGIN          = ../../plugin_system/plugin_programmer_interface.h
+# PROTOCOL        = ../../plugin_system/protocol_interface.h
 
 .PHONY: all clean
 

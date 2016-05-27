@@ -1,7 +1,7 @@
 #include "protocol.h"
 
 #include "../common.h"
-/* #include "listmsg.h" */
+#include "listmsg_manager.h"
 #include "network.h"
 #include "message.h"
 #include "thread.h"
@@ -16,6 +16,8 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <signal.h>
+
+#include "../plugin_system/plugin_system.h"
 
 
 
@@ -107,8 +109,10 @@ static welc_msg *parse_welc(const char *w_msg)
 
 static newc_msg *parse_newc(const char *n_msg)
 {
-  if (n_msg[4] != ' ' || n_msg[20] != ' ' || n_msg[25] != 0)
+  if (n_msg[4] != ' ' || n_msg[20] != ' ' || n_msg[25] != 0) {
+    debug("parse_newc", "n_msg (%d): %s\n", (int)strlen(n_msg), n_msg);
     return NULL;
+  }
   newc_msg *newc = malloc(sizeof(newc_msg));
   char type[5];
   char port[5];
@@ -230,12 +234,12 @@ static void actualize_receiver(int ring, char ip_next[16], uint16_t port_next,
   if ( (msg = receptLine(sock)) == NULL ) { \
     verbose(REVERSE "Connection lost with client, timeout excedeed.\n"); return; }
 
-static void insert(int ring, char *n_msg, int sock2)
+static void insert_receiver(int ring, char *n_msg, int sock2)
 {
   verbose(REVERSE "Insertion server: parsing NEWC message...\n" RESET);
   newc_msg *newc = parse_newc(n_msg);
   if (newc == NULL) {
-    fprintf(stderr, "Protocol error: bad response from client->\nInsertion failed.\n");
+    verbose(REVERSE "Bad response from client: \"%s\".\n", n_msg);
     free(newc);
     return;
   }
@@ -398,7 +402,7 @@ static void insertionsrv()
     if_receptLine(msg, sock2);
     verbose(REVERSE "Insertion server: received : \"%s\".\n" RESET, msg);
     if (strncmp(msg, "NEWC", 4) == 0)
-      insert(nring, msg, sock2);
+      insert_receiver(nring, msg, sock2);
     else if (strncmp(msg, "DUPL", 4) == 0) {
       if (nring == NRING - 1)
         send(sock2, "MAX\n", 4, 0);
@@ -1085,6 +1089,25 @@ void *mdiff_manager(void *args)
   return NULL;
 }
 
+
+
+void *plugin_message_manager (void *nothing)
+{ 
+  while (1) {
+    const char *message = get_message();
+    char idm[9] = {0};
+    strncpy(idm, message + 5, 8);
+#ifdef DEBUG
+    int r =
+#endif
+      lookup(idm);
+#ifdef DEBUG
+    if (r==1) debug("makemessage", "Detected a hash collision: %s\n", idm);
+#endif
+    sendpacket_all(message);
+  }
+  return NULL;
+}
 
 
 
