@@ -11,12 +11,13 @@ typedef struct {
 } state;
 
 typedef struct {
+    int state;
     int score;         /**< opponent's score >*/
     int racket;        /**< player's racket position >*/
     double racket_t;   /**< player's racket position time >*/
     int ball_x;
     int ball_y;
-    double ball_v;
+    int ball_v;
     double ball_d;
     double ball_t;
 } update;    

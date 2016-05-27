@@ -245,7 +245,7 @@ simulate(SDL_Renderer* renderer, int event){
 
     state s;
     //updating and running engine
-    if(event != OFF)
+    if(event != OFF && event != OFF)
 	run(event);
     getState(&s);
 
@@ -257,9 +257,8 @@ simulate(SDL_Renderer* renderer, int event){
 	//rendering result
 	SDL_RenderCopy(renderer, fieldTexture, NULL, NULL);
 	renderScore(renderer, s.score[0], s.score[1]);
-	if(s.racket != NULL)
-	    renderRackets(renderer, s.racket[0], s.racket[1]);
-	if(s.ball != NULL)
+	renderRackets(renderer, s.racket[0], s.racket[1]);
+	if(s.available != -1) //GAMEOVER
 	    renderBall(renderer, s.ball[0], s.ball[1]);
     }
     else

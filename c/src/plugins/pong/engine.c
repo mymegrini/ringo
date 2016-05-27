@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define DEBUG_ENGINE
+//#define DEBUG_ENGINE
 
 #include "../../plugin_system/plugin_programmer_interface.h"
 #include "engine.h"
@@ -14,9 +14,9 @@
 
 typedef struct {
     double t;
-    double x;
-    double y;
-    double v;
+    int x;
+    int y;
+    int v;
     double d;
 } ball;
 
@@ -43,6 +43,7 @@ int* racket = NULL;
 /**
  * This function returns the current time
  */
+#define CLOCK_TRIM 1464360000
 double tick(){
 
     struct timespec time;
@@ -50,11 +51,13 @@ double tick(){
     if (clock_gettime(CLOCK_REALTIME_COARSE, &time) == -1){
 	perror("clock");
 	return -1;
-    }
+    } else {
 
-    //printf("%ld,%ld\n", time.tv_sec, time.tv_nsec);
-    int msec = time.tv_nsec / 100000;
-    return (double)time.tv_sec + msec/1000.0;
+	int usec = time.tv_nsec / 1000   ;
+	double sec = time.tv_sec - CLOCK_TRIM;
+	//printf("%lf\n", (sec + usec * .000001));
+	return (sec + usec * .000001);
+    }
 }
 
 /**
@@ -187,6 +190,8 @@ void createSession(const char* host, const char* guest,
 	engine->player[1].score = 0;
 	engine->player[0].racket = -1;
 	engine->player[1].racket = -1;
+	engine->player[0].time = engine->time;
+	engine->player[1].time = engine->time;
 	//initializing ball
 	if(*time == 0){
 	    engine->ball.t = engine->time + 3;
@@ -198,7 +203,10 @@ void createSession(const char* host, const char* guest,
 	engine->ball.y = engine->h / 2;
 	engine->ball.v = BALL_V / 2;
 	engine->ball.d = M_PI;
-
+	#ifdef DEBUG_ENGINE
+	printf("ball init : (%d,%d) V%d D%lf T%lf\n", engine->ball.x,
+	       engine->ball.y, engine->ball.v, engine->ball.d, engine->ball.t);
+        #endif
 	//seting up the pointers
 	self = engine->player[engine->self].id;
 	opponent = engine->player[1-engine->self].id;
@@ -257,12 +265,24 @@ int engineState(){
 /**
  * This function returns the state of the game for rendering
  */
-static void moveBall(double* b, double time){
+static void moveBall(int* b, double time){
 
     ball* ball = &(engine->ball);
-    b[0] = ball->x + ball->v * cos(ball->d) * (time - ball->t);
-    b[1] = ball->y + ball->v * sin(ball->d) * (time - ball->t);
+    int vx = ball->v * cos(ball->d);
+    int vy = ball->v * sin(ball->d);
+    b[0] = ball->x + vx * (time - ball->t);
+    b[1] = ball->y + vy * (time - ball->t);
+    if(b[0]<-MARGIN) b[0] = -MARGIN;
+    if(b[0]>engine->w + MARGIN) b[0] = engine->w + MARGIN;
+    if(b[1]<-MARGIN) b[1] = -MARGIN;
+    if(b[1]>engine->h + MARGIN) b[1] = engine->h + MARGIN;
+    #ifdef DEBUG_ENGINE
+    //printf("B(%d,%d) = B0(%d,%d) + V(%d, %d) * T(%lf-%lf)\n", b[0], b[1],
+    //	   ball->x, ball->y, vx, vy, time, ball->t);
+    #endif
 }
+
+#define GAMEOVER (engine->player[0].score == 9 || engine->player[1].score == 9)
 void getState(state* s){
 
     if (SDL_LockMutex(mutex))
@@ -270,17 +290,17 @@ void getState(state* s){
     else {
 
 	if(engine != NULL){
-	    s->available = 1;
+	    s->available = (GAMEOVER ? -1 : 1); //-1 : GAMEOVER
 	    s->score[0]    = engine->player[0].score;
 	    s->score[1]    = engine->player[1].score;
 	    s->racket[0]   = (int) engine->player[0].racket;
 	    s->racket[1]   = (int) engine->player[1].racket;
 	    //obtain ball coordinates
 	    if(engine->time > engine->ball.t){
-		double b[2];
-		moveBall(b, engine->time);
-		s->ball[0] = (int) b[0];
-		s->ball[1] = (int) b[1];
+	    	int b[2];
+	    	moveBall(b, engine->time);
+	    	s->ball[0] = b[0];
+	    	s->ball[1] = b[1];
 	    } else {
 		s->ball[0] = engine->ball.x;
 		s->ball[1] = engine->ball.y;
@@ -302,6 +322,7 @@ void getUpdate(update* u){
     else {
 
 	if(engine != NULL){
+	    u->state    = 1;
 	    u->score    = engine->player[1-engine->self].score;
 	    u->racket   = engine->player[engine->self].racket;
 	    u->racket_t = engine->player[engine->self].time;
@@ -311,7 +332,7 @@ void getUpdate(update* u){
 	    u->ball_d   = engine->ball.d;
 	    u->ball_t   = engine->ball.t;
 	} else {
-	    u = NULL;
+	    u->state    = 0;
 	}
 
 	//Freeing mutex
@@ -331,14 +352,14 @@ void updateState(const update* u){
 
 	int opponent = 1 - engine->self;
 	int opponent_side = engine->w * opponent;
-	if (engine->player[opponent].time < u->racket_t){
-	    engine->player[opponent].racket = u->racket;
-	    engine->player[opponent].time = u->racket_t;
-	}
+
+	engine->player[opponent].racket = u->racket;
+	engine->player[opponent].time = u->racket_t;
+
 	if (engine->player[engine->self].score < u->score)
 	    engine->player[engine->self].score = u->score;
-	if (engine->ball.t < u->ball_t
-	    && abs(u->ball_x - opponent_side) <= engine->w / 2){
+	if (u->ball_x == engine->w / 2 ||
+	    abs(u->ball_x - opponent_side) < engine->w / 2){
 	    engine->ball.x = u->ball_x;
 	    engine->ball.y = u->ball_y;
 	    engine->ball.v = u->ball_v;
@@ -356,15 +377,15 @@ void updateState(const update* u){
  * This function updates the state of the game
  * returns 1 if modified, 0 if not
  */
-#define LAG 0.005
-#define RACKET_COLLISION(out, ball, side)\
-    (out || abs(ball[0] - engine->w / 2) > abs((side) - engine->w /2))
-#define WALL_COLLISION(ball) (ball[1] < 0 || ball[1] > engine->h)
-#define LIMIT_COLLISION(ball) (ball[0] < -MARGIN ||			\
-			       ball[0] > engine->w + MARGIN ||		\
-			       ball[1] < -MARGIN ||			\
-			       ball[1] > engine->h + MARGIN)
-static double shift(double d, int alpha){
+#define IN_FIELD         (scored == 0)
+#define OUT_FIELD        (scored == 1)
+#define RACKET_COLLISION ( IN_FIELD && (ball[0] >= engine->w || ball[0] <= 0))
+#define WALL_COLLISION   ( IN_FIELD && (ball[1] < 0 || ball[1] > engine->h))
+#define LIMIT_COLLISION  (ball[0] <= -MARGIN ||				\
+			  ball[0] >= engine->w + MARGIN ||		\
+			  ball[1] <= -MARGIN ||				\
+			  ball[1] >= engine->h + MARGIN)
+static double shift(double d, int hit){
     return d;
 }
 static void ballCollision(){
@@ -372,77 +393,105 @@ static void ballCollision(){
     if(engine->time <= engine->ball.t)
 	return;
 
-    static int out = 0;
-    double ball[2];
+    static int scored = 0;
+    int ball[2];
     moveBall(ball, engine->time);
-    int side = engine->w * engine->self;
-    double wall = (ball[1] < 0 ? 0 : engine->w);
+    int side = (ball[0] <= engine->w / 2 ? 0 : engine->w);
+    int wall = (ball[1] <= engine->h / 2 ? 0 : engine->h);
+    int vx = engine->ball.v * cos(engine->ball.d);
+    int vy = engine->ball.v * sin(engine->ball.d);
+    #ifdef DEBUG_ENGINE
+    printf("self : %d | side : %d | wall : %d\n", engine->self, side, wall);
+    #endif
 
-    if (LIMIT_COLLISION(ball)){
-
+    if (LIMIT_COLLISION){
+        #ifdef DEBUG_ENGINE
+	printf("collision: out of bounds\n");
+        #endif
 	//resetting ball
-	engine->ball.t = engine->time + 2;
-	engine->ball.x = ( engine->w - BALL_SIZE )/ 2;
-	engine->ball.y = ( engine->h - BALL_SIZE )/ 2;
+	engine->ball.t = engine->time + 3;
+	engine->ball.x = engine->w / 2;
+	engine->ball.y = engine->h / 2;
 	engine->ball.v = BALL_V / 2;
 	engine->ball.d = M_PI;
-	out = 0;
-    } else if(WALL_COLLISION(ball) && !RACKET_COLLISION(out, ball, side)){
-
-	//calculating collision time
-	double time = engine->ball.t +
-	    abs(wall - engine->ball.y) / (engine->ball.v * sin(engine->ball.d));
-	//changing ball direction and origin
-	moveBall(ball, time);
-	engine->ball.x = ball[0];
-	engine->ball.y = ball[1];
-	engine->ball.d *= -1;
-	engine->ball.t = time;
-
-    } else if(RACKET_COLLISION(out, ball, side) && !WALL_COLLISION(ball)){
-
-	//getting racket position
-	int racket = engine->player[engine->self].racket;
-	//calculating collision time
-	double time = engine->ball.t +
-	    abs(side - engine->ball.x) / (engine->ball.v * cos(engine->ball.d));
-	//checking if ball received
-	moveBall(ball, time);
-	if (abs(ball[1]-racket) > RACKET_X / 2){
-	    out = 1;
-	    //score a point for the opponent
-	    engine->player[1-engine->self].score++;
+	scored = 0;
+    } else if(WALL_COLLISION){
+	if(RACKET_COLLISION){
+            #ifdef DEBUG_ENGINE
+	    printf("collision: corner\n");
+            #endif
+	    //getting racket position
+	    int racket = (ball[0] <= engine->w / 2
+			  ? engine->player[0].racket
+			  : engine->player[1].racket);
+	    //calculating collision time
+	    double timeR = engine->ball.t + (side - engine->ball.x) / vx;
+	    double timeW = engine->ball.t + (wall - engine->ball.y) / vy;
+	    double time = (timeW<timeR ? timeW : timeR);
+	    //checking if ball received
+	    moveBall(ball, time);
+	    if (abs(ball[1]-racket) > RACKET_X / 2){
+		//score a point for the opponent
+		engine->player[1-engine->self].score++;
+		scored = 1;
+	    } else {
+		//changing ball direction and origin
+		moveBall(ball, time);
+		engine->ball.x = ball[0];
+		engine->ball.y = ball[1];
+		engine->ball.d += M_PI;
+		engine->ball.t = time;
+	    }
 	} else {
+	    //calculating collision time
+	    double time = engine->ball.t + (wall - engine->ball.y) / vy;
+            #ifdef DEBUG_ENGINE
+	    printf("collision: wall @%lf\n", time);
+            #endif
 	    //changing ball direction and origin
 	    moveBall(ball, time);
 	    engine->ball.x = ball[0];
 	    engine->ball.y = ball[1];
-	    engine->ball.d *= shift(M_PI - engine->ball.d, ball[1]-racket);
+	    engine->ball.d *= -1;
 	    engine->ball.t = time;
 	}
-    } else if(WALL_COLLISION(ball) && RACKET_COLLISION(out, ball, side)){
-
-	//getting racket position
-	int racket = engine->player[engine->self].racket;
-	//calculating collision time
-	double timeR = engine->ball.t +
-	    abs(side - engine->ball.x) / (engine->ball.v * cos(engine->ball.d));
-	double timeW = engine->ball.t +
-	    abs(wall - engine->ball.y) / (engine->ball.v * sin(engine->ball.d));
-	double time = (timeW<timeR ? timeW : timeR);
-	//checking if ball received
-	moveBall(ball, time);
-	if (abs(ball[1]-racket) > RACKET_X / 2){
-	    out = 1;
-	    //score a point for the opponent
-	    engine->player[1-engine->self].score++;
-	} else {
-	    //changing ball direction and origin
+    } else {
+	if (RACKET_COLLISION){
+            #ifdef DEBUG_ENGINE
+	    printf("collision: racket @");
+	    #endif
+	    //getting racket position
+	    int racket = (ball[0] <= engine->w / 2
+			  ? engine->player[0].racket
+			  : engine->player[1].racket);
+	    //calculating collision time
+	    double time = engine->ball.t + (side - engine->ball.x) / vx;
+            #ifdef DEBUG_ENGINE
+	    printf("%lf = %lf+(%d - %d)/%d\n", time, engine->ball.t, side,
+		   engine->ball.x, vx);
+            #endif
+	    //checking if ball received
 	    moveBall(ball, time);
-	    engine->ball.x = ball[0];
-	    engine->ball.y = ball[1];
-	    engine->ball.d += M_PI;
-	    engine->ball.t = time;
+	    if (abs(ball[1]-racket) > RACKET_Y / 2){
+                #ifdef DEBUG_ENGINE
+		printf("no |%d-%d| > %d \n", ball[1], racket, RACKET_Y / 2);
+                #endif
+		//score a point for the opponent
+		if(scored == 0 && side == engine->self * engine->w)
+		    engine->player[1-engine->self].score++;
+		    scored = 1;
+	    } else {
+                #ifdef DEBUG_ENGINE
+		printf("yes |%d-%d| <= %d \n", ball[1], racket, RACKET_Y / 2);
+                #endif
+		//changing ball direction and origin
+		moveBall(ball, time);
+		engine->ball.x = ball[0];
+		engine->ball.y = ball[1];
+		engine->ball.d = shift(M_PI - engine->ball.d, ball[1]-racket);
+		engine->ball.t = time;
+		engine->ball.v = BALL_V;
+	    }
 	}
     }
 }
@@ -454,29 +503,31 @@ void run(int direction){
 	return;
     } else {
 
-	player p = engine->player[engine->self];
+	player* p = &engine->player[engine->self];
 
 	//update engine time
-	engine->time = tick() + LAG;
+	engine->time = tick();
 
 	//calculate racket shift
-	double step = direction * RACKET_V * (engine->time - p.time);
-
-	//move racket
-	if(p.racket + (int)step < RACKET_Y / 2){
-	    if(p.racket != 0)
-		p.racket = RACKET_Y / 2;
-	} else if(p.racket + step > engine->h - RACKET_Y / 2){
-	    if(p.racket != engine->h - RACKET_Y / 2)
-		p.racket = engine->h - RACKET_Y / 2;
-	} else
-	    p.racket += (int)step;
+	if(direction != STILL) {
+	    double step = direction * RACKET_V * (engine->time - p->time);
+	    //move racket
+	    if(p->racket + step < RACKET_Y / 2){
+		if(p->racket != RACKET_Y / 2)
+		    p->racket = RACKET_Y / 2;
+	    } else if(p->racket + step > engine->h - RACKET_Y / 2){
+		if(p->racket != engine->h - RACKET_Y / 2)
+		    p->racket = engine->h - RACKET_Y / 2;
+	    } else
+		p->racket += step;
+	}
 
 	//update player time
-	p.time = engine->time;
+	p->time = engine->time;
 
 	//run ball collision calculation
-	ballCollision();
+	if (!GAMEOVER)
+	    ballCollision();
 
 	//Freeing mutex
 	SDL_UnlockMutex(mutex);
