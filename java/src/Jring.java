@@ -10,7 +10,7 @@ public class Jring{
     public static void main(String[] args){
         mess_list = new ArrayList<String>();
         InetAddress host_ip =host_ip();
-        System.out.println(host_ip.toString());
+        System.out.println("Your ip adress : "+host_ip.toString().substring(1));
         Scanner sc = new Scanner(System.in);
         String id="";
         int u=0,t=0,d=0;
@@ -24,13 +24,13 @@ public class Jring{
                 d=8886;
             }
             if(args[args.length-1].charAt(0)=='2'){
-                id="Kate";
+                id="Nicolas";
                 u=8889;
                 t=8880;
                 d=8881;
             }
             if(args[args.length-1].charAt(0)=='3'){
-                id="Max";
+                id="Younes";
                 u=8885;
                 t=8884;
                 d=8883;
@@ -93,14 +93,16 @@ public class Jring{
                     e.printStackTrace();
                 }
             }
-            System.out.println("Give the diffusion port");
-            d = sc.nextInt();
-            while(t<1024 || t>9999){
-                System.out.println("The diffusion port is not correct, give one between 1024 and 9999");
+            if(args.length==1 || args.length==1){
+                System.out.println("Give the diffusion port");
                 d = sc.nextInt();
+                while(t<1024 || t>9999){
+                    System.out.println("The diffusion port is not correct, give one between 1024 and 9999");
+                    d = sc.nextInt();
+                }
             }
         }
-        ent = new Entity(id,host_ip.toString().substring(1),u,t,"224.0.0.0",d);
+        ent = new Entity(id,host_ip.toString().substring(1),u,t,"225.0.0.1",d);
         boolean stage1=true;
         if(args.length==0 || args.length==1){
             ent.ip_next=ent.ip;
@@ -139,20 +141,12 @@ public class Jring{
                 String m_id;
                 int size_mess;
                 boolean mess_recognize=false;
-                System.out.println("If you don't know how to use the programm write help, you will have all the command.");
                 while(true){
                     mess_recognize=false;
                     mess_send= sc.nextLine();
                     m_id=message_id();
                     if(mess_send.equals("help")){
-                        System.out.println("info : Display informations on current entity.");
-                        System.out.println("whos : Getting to know each other...");
-                        System.out.println("gbye : Exit.");                        
-                        System.out.println("diff : Send messages on the ring.");
-                        System.out.println("test : Know if the ring is still correct.");
-                        System.out.println("trans : Have a file that another computer in the ring have.");
-                        System.out.println("ls : Know what is in your repository.");
-                        System.out.println("insert duplication ?");
+                        cmd_help();
                     }
                     if(mess_send.equals("ls")){
                         cmd_ls();
@@ -176,13 +170,40 @@ public class Jring{
                         }
                     }
                     if(mess_send.equals("test")){
-                        mess_recognize=true;
                         mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+Entity.add_zero(ent.mdiff_port,4);
-                        /*System.out.println("How many times do you like to check the ring if it's not safe ?");
-                          int times = sc.nextInt();*/
-                        dwn = new Down_thread(ent,mess_list,m_id,0);
+                        mess_list.add(m_id);
+                        Udp_thread.send_mess(ent,dso,mess_send);
+                        dwn = new Down_thread(ent,mess_list,m_id,0,ent.mdiff_ip,ent.mdiff_port);
                         dwn_t = new Thread(dwn);
                         dwn_t.start();
+                        if(ent.port_next2!=-1){
+                            m_id=message_id();
+                            mess_send="TEST "+m_id+" "+ent.mdiff_ip2+" "+Entity.add_zero(ent.mdiff_port2,4);
+                            mess_list.add(m_id);
+                            Udp_thread.send_mess(ent,dso,mess_send);
+                            dwn = new Down_thread(ent,mess_list,m_id,0,ent.mdiff_ip2,ent.mdiff_port2);
+                            dwn_t = new Thread(dwn);
+                            dwn_t.start();
+                        }
+                    }
+                     if(mess_send.equals("testplus")){
+                        mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+Entity.add_zero(ent.mdiff_port,4);
+                        System.out.println("How many times do you like to check the ring if it's not safe ?");
+                        int times = sc.nextInt();
+                        mess_list.add(m_id);
+                        Udp_thread.send_mess(ent,dso,mess_send);
+                        dwn = new Down_thread(ent,mess_list,m_id,0,ent.mdiff_ip,ent.mdiff_port);
+                        dwn_t = new Thread(dwn);
+                        dwn_t.start();
+                        if(ent.port_next2!=-1){
+                            m_id=message_id();
+                            mess_send="TEST "+m_id+" "+ent.mdiff_ip2+" "+Entity.add_zero(ent.mdiff_port2,4);
+                            mess_list.add(m_id);
+                            Udp_thread.send_mess(ent,dso,mess_send);
+                            dwn = new Down_thread(ent,mess_list,m_id,0,ent.mdiff_ip2,ent.mdiff_port2);
+                            dwn_t = new Thread(dwn);
+                            dwn_t.start();
+                        }
                     }
                     if(mess_send.equals("diff")){
                         mess_recognize=true;
@@ -258,8 +279,8 @@ public class Jring{
             Scanner sc = new Scanner(System.in);
             /*System.out.println("Give the ip adress of the new ring");
               String ip_mdiff2 = sc.nextLine();*/
-            String ip_mdiff2 = "224.0.0.0";
-            System.out.println("Give the port of the new ring");
+            String ip_mdiff2 = "225.0.0.1";
+            System.out.println("Give the diffusion port of the new ring");
             int port_mdiff2=sc.nextInt();
             Socket socket = new Socket(adress,tcp);
             BufferedReader br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -268,7 +289,7 @@ public class Jring{
             Welc_mess data_welc = Welc_mess.parse_welc(mess_recv);
             boolean dupl=false;
             if(data_welc!=null){
-                String mess_send = "DUPL "+ent.ip+" "+Entity.add_zero(ent.udp,4)+" "+ip_mdiff2+" "+Entity.add_zero(port_mdiff2,4);
+                String mess_send = "DUPL "+Entity.ip_form(ent.ip)+" "+Entity.add_zero(ent.udp,4)+" "+Entity.ip_form(ip_mdiff2)+" "+Entity.add_zero(port_mdiff2,4);
                 pw.println(mess_send);
                 pw.flush();
                 mess_recv=br.readLine();
@@ -277,6 +298,8 @@ public class Jring{
                     if(tab.length==2){
                         ent.ip_next=adress;
                         ent.port_next=Integer.parseInt(tab[1]);
+                        ent.mdiff_ip=Entity.ip_form(ip_mdiff2);
+                        ent.mdiff_port=port_mdiff2;
                         dupl=true;
                         System.out.println("duplicate : Successful Connexion !");
                     }
@@ -354,5 +377,17 @@ public class Jring{
             e.printStackTrace();
             System.exit(-1);
         }
+    }
+
+    public static void cmd_help(){
+        System.out.println("info : Display informations on current entity.");
+        System.out.println("whos : Getting to know each other...");
+        System.out.println("gbye : Exit.");                        
+        System.out.println("diff : Send messages on the ring.");
+        System.out.println("test : Know if the ring is still correct.");
+        System.out.println("testplus : Know if the ring is still correct with verification");
+        System.out.println("trans : Have a file that another computer in the ring have.");
+        System.out.println("ls : Know what is in your repository.");
+        System.out.println("insert duplication ?");
     }
 }

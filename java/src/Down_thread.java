@@ -7,12 +7,16 @@ public class Down_thread implements Runnable{
     ArrayList<String> mess_list;
     String mess_id;
     int nb_test;
-    
-    public Down_thread(Entity e,ArrayList<String> list,String id,int nb){
+    String ip_diff;
+    int port_diff;
+
+    public Down_thread(Entity e,ArrayList<String> list,String id,int nb,String ip,int port){
         ent=e;
         mess_list=list;
         mess_id=id;
         nb_test=nb;
+        ip_diff=ip;
+        port_diff=port;
     }
     
     public void run(){
@@ -22,19 +26,15 @@ public class Down_thread implements Runnable{
             DatagramSocket dso = new DatagramSocket();
             DatagramPacket packet_send;
             boolean found = false;
-            /* mess_send="DOWN";
-               data=mess_send.getBytes();
-               packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.mdiff_ip,ent.mdiff_port));
-               dso.send(packet_send);*/
             for(int i=0;i<nb_test;i++){
                 Thread.sleep(15000);
                 if(mess_list.remove(mess_id)){
                     System.out.println("TEST : The ring is not safe \n The test is restart to be sure !");
                     mess_id=Jring.message_id();
-                    mess_send="TEST "+mess_id+" "+ent.mdiff_ip+" "+ent.mdiff_port;
+                    mess_send="TEST "+mess_id+" "+ip_diff+" "+port_diff;
                     mess_list.add(mess_id);
                     data=mess_send.getBytes();
-                    packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
+                    packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ip_diff,port_diff));
                     dso.send(packet_send);
                 }
                 else {
@@ -47,7 +47,7 @@ public class Down_thread implements Runnable{
                 if(mess_list.remove(mess_id)){
                     mess_send="DOWN";
                     data=mess_send.getBytes();
-                    packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.mdiff_ip,ent.mdiff_port));
+                    packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ip_diff,port_diff));
                     dso.send(packet_send);
                 }
             }          

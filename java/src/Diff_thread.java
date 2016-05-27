@@ -38,6 +38,7 @@ public class Diff_thread implements Runnable{
                                 ent.port_next=ent.port_next2;
                                 ent.ip_next=ent.ip_next2;
                                 ent.mdiff_ip=ent.mdiff_ip2;
+                                ent.mdiff_port=ent.mdiff_port2;
                                 ent.port_next2=-1;
                             }
                             else ent.port_next2=-1;
@@ -53,11 +54,10 @@ public class Diff_thread implements Runnable{
                 }catch(Exception e){
                     System.out.println(e);
                     e.printStackTrace();
-                    System.out.println("Fin du diff");
                     break;
                 }
             }
-            System.out.println("Fin du diff");
+            System.out.println("End of the diffusion "+ip+" "+port);
         }
         catch(Exception e){
             System.out.println(e);

@@ -30,8 +30,8 @@ public class Entity{
         System.out.println("Next ip "+ip_next+" Next port "+port_next);
         System.out.println("Diffusion ip "+mdiff_ip+" Diffusion port "+mdiff_port);
         if(port_next2!=-1){
-            System.out.println("Next ip "+ip_next2+" Next port "+port_next2);
-            System.out.println("Diffusion ip "+mdiff_ip2+" Diffusion port "+mdiff_port2);
+            System.out.println("Ring 2 Next ip "+ip_next2+" Next port "+port_next2);
+            System.out.println("Ring 2 Diffusion ip "+mdiff_ip2+" Diffusion port "+mdiff_port2);
         }
     }
 

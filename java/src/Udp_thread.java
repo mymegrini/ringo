@@ -31,8 +31,8 @@ public class Udp_thread implements Runnable{
                 try{
                     dso.receive(packet_recv);
                     mess_recv = new String(packet_recv.getData(),0,packet_recv.getLength());
-                    System.out.println("Ring message : "+mess_recv);
                     tab = mess_recv.split(" ");
+                    System.out.println("Ring message : "+mess_recv);
                     mess_recv_WHOS(tab,mess_recv);
                     mess_recv_MEMB(tab,mess_recv);
                     mess_recv_GBYE(tab,mess_recv);
@@ -113,8 +113,8 @@ public class Udp_thread implements Runnable{
     public void mess_recv_TEST(String[] tab,String mess_recv){
         if(tab.length==4 && tab[0].equals("TEST")){
             if(tab[2].equals(ent.mdiff_ip) && Integer.parseInt(tab[3])==ent.mdiff_port || tab[2].equals(ent.mdiff_ip2) && Integer.parseInt(tab[3])==ent.mdiff_port2){
-                if(!mess_list.remove(tab[1])){ send_mess(ent,dso,mess_recv);}
-                else System.out.println("TEST : Ring Check");
+                if(!mess_list.remove(tab[1])) send_mess(ent,dso,mess_recv);
+                else System.out.println("TEST : Ring "+tab[2]+" "+tab[3]+" Check");
             }
         }
     }
@@ -156,7 +156,6 @@ public class Udp_thread implements Runnable{
                         }
                     }
                     catch(FileNotFoundException e){
-                        //System.out.println("fichier n'est pas present ici");
                         send_mess(ent,dso,mess_recv);                        
                     }
                     catch(IOException e){
@@ -186,7 +185,7 @@ public class Udp_thread implements Runnable{
                             data_fic = tab[7].getBytes();
                             trans_list.get(i).fos.write(data_fic);
                             trans_list.get(i).num_mess++;
-                            if(trans_list.get(i).num_mess==trans_list.get(i).nb_mess){
+                            if(trans_list.get(i).num_mess+1==trans_list.get(i).nb_mess){
                                 System.out.println("Transfer Complete");
                                 trans_list.get(i).fos.close();
                                 trans_list.remove(i);
@@ -215,7 +214,8 @@ public class Udp_thread implements Runnable{
             packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
             dso.send(packet_send);
             if(ent.port_next2!=-1){
-                mess_list.add(mess.split(" ")[1]);
+                String[] tab = mess.split(" ");
+                if(!tab[0].equals("TEST")) mess_list.add(tab[1]);
                 packet_send =new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next2,ent.port_next2));
                 dso.send(packet_send);
             }
