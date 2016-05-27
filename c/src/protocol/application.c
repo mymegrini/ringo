@@ -5,7 +5,6 @@
 #include "protocol.h"
 #include "../plugin_system/plugin_system.h"
 
-#include <stdarg.h>
 #include <stdio.h>
 
 extern void action_diff(char *mess, char *content, int lookup_flag);
@@ -50,17 +49,19 @@ int parseappmsg(char *message, char *content, int lookup_flag) {
         }
     }
     // look for plugin action
-    plug_action *pa;
-    if (find((void **)&pa, plugin_manager.action, idapp)) {
-      return pa->action(message, app_content, lookup_flag);
-    }
+    /* plug_action *pa; */
+    /* if (find((void **)&pa, plugin_manager.action, idapp)) { */
+    /*   return pa->action(message, app_content, lookup_flag); */
+    /* } */
     // application not found, retransmit the message if not seen.
+    r =  exec_plugin_action(&plugin_manager, idapp, 
+        message, app_content, lookup_flag);
+    if (r != -1)
+      return r;
     if (!lookup_flag)
       sendpacket_all(message);
-    return r;
+    return 0;
 }
-
-
 
 
 void sendappmessage_all(const char *type, const char *format, ...)

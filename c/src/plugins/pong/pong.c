@@ -1,4 +1,4 @@
-#include "../../plugin_system/plugin_interface.h"
+#include "../../plugin_system/plugin_programmer_interface.h"
 #include "pong.h"
 #include "gui.h"
 #include "netcode.h"

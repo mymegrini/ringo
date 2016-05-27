@@ -386,27 +386,6 @@ void rm_all_if(list l, int (*predicate) (const char *, void *))
     }
   }
 }
-/* { */
-/*   if (empty(l)) */
-/*     return; */
-/*   node *n = l->first; */
-/*   while (n->next ) { */
-/*     if (predicate(n->next->name, n->next->data)) { */
-/*       node *rm = n->next; */
-/*       n->next = n->next->next; */
-/*       free_node(rm); */
-/*       --l->size; */
-/*     } */
-/*     else */
-/*       n = n->next; */
-/*   } */
-/*   n = l->first; */
-/*   if (predicate(n->name, n->data)) { */
-/*     l->first = l->first->next; */
-/*     free_node(n); */
-/*     --l->size; */
-/*   } */
-/* } */
 
 
 
@@ -471,4 +450,17 @@ void rm_all_if_free_data(list l, int (*predicate) (const char *, void *), void (
 int list_size(list l)
 {
   return l->size;
+}
+
+
+
+char *pop_name(list l)
+{
+  if (empty(l))
+    return NULL;
+  node *n = l->first;
+  l->first = l->first->next;
+  char *str = strdup(n->name);
+  free_node(n);
+  return str;
 }

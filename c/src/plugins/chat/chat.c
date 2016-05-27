@@ -1,7 +1,5 @@
 #include "../../common.h"
-#include "../../plugin_system/plugin_interface.h"
-#include "../../plugin_system/protocol_interface.h"
-#include "../../plugin_system/plugin_tool.h"
+#include "../../plugin_system/plugin_programmer_interface.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -10,6 +8,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <ctype.h>
 
 #include <pthread.h>
 
@@ -18,7 +17,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 // GLOBALS
 ////////////////////////////////////////////////////////////////////////////////
-static void getmessage(char *message);
 static void help(char *argv0);
 static void usage(char *argv0);
 static void send_chat(const char *mess);
@@ -40,7 +38,6 @@ static void* terminal_chat(void *arg);
 
 
 static int   chat_fd = STDOUT_FILENO;
-static pid_t pid_term;
 
 //// END OF GLOBALS
 
@@ -56,6 +53,9 @@ static pid_t pid_term;
 static int cmd_chat(int argc, char **argv);
 static int action_chat(const char *message, const char *content, int lookup_flag);
 static void close_plugin();
+
+char id[9];
+char padded_id[9];
 
 
 
@@ -87,6 +87,8 @@ Plugin plug_chat = {
 
 int init_chat(PluginManager *p)
 {
+  get_id(id);
+  padstr(padded_id, id, 8);
   return plugin_register(p, "chat", &plug_chat);
 }
 
@@ -97,12 +99,17 @@ static void close_plugin()
 }
 
 
+
 int action_chat(const char *mess, const char *content, int lookup_flag) {
 
   if (lookup_flag)
     return 1;
 
-  if (content[3] != ' ' || !isnumericn(content, 3) ||
+  int valid_size = 1;
+  for (int i = 0; i < 3; ++i)
+    valid_size &= isdigit(content[i]);
+
+  if (content[3] != ' ' || !valid_size ||
       content[12] != ' '){
     debug(RED "action_chat", RED "message content \"%s\" not valid for application.",
         content);
@@ -155,8 +162,6 @@ int cmd_chat(int argc, char **argv)
 {
   char message[481] = "";
   if (argc == 1) {
-    getmessage(message);
-    send_chat(message);
     return 0;
   }
   int c, indexptr;
@@ -190,7 +195,8 @@ int cmd_chat(int argc, char **argv)
     }
   }
 
-  if (!optionmess && optind != -1) {
+  if (!optionmess && optind != argc && optind != -1) {
+    debug("cmd_chat", "optind: %d, argc: %d", optind, argc);
     flag |= FLAG_MESS;
     int len = 0;
     for (int i = optind; i < argc - 1; ++i) {
@@ -238,11 +244,12 @@ static void send_chat(const char *mess)
 {
   unsigned len = strlen(mess);
   unsigned size = MSIZE < len ? MSIZE : len;
-  char ssize[4];
-  itoa(ssize, 3, size);
-  char name[9];
-  padstr(name, info->id, 8);
-  send_message(IDAPP_CHAT, "%s %s %s", ssize, name, mess);
+  char ssize[4] = {0};
+  for (int i = 0; i < 3; ++i) {
+    ssize[2-i] = '0' + size % 10;
+    size /= 10;
+  }
+  send_message(IDAPP_CHAT, "%s %s %s", ssize, padded_id, mess);
   print_chat("You", mess);
 }
 
@@ -261,12 +268,6 @@ static void help(char *argv0)
 }
 
 
-static void getmessage(char *message)
-{
-  char *line = readline(BOLD "Enter your message:\n" RESET);
-  strncpy(message, line, 481);
-  free(line);
-}
 
 static void padstr(char *padded, const char *str, int size)
 {
@@ -308,17 +309,18 @@ static void outputto(int fd)
 
 
 
+static xterm     x;
+static pthread_t terminal_communication;
+
+
+
 static int output_term()
 {
-  int pipe[2];
-  if (open_terminal_communication(&pid_term, pipe) == -1)
+  if (init_xterm_communication(&x) == -1)
     return 0;
   else {
-    outputto(pipe[1]);
-    pthread_t communication;
-    int *xin = malloc(sizeof(int));
-    *xin = pipe[0];
-    pthread_create(&communication, NULL, terminal_chat, xin);
+    outputto(xterm_getoutput(x));
+    pthread_create(&terminal_communication, NULL, terminal_chat, x);
   }
   return 1;
 }
@@ -326,17 +328,14 @@ static int output_term()
 
 static void* terminal_chat(void *arg)
 {
-  int *fdin = (int *)arg;
+  xterm x = arg;
   while (1) {
-    FILE *xin = fdopen(*fdin, "r");
-    while (1) {
       size_t n = 0;
       char *line;
-      ssize_t r = getline(&line, &n, xin);
+      ssize_t r = xterm_getline(x, &line, &n);
       line[r-1] = 0;
       send_chat(line);
       free(line);
-    }
   }
   return NULL;
 }
@@ -346,8 +345,8 @@ static void* terminal_chat(void *arg)
 static void close_outputterm()
 {
   if (chat_fd != STDOUT_FILENO) {
-    kill(pid_term, SIGKILL);
-    close(chat_fd);
+    pthread_cancel(terminal_communication);
+    xterm_close(&x);
   }
 }
 //// END OF TOOLS

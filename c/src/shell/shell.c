@@ -5,6 +5,7 @@
 #include "../protocol/protocol.h"
 #include "../protocol/thread.h"
 #include "../list.h"
+/* #include "../plugin_system/plugin_system.h" */
 #include "../plugin_system/plugin_system.h"
 
 #include <stdlib.h>
@@ -92,7 +93,7 @@ static void actualize_prompt()
 {
   char buff[1024];
   if (getcwd(buff, 1024) == NULL){
-      perror("load_all_plugins");
+      perror("getcwd");
       return;
   }
   char dir[255];
@@ -130,12 +131,15 @@ static int exec_cmd(const char *str) {
         }
       }
       // look for plugin command
-      plug_command *pc;
-      if (find((void **)&pc, plugin_manager.command, wordx.we_wordv[0])) {
-        r = (pc->command)(wordx.we_wordc, wordx.we_wordv);
-        wordfree(&wordx);
+      /* plug_command *pc; */
+      /* if (find((void **)&pc, plugin_manager.command, wordx.we_wordv[0])) { */
+      /*   r = (pc->command)(wordx.we_wordc, wordx.we_wordv); */
+      /*   wordfree(&wordx); */
+      /*   return r; */
+      /* } */
+      r = exec_plugin_command(&plugin_manager, wordx.we_wordc, wordx.we_wordv);
+      if (r != -1)
         return r;
-      }
       // a little alias for ls...
       if (strcmp(wordx.we_wordv[0], "ls") == 0) {
         char *ls = malloc(strlen(str) + 15);
@@ -144,7 +148,8 @@ static int exec_cmd(const char *str) {
         free(ls);
       }
       else {
-	  if(system(str));
+        if(system(str))
+          r = 0;
       }
       break;
   }
@@ -252,7 +257,7 @@ char *command_generator (char *text, int state)
   if (!state)
   {
     list_index = 0;
-    iter = get_iterator(plugin_manager.command);
+    iter = get_iterator(get_commandlist());
     len = strlen (text);
   }
 

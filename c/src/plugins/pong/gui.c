@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <SDL2/SDL.h>
 #include <readline/readline.h>
+#include <string.h>
 #include "pong.h"
 #include "gui.h"
 #include "render.h"
@@ -61,8 +62,7 @@ launchWindow(){
     //Create window
     window = SDL_CreateWindow("pong",
 			      SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-			      WINDOW_WIDTH, WINDOW_HEIGHT,
-			      SDL_WINDOW_SHOWN );
+			      WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN );
 
     if( window == NULL ) {
 	printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -73,8 +73,8 @@ launchWindow(){
     setIcon(window);
 
     //get Renderer
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC
-				  | SDL_RENDERER_ACCELERATED);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_PRESENTVSYNC |
+				  SDL_RENDERER_ACCELERATED);
 
     if( renderer == NULL ) {
 	printf( "Renderer could not be created! SDL_Eroor: %s\n",
@@ -88,9 +88,6 @@ launchWindow(){
     //load asset Textures
     if (loadTextures(renderer))
 	closeWindow();
-    else
-	//render splash screen
-	renderLogo(renderer);
 
     return;
 }
@@ -107,26 +104,23 @@ handleEvents(){
     while(SDL_PollEvent(&evt)) {
 	switch(evt.type){
 	case SDL_QUIT :
-	    return 1; // nonzero value to break out of loop
-	case SDL_KEYDOWN :
+	    return QUIT; // nonzero value to break out of loop
+	case SDL_KEYUP :
 	    if(evt.key.keysym.sym == SDLK_ESCAPE)
-		return 1;
+		return QUIT;
 	}
     }
 
     if(engineState()){
 	const Uint8* state = SDL_GetKeyboardState(NULL);
-	if (state[SDL_SCANCODE_UP]){
-	    if (moveRacket(UP))
-		sendUpdate();
-	}
-	if (state[SDL_SCANCODE_DOWN]){
-	    if (moveRacket(DOWN))
-		sendUpdate();
-	}
-	return 0;
+	if (state[SDL_SCANCODE_UP] && !state[SDL_SCANCODE_DOWN])
+	    return UP;
+	else if (state[SDL_SCANCODE_DOWN] && !state[SDL_SCANCODE_UP])
+	    return DOWN;
+	else
+	    return STILL;
     } else
-	return 0;
+	return OFF;
 }
 
 int
@@ -138,10 +132,15 @@ launchPong(int argc, char **argv) {
 
     loginPong();
 
-    //event loop
-    while(!handleEvents())
-	render(renderer);
-
+    int e;
+    
+    //event loop    
+    while((e = handleEvents()) != QUIT){
+	simulate(renderer, e);
+	if (e != OFF)
+	    sendUpdate();
+    }
+    
     //quitting
     closeWindow();
     logoutPong();

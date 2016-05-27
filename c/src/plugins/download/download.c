@@ -1,12 +1,6 @@
-/* #include "../protocol/protocol.h" */
-/* #include "../protocol/application.h" */
-/* #include "../protocol/common.h" */
-/* #include "../protocol/network.h" */
 #include "../../common.h"
-#include "../../plugin_system/plugin_interface.h"
-#include "../../plugin_system/protocol_interface.h"
-#include "../../plugin_system/plugin_tool.h"
-#include "../../list.h"
+#include "../../plugin_system/plugin_programmer_interface.h"
+/* #include "../../list.h" */
 
 #include <stdio.h>
 #include <unistd.h>
@@ -140,7 +134,7 @@ static long letol(const char *le)
 static int request_file(const char *filename)
 {
   request_data *r = malloc(sizeof(request_data));
-  r->nrequest = *ring_number+1;
+  r->nrequest = get_ring_number()+1;
   if (!insert_one(requested, filename, r)) {
     fprintf(stderr, "File %s already requested.\n", filename);
     return 0;
@@ -204,7 +198,7 @@ static int action_req(const char *message, const char *content, int lookup_flag)
       begin_transfert(fd, filename, filename_size, id_trans);
     }
     else {
-      sendpacket_all(message);
+      retransmit(message);
     }
 
     free(filename);
@@ -275,7 +269,8 @@ static int action_sen(const char *message, const char *content, int lookup_flag)
       int size = atoi(size_content);
       /* fwrite(fcontent, size, 1, t->f); */
       /* fflush(t->f); */
-      write(t->fd, fcontent, size);
+      if (write(t->fd, fcontent, size) == -1)
+	  perror("plugin/download/ action_sen");
       if (++t->nextnum == t->nummess) {
         char *filename = strdup(t->filename);
         free_transfert_data(t);
