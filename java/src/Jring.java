@@ -6,9 +6,11 @@ import java.math.*;
 public class Jring{
     static Entity ent;
     static ArrayList<String> mess_list;
+    static  ArrayList<String> mess_list_dupl;
     
     public static void main(String[] args){
         mess_list = new ArrayList<String>();
+        mess_list_dupl = new ArrayList<String>();
         InetAddress host_ip =host_ip();
         System.out.println("Your ip adress : "+host_ip.toString().substring(1));
         Scanner sc = new Scanner(System.in);
@@ -126,7 +128,7 @@ public class Jring{
                 Thread tcp_t = new Thread(tcp_mode);
                 tcp_t.start();
                 //Udp
-                Udp_thread udp_mode = new Udp_thread(ent,mess_list,dso_udp,diff_mode.mso);
+                Udp_thread udp_mode = new Udp_thread(ent,mess_list,mess_list_dupl,dso_udp,diff_mode.mso);
                 Thread udp_t = new Thread(udp_mode);
                 udp_t.start();
                 diff_mode.dso_udp=dso_udp;
@@ -162,12 +164,6 @@ public class Jring{
                         mess_recognize=true;
                         tcp_mode.server.close();
                         mess_send="GBYE "+m_id+" "+ent.ip+" "+Entity.add_zero(ent.udp,4)+" "+ent.ip_next+" "+Entity.add_zero(ent.port_next,4);
-                        /*if(ent.port_next2!=-1){
-                            mess_list.add(m_id);
-                            Udp_thread.send_mess(ent,dso,mess_send);
-                            m_id=message_id();
-                            mess_send="GBYE "+m_id+" "+ent.ip+" "+Entity.add_zero(ent.udp,4)+" "+ent.ip_next2+" "+Entity.add_zero(ent.port_next2,4);
-                        }*/
                     }
                     if(mess_send.equals("test")){
                         mess_send="TEST "+m_id+" "+ent.mdiff_ip+" "+Entity.add_zero(ent.mdiff_port,4);

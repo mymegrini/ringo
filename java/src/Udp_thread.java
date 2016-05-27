@@ -6,14 +6,16 @@ import java.math.*;
 public class Udp_thread implements Runnable{
     Entity ent;
     static ArrayList<String> mess_list;
+    static ArrayList<String> mess_list_dupl;
     static ArrayList<Trans> trans_list;
     DatagramSocket dso;
     MulticastSocket mso;
     
 
-    public Udp_thread(Entity e,ArrayList<String> list,DatagramSocket dso_u,MulticastSocket mso_d){
+    public Udp_thread(Entity e,ArrayList<String> list,ArrayList<String> list_dupl,DatagramSocket dso_u,MulticastSocket mso_d){
         ent=e;
         mess_list=list;
+        mess_list_dupl=list_dupl;
         trans_list=new ArrayList<Trans>();
         dso =  dso_u;
         mso=mso_d;
@@ -54,8 +56,8 @@ public class Udp_thread implements Runnable{
 
     public void mess_recv_WHOS(String[] tab,String mess_recv){
         if(tab.length==2 && tab[0].equals("WHOS")){
-            if(!mess_list.remove(tab[1])) send_mess(ent,dso,mess_recv);
-            if(!mess_list.contains(tab[1])){
+            if(!mess_list.remove(tab[1]) && !mess_list_dupl.remove(tab[1])) send_mess(ent,dso,mess_recv);
+            if(!mess_list.contains(tab[1]) && !mess_list_dupl.remove(tab[1])){
                 String mess_id =Jring.message_id();
                 String mess_send="MEMB "+mess_id+" "+ent.id+" "+ent.ip+" "+ent.udp;
                 mess_list.add(mess_id);
@@ -66,7 +68,7 @@ public class Udp_thread implements Runnable{
     
     public void mess_recv_MEMB(String[] tab,String mess_recv){
         if(tab.length==5 && tab[0].equals("MEMB")){
-            if(!mess_list.remove(tab[1])) send_mess(ent,dso,mess_recv);
+            if(!mess_list.remove(tab[1]) && !mess_list_dupl.remove(tab[1])) send_mess(ent,dso,mess_recv);
         }
     }
     public void mess_recv_GBYE(String[] tab,String mess_recv){
@@ -91,7 +93,9 @@ public class Udp_thread implements Runnable{
                         ent.port_next2=Integer.parseInt(tab[5]);
                     }
                 }
-                else send_mess(ent,dso,mess_recv);
+                else{
+                    if(!mess_list_dupl.remove(tab[1])) send_mess(ent,dso,mess_recv);
+                }
             }
         }
     }
@@ -102,7 +106,6 @@ public class Udp_thread implements Runnable{
                 mso.leaveGroup(InetAddress.getByName(ent.mdiff_ip));
                 if(ent.port_next2!=-1){ 
                     if(!ent.mdiff_ip.equals(ent.mdiff_ip2)) mso.leaveGroup(InetAddress.getByName(ent.mdiff_ip2));
-                    //ent.port_next2=-1;
                 }
                 dso.close();
                 System.exit(0);
@@ -116,7 +119,7 @@ public class Udp_thread implements Runnable{
     public void mess_recv_TEST(String[] tab,String mess_recv){
         if(tab.length==4 && tab[0].equals("TEST")){
             if(tab[2].equals(ent.mdiff_ip) && Integer.parseInt(tab[3])==ent.mdiff_port || tab[2].equals(ent.mdiff_ip2) && Integer.parseInt(tab[3])==ent.mdiff_port2){
-                if(!mess_list.remove(tab[1])) send_mess(ent,dso,mess_recv);
+                if(!mess_list.remove(tab[1]) && !mess_list_dupl.remove(tab[1])) send_mess(ent,dso,mess_recv);
                 else System.out.println("TEST : Ring "+tab[2]+" "+tab[3]+" Check");
             }
         }
@@ -124,12 +127,13 @@ public class Udp_thread implements Runnable{
     
     public void mess_recv_DIFF(String[] tab,String mess_recv){
         if(tab.length==5 && tab[0].equals("APPL") && tab[2].equals("DIFF####")){
-            if(!mess_list.remove(tab[1]))  send_mess(ent,dso,mess_recv);
+            if(!mess_list.remove(tab[1]) && !mess_list_dupl.remove(tab[1]))  send_mess(ent,dso,mess_recv);
         }
     }
 
     public void mess_recv_TRANS(String[] tab,String mess_recv){
         if(tab[0].equals("APPL") && tab[2].equals("TRANS###")){
+            mess_list_dupl.remove(tab[1]);
             boolean r=mess_list.remove(tab[1]);
             String mess_send;
             String mess_id;
@@ -176,7 +180,7 @@ public class Udp_thread implements Runnable{
             }
             if(tab.length==8 && tab[3].equals("ROK")){
                 if(r) trans_list.add(new Trans(tab[4],tab[6],tab[7]));
-                else send_mess(ent,dso,mess_recv);
+                else if(!mess_list_dupl.remove(tab[1])) send_mess(ent,dso,mess_recv);
             }
             int i =  Trans.search(trans_list,tab[4]);
             if(tab.length>=8 && tab[3].equals("SEN")){
@@ -188,7 +192,8 @@ public class Udp_thread implements Runnable{
                             data_fic = tab[7].getBytes();
                             trans_list.get(i).fos.write(data_fic);
                             trans_list.get(i).num_mess++;
-                            if(trans_list.get(i).num_mess+1==trans_list.get(i).nb_mess){
+                            System.out.println(trans_list.get(i).num_mess+" "+Entity.denl(""+trans_list.get(i).nb_mess));
+                            if(trans_list.get(i).num_mess==Entity.denl(""+trans_list.get(i).nb_mess)){
                                 System.out.println("Transfer Complete");
                                 trans_list.get(i).fos.close();
                                 trans_list.remove(i);
@@ -205,7 +210,7 @@ public class Udp_thread implements Runnable{
                         send_mess(ent,dso,mess_send);
                     }
                 }
-                else send_mess(ent,dso,mess_recv);
+                else if(!mess_list_dupl.remove(tab[1])) send_mess(ent,dso,mess_recv);
             }
         }
     }
@@ -216,10 +221,17 @@ public class Udp_thread implements Runnable{
             DatagramPacket packet_send;
             packet_send = new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next,ent.port_next));
             dso.send(packet_send);
-            if(ent.port_next2!=-1){
+            /* if(ent.port_next2!=-1){
                 String[] tab = mess.split(" ");
                 if(tab[0].equals("EYBG") || tab[0].equals("GBYE")) mess_list.add(tab[1]);
                 if(!tab[0].equals("TEST")) mess_list.add(tab[1]);
+                packet_send =new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next2,ent.port_next2));
+                dso.send(packet_send);
+            }*/
+            if(ent.port_next2!=-1){
+                String[] tab = mess.split(" ");
+                mess_list_dupl.add(tab[1]);
+                if(tab[0].equals("WHOS"))  mess_list_dupl.add(tab[1]);
                 packet_send =new DatagramPacket(data,data.length,new InetSocketAddress(ent.ip_next2,ent.port_next2));
                 dso.send(packet_send);
             }
